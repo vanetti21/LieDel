@@ -1,2 +1,0 @@
-# LieDel
-Proyecto Software
