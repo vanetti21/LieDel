@@ -169,7 +169,7 @@ header .navbar {
 
 
 .hero-section .hero-details .description {
-    max-width: 70%;
+    max-width: 80%;
     margin-top: 24px 0 40px;
     font-size: var(--font-size-m);
 }
@@ -209,8 +209,8 @@ header .navbar {
 
 
 .hero-section .hero-image-wrapper {
-    width: 500px;
-    margin-right: 30px;
+    width: 500;
+    margin-right: 60px;
 }
 
 
@@ -233,6 +233,7 @@ header .navbar {
     height: 500px;
     object-fit: cover;
     margin-left: 20px;
+    margin-top: 20px;
 }
 
 
@@ -260,11 +261,17 @@ header .navbar {
 }
 
 
+.gallery-section .section-title {
+    margin-top: 18px;
+}
+
+
 
 .gallery-section .gallery-list {
     display: flex;
     flex-wrap: wrap;
     gap: 32px;
+    margin-top: -18px;
 }
 
 
