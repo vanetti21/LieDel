@@ -12,7 +12,7 @@
     /* Colors */
   --white-color: #ffffff;
   --dark-color: #252525;
-  --primary-color: #4444f4;
+  --primary-color: #16168f;
   --secondary-color: #f9b75f;
   --light-pink-color: #fff1f8;
   --medium-gray-color: #ccc;
@@ -189,7 +189,7 @@ img {
     border-radius: var(--border-radius-m);
     background: var(--secondary-color);
     font-weight: var(--font-weight-medium);
-    transition: 0.3s ease;
+    transition: 0.3s ease; /*/*/
 }
 
 
@@ -399,25 +399,34 @@ img {
 
 /*Login*/
 .login-body {
-    font-family: Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #f4f4f4;
+    background: linear-gradient(rgb(30, 30, 134) 20%, rgb(255, 255, 255) 50%, rgb(247, 184, 49) 90%);
+    backdrop-filter: blur(155px);
+}
+
+.avatar {
+    width: 75px; /* Ajusta el tamaño según necesites */
+    height: 85px;
+    display: block;
+    margin: 0 auto 15px;
 }
 
 .login-container {
-    background: white;
+    background: rgba(255, 255, 255, 0.77);
     padding: 40px;
-    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 0px 15px rgb(0, 0, 0, 0.4);
     border-radius: 10px;
     text-align: center;
     width: 400px;
+    transform: translateY(-5px);
 }
 
 .login-title {
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     font-size: 24px;
     font-weight: bold;
 }
@@ -427,28 +436,59 @@ img {
     flex-direction: column;
 }
 
+.input-container {
+    position: relative;
+    margin: 17px 0;
+}
+
 .login-input {
     width: 100%;
-    padding: 15px;
-    margin: 15px 0;
-    border: 2px solid #ccc;
-    border-radius: 8px;
+    padding: 10px 0;
+    border: none;
+    border-bottom: 2px solid #c6c2c2;
     font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    background: transparent;
+    outline: none;
+}
+
+.login-input:focus {
+    border-color: #a7a7fa;
+}
+
+.login-label {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #ccc;
+    transition: 0.3s ease all;
+    pointer-events: none; /* Para que el texto no interfiera con la escritura */
+}
+
+.login-input:focus + .login-label,
+.login-input:not(:placeholder-shown) + .login-label {
+    top: -5px; /* Mueve la etiqueta hacia arriba */
+    font-size: 16px;
+    color: #908f96;
 }
 
 .login-button {
     background-color: #28a745;
-    color: white;
+    color: rgb(255, 255, 255);
     padding: 15px;
+    margin-top: 10px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     width: 100%;
     font-size: 18px;
+    transition: 0.3s ease;
 }
 
 .login-button:hover {
-    background-color: #218838;
+    background-color: #259115;
 }
 
 .login-error {
