@@ -33,8 +33,8 @@ const Categorias = () => {
 	}, [startDate, endDate]);
 
 	return (
-		<div className='bg-gray-800 p-6 rounded-xl shadow-lg text-white'>
-			<h2 className='text-2xl font-bold mb-4'>Categorías más vendidas</h2>
+		<div className='p-5 rounded-xl shadow-lg text-white' style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
+			<h2 className='text-xl font-semibold mb-4 text-black'>Categorías más vendidas</h2>
 
 			<div className='flex gap-4 mb-4'>
 				<input

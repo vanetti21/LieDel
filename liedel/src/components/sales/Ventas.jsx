@@ -28,8 +28,8 @@ const Ventas = () => {
 	}, [startDate, endDate]);
     
 	return (
-		<div className='bg-gray-800 p-6 rounded-xl shadow-lg text-white'>
-			<h2 className='text-2xl font-bold mb-4'>Reporte de Ventas</h2>
+		<div className='p-5 rounded-xl shadow-lg text-white' style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
+			<h2 className='text-xl font-semibold mb-4 text-black'>Reporte de Ventas</h2>
 
 			<div className='flex gap-4 mb-4'>
 				<input
@@ -46,7 +46,7 @@ const Ventas = () => {
 				/>
 			</div>
 
-			<div className='mb-4 text-green-400'>
+			<div className='mb-4 text-green-600'>
 				Total vendido: ${parseFloat(totalSales || 0).toFixed(2)}
 			</div>
 
