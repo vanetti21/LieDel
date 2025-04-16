@@ -29,12 +29,7 @@ const SalesPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 1 }}
 				>
-					<StatCard
-						name='Avg. Order Value'
-						icon={ShoppingCart}
-						value={salesStats.averageOrderValue}
-						color='#10B981'
-					/>
+					<StatCard name='Total Revenue' icon={DollarSign} value={salesStats.totalRevenue} color='#6366F1' />
 					<StatCard
 						name='Conversion Rate'
 						icon={TrendingUp}
