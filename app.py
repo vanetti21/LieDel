@@ -358,6 +358,41 @@ def get_sales_by_month():
         conn.close()
 
 
+#Settings
+@app.route('/api/empleados', methods=['GET'])
+def verificar_empleados():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT idemp, nombre, apellido FROM empleado")
+    empleados = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(empleados)
+
+
+@app.route('/api/usuarios', methods=['POST'])
+def crear_usuario():
+    datos = request.get_json()
+    idemp = datos.get('idemp')
+    usuario = datos.get('usuario')
+    clave = datos.get('clave')
+    estado = datos.get('estado')
+
+    conn = conectar_bd()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO usuario (idemp, usuario, clave, estado) VALUES (%s, %s, %s, %s)",
+                       (idemp, usuario, clave, estado))
+        conn.commit()
+        return jsonify({'mensaje': 'Usuario creado exitosamente'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 
 
 

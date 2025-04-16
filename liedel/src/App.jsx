@@ -10,7 +10,7 @@ import OrdersPage from "./pages/OrdersPage";
 import ReportsPage from "./pages/ReportsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
-
+import UserSave from "./components/settings/usersave";
 
 function App() {
 	return (
@@ -18,7 +18,7 @@ function App() {
 			{/* BG */}
 			<div className='fixed inset-0 z-0'>
 				<div className='absolute inset-0' />
-				<div className='absolute inset-0 backdrop-blur-sm' />
+				<div className='absolute inset-0 ' />
 			</div>
 
 			<Sidebar />
@@ -30,6 +30,7 @@ function App() {
 				<Route path='/orders' element={<OrdersPage />} />
 				<Route path='/reports' element={<ReportsPage />} />
 				<Route path='/analytics' element={<AnalyticsPage />} />
+				<Route path='/usersave' element={<UserSave />} />
 				<Route path='/settings' element={<SettingsPage />} />
 			</Routes>
 		</div>
