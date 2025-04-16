@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="estilo/style.css">
+</head>
+<body>
+    <header class="navbar-header">
+        <nav class="navbar section-content">
+            <a href="#" class="nav-logo">
+                <h2 class="logo-text">📋 Reports</h2>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#about" class="nav-link">About</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#gallery" class="nav-link">Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#contact" class="nav-link">Contact</a>
+                </li>
+                <li class="nav-item">
+                    <a href="logout" class="nav-link">Logout</a>  <!-- Agregamos un botón de logout -->
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div id="welcome-message">Cargando...</div>
+
+    <script>
+        // Aquí va la lógica para comprobar si el usuario está autenticado
+        fetch("http://127.0.0.1:5000/homes", {
+            method: "GET",
+            credentials: "include"  // Esto envía cookies (sesiones) con la solicitud
+        })
+        .then(response => {
+            if (!response.ok) {
+                window.location.href = "login.html";  // Redirige al login si no está autenticado
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById("welcome-message").innerText = data.message;
+        });
+    </script>
+</body>
+</html>

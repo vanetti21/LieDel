@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="estilo/style.css">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <img src="./images/avatar.png" class="avatar">
+        <h2 class="login-title">Login</h2>
+        <form id="loginForm" class="login-form">
+            <div class="input-container">
+                <input type="text" id="username" class="login-input" placeholder=" " required>
+                <label for="username" class="login-label">Usuario</label>
+            </div>
+            <div class="input-container">
+                <input type="password" id="password" class="login-input" placeholder=" " required>
+                <label for="password" class="login-label">Contraseña</label>
+            </div>
+            <button type="submit" class="login-button">Ingresar</button>
+        </form>
+        <p id="error" class="login-error" style="color: red;"></p>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async function(event) {
+            event.preventDefault(); 
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            
+            const response = await fetch("http://127.0.0.1:5000/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                // Redirige al index después de un inicio de sesión exitoso
+                window.location.href = "http://localhost:5173/";
+            } else {
+                document.getElementById("error").innerText = "Credenciales incorrectas";
+            }
+        });
+    </script>
+</body>
+</html>
