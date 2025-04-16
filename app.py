@@ -160,6 +160,127 @@ def obtener_resumen():
 
     return jsonify(resumen_data)
 
+#Sales
+@app.route('/api/ventas', methods=['GET'])
+def obtener_ventas_por_fecha():
+    inicio = request.args.get('inicio')
+    fin = request.args.get('fin')
+
+    if not inicio or not fin:
+        return jsonify({"error": "Debes proporcionar 'inicio' y 'fin' en el query string"}), 400
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT 
+            fecha,
+            SUM(importe) AS total
+        FROM 
+            venta
+        WHERE 
+            fecha BETWEEN %s AND %s
+        GROUP BY 
+            fecha
+        ORDER BY 
+            fecha;
+    """
+    cursor.execute(query, (inicio, fin))
+    resultados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(resultados)
+
+
+@app.route("/api/categorias-mas-vendidas")
+def categorias_mas_vendidas():
+    inicio = request.args.get("inicio")
+    fin = request.args.get("fin")
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT c.nombre AS categoria, SUM(d.cant * d.precio) AS total
+        FROM detalle d
+        JOIN producto p ON d.idprod = p.idprod
+        JOIN categoria c ON p.idcat = c.idcat
+        JOIN venta v ON d.idventa = v.idventa
+        WHERE v.fecha BETWEEN %s AND %s
+        GROUP BY c.idcat
+        ORDER BY total DESC;
+    """, (inicio, fin))
+
+    resultados = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(resultados)
+
+
+#Reportes
+@app.route('/api/reporte-fechas', methods=['GET'])
+def reporte_por_fechas():
+    inicio = request.args.get('inicio')
+    fin = request.args.get('fin')
+
+    conn = conectar_bd()
+    if not conn:
+        return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    # Total vendido
+    cursor.execute("""
+        SELECT SUM(importe) as total FROM venta
+        WHERE fecha BETWEEN %s AND %s
+    """, (inicio, fin))
+    total = cursor.fetchone()["total"] or 0
+
+    # Categorías más vendidas
+    cursor.execute("""
+            SELECT c.nombre, COUNT(*) as total FROM detalle d
+            JOIN producto p ON d.idprod = p.idprod
+            JOIN categoria c ON p.idcat = c.idcat
+            JOIN venta v ON d.idventa = v.idventa
+            WHERE v.fecha BETWEEN %s AND %s
+            GROUP BY c.idcat ORDER BY total DESC
+    """, (inicio, fin))
+    categorias = cursor.fetchall()
+
+    # Productos más vendidos
+    cursor.execute("""
+        SELECT p.nombre, SUM(d.cant) as cant FROM detalle d
+        JOIN producto p ON d.idprod = p.idprod
+        JOIN venta v ON d.idventa = v.idventa
+        WHERE v.fecha BETWEEN %s AND %s
+        GROUP BY p.idprod ORDER BY cant DESC
+    """, (inicio, fin))
+    productos = cursor.fetchall()
+
+    # Empleados con más ventas
+    cursor.execute("""
+        SELECT e.nombre, SUM(v.importe) as total FROM venta v
+        JOIN empleado e ON v.idemp = e.idemp
+        WHERE v.fecha BETWEEN %s AND %s
+        GROUP BY e.idemp ORDER BY total DESC
+    """, (inicio, fin))
+    empleados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "total": total,
+        "categorias": categorias,
+        "productos": productos,
+        "empleados": empleados
+    })
+
+
+
 
 # Employees
 @app.route('/obtener_empleados', methods=['GET'])
