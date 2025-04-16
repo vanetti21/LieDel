@@ -279,6 +279,85 @@ def reporte_por_fechas():
         "empleados": empleados
     })
 
+#Products
+@app.route("/api/productos-reporte", methods=["GET"])
+def productos_reporte():
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+        query = """
+        SELECT 
+            p.idprod,
+            p.nombre AS producto,
+            c.nombre AS categoria,
+            p.precio,
+            p.stock,
+            COALESCE(SUM(d.cant * d.precio), 0) AS total_ganado
+        FROM producto p
+        JOIN categoria c ON p.idcat = c.idcat
+        LEFT JOIN detalle d ON p.idprod = d.idprod
+        GROUP BY p.idprod, p.nombre, c.nombre, p.precio, p.stock
+        ORDER BY total_ganado DESC;
+        """
+        cursor.execute(query)
+        resultados = cursor.fetchall()
+        return jsonify(resultados)
+    except Exception as e:
+        print("Error al obtener productos:", e)
+        return jsonify({"error": "No se pudieron obtener los productos"}), 500
+
+
+@app.route("/api/productos-stats")
+def productos_stats():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT COUNT(*) AS total_productos FROM producto")
+    total_productos = cursor.fetchone()["total_productos"]
+
+    cursor.execute("""
+        SELECT SUM(d.cant) AS top_selling 
+        FROM detalle d
+    """)
+    top_selling = cursor.fetchone()["top_selling"] or 0
+
+    cursor.execute("SELECT COUNT(*) AS low_stock FROM producto WHERE stock < 5")
+    low_stock = cursor.fetchone()["low_stock"]
+
+    cursor.execute("SELECT SUM(subtotal) AS total_revenue FROM detalle")
+    total_revenue = cursor.fetchone()["total_revenue"] or 0
+
+    return jsonify({
+        "total_productos": total_productos,
+        "top_selling": int(top_selling),
+        "low_stock": low_stock,
+        "total_revenue": float(total_revenue)
+    })
+@app.route('/api/ventas-mensuales', methods=['GET'])
+def get_sales_by_month():
+    conn = conectar_bd()
+    cursor = conn.cursor()
+    try:
+        query = """
+            SELECT 
+                DATE_FORMAT(fecha, '%Y-%m') AS month, 
+                SUM(importe) AS sales
+            FROM venta
+            GROUP BY month
+            ORDER BY month;
+        """
+        cursor.execute(query)
+        result = cursor.fetchall()
+        sales_data = [{"month": row[0], "sales": float(row[1])} for row in result]
+        return jsonify(sales_data)
+    except Exception as e:
+        print("Error en /api/ventas-mensuales:", e)
+        return jsonify({"error": "Error al obtener datos de ventas"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 
 
 
