@@ -50,7 +50,7 @@ def obtener_ventas():
     conn.close()
     
 
-    # Formatear los resultados para que coincidan con el formato esperado en React
+# Formatear los resultados para que coincidan con el formato esperado en React
     sales_data = []
     for row in results:
         sales_data.append({
@@ -382,6 +382,56 @@ def obtener_empleados():
 
     return jsonify(resumen_data)
 
+
+# Ruta para obtener los empleados
+@app.route('/listar_empleados', methods=['GET'])
+def get_employees():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("" \
+        """ 
+        SELECT 
+            idemp, 
+            nombre, 
+            apellido, 
+            email, 
+            telefono, 
+            estado, 
+            hire 
+        FROM 
+            empleado;
+ 
+        """
+        )
+        results = cursor.fetchall()
+
+        # Transformamos los datos si quieres hacerlos más amigables al frontend
+        employees = []
+        for row in results:
+            employees.append({
+                'id': row['idemp'],
+                'name': f"{row['nombre']} {row['apellido']}",
+                'email': row['email'],
+                'phone': row['telefono'],
+                'status': "Active" if row['estado'].lower() == 'activo' else "Inactive",
+                'hireDate': row['hire']
+            })
+
+        return jsonify(employees)
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+
+
+
 @app.route('/images/<path:filename>')
 def serve_images(filename):
     return send_from_directory('Home/images', filename)
@@ -412,7 +462,7 @@ def login():
 
 @app.route('/index', methods=['GET'])
 def index():
-    return render_template('index.html')  # Asegúrate de tener tu archivo index.html en la carpeta templates
+    return render_template('index.html') # Asegúrate de tener tu archivo index.html en la carpeta templates
 
 #Analystics
 @app.route("/revenue_data")
