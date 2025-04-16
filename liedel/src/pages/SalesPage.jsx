@@ -6,6 +6,7 @@ import { CreditCard, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import SalesOverviewChart from "../components/sales/SalesOverviewChart";
 import Ventas from "../components/sales/Ventas";
 import Categorias from "../components/sales/Categorias";
+import RevenueChart from "../components/analytics/RevenueChart";
 
 
 const salesStats = {
@@ -23,12 +24,11 @@ const SalesPage = () => {
 			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
 				{/* SALES STATS */}
 				<motion.div
-					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8'
+					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 1 }}
 				>
-					<StatCard name='Total Revenue' icon={DollarSign} value={salesStats.totalRevenue} color='#6366F1' />
 					<StatCard
 						name='Avg. Order Value'
 						icon={ShoppingCart}
@@ -45,6 +45,7 @@ const SalesPage = () => {
 				</motion.div>
 
                 <SalesOverviewChart />
+				<RevenueChart/>
 
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8'>
 					<Ventas/>

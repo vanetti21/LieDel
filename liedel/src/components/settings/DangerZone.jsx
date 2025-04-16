@@ -48,13 +48,6 @@ const DangerZone = () => {
 				Log Out
 			</button>
 
-			<button
-				onClick={() => setShowForm(!showForm)}
-				className='mt-4 flex items-center text-indigo-900 hover:text-indigo-400 transition duration-200'
-			>
-				<Plus size={18} className='mr-2' />
-				Add Account
-			</button>
 
 			{showForm && (
 				<form onSubmit={handleSubmit} className='mt-6 space-y-4 bg-white p-4 rounded-xl shadow'>

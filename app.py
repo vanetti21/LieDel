@@ -399,24 +399,26 @@ def crear_usuario():
 # Employees
 @app.route('/obtener_empleados', methods=['GET'])
 def obtener_empleados():
-
-    conn = mysql.connector.connect(**db_config)
+    conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT COUNT(DISTINCT idemp) AS employees FROM empleado")
-    employees = cursor.fetchone()['employees']
-    if employees is None:
-        employees = 0
+    # Total empleados
+    cursor.execute("SELECT COUNT(*) AS total FROM empleado")
+    total = cursor.fetchone()['total']
 
-    cursor.close()
-    conn.close()
+    # Empleados activos
+    cursor.execute("SELECT COUNT(*) AS activos FROM empleado WHERE estado = 'activo'")
+    activos = cursor.fetchone()['activos']
 
-    resumen_data = {
-        "employees": employees,
-    }
+    # Empleados inactivos (para churn)
+    inactivos = total - activos
+    churn_rate = round((inactivos / total) * 100, 2) if total > 0 else 0
 
-    return jsonify(resumen_data)
-
+    return jsonify({
+        "employees": total,
+        "active": activos,
+        "churn_rate": churn_rate
+    })
 
 # Ruta para obtener los empleados
 @app.route('/listar_empleados', methods=['GET'])
@@ -465,6 +467,29 @@ def get_employees():
             cursor.close()
             conn.close()
 
+@app.route('/api/empleados/crecimiento', methods=['GET'])
+def employee_growth():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT 
+            DATE_FORMAT(hire, '%b %Y') AS month, 
+            COUNT(*) AS hires
+        FROM empleado
+        WHERE hire IS NOT NULL
+        GROUP BY month
+        ORDER BY STR_TO_DATE(month, '%b %Y')
+    """
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Aseguramos tipo numérico en hires
+    for r in rows:
+        r['hires'] = int(r['hires'] or 0)
+
+    return jsonify(rows)
 
 
 @app.route('/images/<path:filename>')
