@@ -89,19 +89,19 @@ const ReportsPage = () => {
       </div>
 
       {data ? (
-        <div className="bg-gray-800 p-4 rounded-xl shadow space-y-8" id="reportContent">
-          <h2 className="text-3xl font-bold mb-4 text-green-400">
+        <div className="p-8 rounded-xl shadow space-y-8 border-gray-100" id="reportContent" style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
+          <h2 className="text-4xl font-medium mb-3 text-black text-center">
             Reporte General desde{" "}
-            <span className="underline underline-offset-4 text-white">{startDate}</span> hasta{" "}
-            <span className="underline underline-offset-4 text-white">{endDate}</span>
+            <span className="text-black">{startDate}</span> hasta{" "}
+            <span className="text-black">{endDate}</span>
           </h2>
 
           {/* Total vendido destacado */}
-          <div className="bg-green-600 bg-opacity-20 border border-green-500 p-4 rounded-xl flex items-center gap-4">
-            <DollarSign className="text-green-400 w-8 h-8" />
+          <div className="bg-green-500 bg-opacity-40 border-gray-200 p-4 rounded-xl flex items-center gap-4">
+            <DollarSign className="text-green-600 w-8 h-8" />
             <div>
-              <p className="text-sm text-gray-300">Total vendido</p>
-              <p className="text-2xl font-bold text-green-400">
+              <p className="text-sm text-black">Total vendido</p>
+              <p className="text-2xl font-bold text-green-600">
                 ${parseFloat(data.total || 0).toFixed(2)}
               </p>
             </div>
@@ -109,7 +109,7 @@ const ReportsPage = () => {
 
           {/* Categorías más vendidas */}
           <div>
-            <h3 className="text-xl font-semibold mb-2">Categorías más vendidas</h3>
+            <h3 className="py-3 text-xl font-semibold mb-2 text-black">Categorías más vendidas</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={data.categorias}>
                 <XAxis dataKey="nombre" />
@@ -123,21 +123,21 @@ const ReportsPage = () => {
 
           {/* Tabla de productos más vendidos */}
           <div>
-            <h3 className="text-xl font-semibold mb-2">Productos más vendidos</h3>
-            <div className="overflow-x-auto bg-gray-700 border border-gray-600 rounded-xl p-4">
+            <h3 className="text-xl font-semibold mb-2 text-black">Productos más vendidos</h3>
+            <div className="overflow-x-auto border-gray-200 rounded-xl p-4">
               <table className="min-w-full">
                 <thead>
                   <tr>
-                    <th className="px-4 py-2 text-left text-gray-300">Producto</th>
-                    <th className="px-4 py-2 text-left text-gray-300">Cantidad</th>
+                    <th className="px-4 py-2 text-left text-black">Producto</th>
+                    <th className="px-4 py-2 text-left text-black">Cantidad</th>
                     
                   </tr>
-                </thead>
+                </thead> 
                 <tbody>
                   {data.productos.map((producto, index) => (
                     <tr key={index} className="border-t border-gray-600">
-                      <td className="px-4 py-2 text-gray-200">{producto.nombre}</td>
-                      <td className="px-4 py-2 text-gray-200">{producto.cant}</td>
+                      <td className="px-4 py-2 text-black">{producto.nombre}</td>
+                      <td className="px-4 py-2 text-black">{producto.cant}</td>
                       
                     </tr>
                   ))}
@@ -148,9 +148,9 @@ const ReportsPage = () => {
 
           {/* Empleados con más ventas */}
           <div>
-            <h3 className="text-xl font-semibold mb-2">Empleados con más ventas</h3>
+            <h3 className="py-4 text-xl font-semibold mb-2 text-black">Empleados con más ventas</h3>
             {data.empleados.length > 0 ? (
-              <ResponsiveContainer width="100%" height={600}>
+              <ResponsiveContainer width="100%" height={550}>
                 <PieChart>
                   <Pie
                     data={data.empleados.map((emp) => ({
@@ -161,7 +161,7 @@ const ReportsPage = () => {
                     nameKey="nombre"
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
+                    outerRadius={180}
                     label={({ name, total }) => `${name} - $${total.toFixed(2)}`}
                   >
                     {data.empleados.map((_, index) => (
@@ -172,20 +172,20 @@ const ReportsPage = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-400">No hay ventas de empleados en este rango.</p>
+              <p className="text-black">No hay ventas de empleados en este rango.</p>
             )}
           </div>
 
           {/* Botón para descargar el PDF */}
           <button
             onClick={generatePDF}
-            className="mt-4 bg-green-600 text-white py-2 px-4 rounded-lg"
+            className="mt-4 bg-green-700 text-white py-2 px-4 rounded-lg"
           >
             Descargar Reporte en PDF
           </button>
         </div>
       ) : (
-        <p className="text-gray-400">Selecciona un rango de fechas para ver el reporte.</p>
+        <p className="text-gray-900">Selecciona un rango de fechas para ver el reporte.</p>
       )}
     </div>
   );
