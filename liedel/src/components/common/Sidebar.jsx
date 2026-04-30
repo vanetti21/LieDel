@@ -1,4 +1,3 @@
-
 import { BarChart2, DollarSign, Menu, Settings, ShoppingBag, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -8,14 +7,14 @@ const SIDEBAR_ITEMS = [
 	{
 		name: "Overview",
 		icon: BarChart2,
-		color: "#6366f1",
+		color: "#5a5cf9",
 		href: "/",
 	},
-	{ name: "Products", icon: ShoppingBag, color: "#8B5CF6", href: "/products" },
-	{ name: "Employees", icon: Users, color: "#EC4899", href: "/users" },
-	{ name: "Sales", icon: DollarSign, color: "#10B981", href: "/sales" },
-	{ name: "Reports", icon: TrendingUp, color: "#3B82F6", href: "/reports" },
-	{ name: "Settings", icon: Settings, color: "#6EE7B7", href: "/settings" },
+	{ name: "Products", icon: ShoppingBag, color: "#8654fb", href: "/products" },
+	{ name: "Employees", icon: Users, color: "#ec3f95", href: "/users" },
+	{ name: "Sales", icon: DollarSign, color: "#10ac78", href: "/sales" },
+	{ name: "Reports", icon: TrendingUp, color: "#337ef8", href: "/reports" },
+	{ name: "Settings", icon: Settings, color: "#6d9f8b", href: "/settings" },
 ];
 
 const Sidebar = () => {
@@ -28,20 +27,20 @@ const Sidebar = () => {
 			}`}
 			animate={{ width: isSidebarOpen ? 256 : 80 }}
 		>
-			<div className='h-full backdrop-blur-md p-4 flex flex-col border-r border-gray-200' style={{ backgroundColor: 'rgb(240, 243, 249)'}}>
+			<div className='h-full backdrop-blur-md p-4 flex flex-col border-r border-gray-400' style={{ backgroundColor: 'rgb(240, 243, 246)'}}>
 				<motion.button
 					whileHover={{ scale: 1.1 }}
 					whileTap={{ scale: 0.9 }}
 					onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-					className='p-3 rounded-full hover:bg-blue-500 transition-colors max-w-fit' 
+					className='p-3 rounded-full hover:bg-[#A9C1FF] transition-colors max-w-fit' 
 				>
 					<Menu size={24} />
 				</motion.button>
 
-				<nav className='mt-8 flex-grow'>
+				<nav className='mt-7 flex-grow'>
 					{SIDEBAR_ITEMS.map((item) => (
 						<Link key={item.href} to={item.href}>
-							<motion.div className='flex items-center p-3 text-m hover:bg-blue-300 font-medium rounded-lg transition-colors mb-2' >
+							<motion.div className='flex items-center p-3 text-m hover:bg-[#A9C1FF] font-medium rounded-lg transition-colors mb-2' >
 								<item.icon size={27} style={{ color: item.color, minWidth: "27px" }} />
 								<AnimatePresence>
 									{isSidebarOpen && (

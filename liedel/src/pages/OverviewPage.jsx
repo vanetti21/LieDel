@@ -20,7 +20,7 @@ const OverviewPage = () => {
 			.then(response => response.json())
 			.then(data => {
 				console.log('Resumen:', data);
-				setData(data); // ← Actualiza el estado con los datos recibidos
+				setData(data);
 			})
 			.catch(error => {
 				console.error('Error fetching resumen:', error);
@@ -31,10 +31,10 @@ const OverviewPage = () => {
 		<div className='flex-1 overflow-auto relative z-10'>
 			<Header title='Overview' />
 
-			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
+			<main className='max-w-7xl mx-auto py-10 px-4 lg:px-8'>
 				{/* STATS */}
 				<motion.div
-					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8'
+					className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-9'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 1 }}
@@ -43,24 +43,24 @@ const OverviewPage = () => {
 						name='Total Sales'
 						icon={Zap}
 						value={`$${parseFloat(data.total_sales).toFixed(2)}`}
-						color='#6366F1'
+						color='#7c44ff'
 					/>
 					<StatCard
 						name='Total Employees'
 						icon={Users}
 						value={data.employees}
-						color='#8B5CF6'
+						color='#a96ce9'
 					/>
 					<StatCard
 						name='Total Products'
 						icon={ShoppingBag}
 						value={data.total_products}
-						color='#EC4899'
+						color='#f7429c'
 					/>
 				</motion.div>
 
 				{/* CHARTS */}
-				<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+				<div className='grid grid-cols-1 lg:grid-cols-2 gap-9'>
 					<SalesOverviewChart />
 					<CategoryDistributionChart />
 					<SalesChannelChart />

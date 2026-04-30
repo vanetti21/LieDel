@@ -23,7 +23,7 @@ const CategoryDistributionChart = () => {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.3 }}
 		>
-			<h2 className='text-lg font-medium mb-4 text-black-100'>Distribución por Categoría</h2>
+			<h2 className='text-lg font-medium mb-6 text-black-100'>Distribución por Categoría</h2>
 
 			<div className='h-80'>
 				<ResponsiveContainer width="100%" height="100%">
@@ -54,7 +54,7 @@ const CategoryDistributionChart = () => {
 			</div>
 
 			{/* Leyenda personalizada abajo */}
-			<div className="flex flex-wrap justify-center mt-6 gap-4">
+			<div className="flex flex-wrap justify-center mt-6 gap-6">
 				{categoryData.map((entry, index) => (
 					<div key={index} className="flex items-center space-x-2">
 						<div

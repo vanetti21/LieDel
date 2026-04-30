@@ -445,33 +445,34 @@ img {
     width: 100%;
     padding: 10px 0;
     border: none;
-    border-bottom: 2px solid #c6c2c2;
+    border-bottom: 2px solid #bdbdbd;
     font-size: 16px;
     font-family: 'Poppins', sans-serif;
     background: transparent;
     outline: none;
+    color: #767575;
 }
 
 .login-input:focus {
-    border-color: #a7a7fa;
+    border-color: #ababf8;
 }
 
 .login-label {
     position: absolute;
-    top: 50%;
+    top: 40%;
     left: 0;
     transform: translateY(-50%);
-    font-size: 16px;
-    color: #ccc;
+    font-size: 17px;
+    color: #3c3c3c;
     transition: 0.3s ease all;
-    pointer-events: none; /* Para que el texto no interfiera con la escritura */
+    pointer-events: none;
 }
 
 .login-input:focus + .login-label,
 .login-input:not(:placeholder-shown) + .login-label {
-    top: -5px; /* Mueve la etiqueta hacia arriba */
-    font-size: 16px;
-    color: #908f96;
+    top: -4px; 
+    font-size: 17px;
+    color: #3c3c3c;
 }
 
 .login-button {

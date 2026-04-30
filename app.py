@@ -7,7 +7,7 @@ import datetime
 
 
 # Configuración de Flask
-app = Flask(__name__, template_folder='Home', static_folder='Home/estilo')  # Usamos 'estilo' para static
+app = Flask(__name__, template_folder='Home', static_folder='Home/estilo')
 
 CORS(app)  # Permitir solicitudes desde el frontend
 
@@ -27,6 +27,7 @@ def conectar_bd():
     except mysql.connector.Error as e:
         print("Error al conectar a la BD:", e)
         return None
+
 
 # OverView   
 @app.route('/obtener_ventas', methods=['GET'])
@@ -61,7 +62,6 @@ def obtener_ventas():
     return jsonify(sales_data)
 
 from decimal import Decimal
-
 
 
 @app.route('/obtener_categoria_distribucion', methods=['GET'])
@@ -507,7 +507,7 @@ def login():
     password = data.get("password")
 
     conn = conectar_bd()
-    if conn:
+    if conn: 
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM usuario WHERE usuario = %s AND clave = %s", (username, password))
         user = cursor.fetchone()
@@ -520,9 +520,9 @@ def login():
     else:
         return jsonify({"success": False, "message": "Error de conexión a la BD"}), 500
 
-@app.route('/index', methods=['GET'])
+@app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html') # Asegúrate de tener tu archivo index.html en la carpeta templates
+    return render_template('index.html')
 
 #Analystics
 @app.route("/revenue_data")
@@ -681,20 +681,11 @@ def home():
             fig_categoria = px.bar(df_categoria, x="nombre", y="total_ventas", title="Ventas por Categoría", labels={"nombre": "Categoría", "total_ventas": "Ventas Totales ($)"})
             graph_categoria_html = fig_categoria.to_html(full_html=False)
 
-    # Renderizar la página de inicio con los gráficos actuales
     return render_template('homes.html', graph_ventas_html=graph_ventas_html, graph_productos_html=graph_productos_html, graph_categoria_html=graph_categoria_html)
 
 
+
 #Sales
-
-
-
-
-
-
-
-
-
 @app.route('/crear_reporte', methods=['GET'])
 def crear_reporte_form():
     return render_template('crear_reporte.html')  # Página de formulario para crear reporte
@@ -710,10 +701,8 @@ def crear_reporte():
     start_date_obj = datetime.datetime.strptime(start_date, "%Y-%m-%d")
     end_date_obj = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
-    # Conectar a la base de datos
     conn = conectar_bd()
     
-    # Obtener gráfico de ventas totales en el rango de fechas
     graph_ventas_html = ""
     if conn:
         cursor = conn.cursor(dictionary=True)
@@ -733,7 +722,6 @@ def crear_reporte():
                                  labels={"fecha": "Fecha", "total_ventas": "Total Ventas ($)"})
             graph_ventas_html = fig_ventas.to_html(full_html=False)
 
-    # Obtener gráfico de productos vendidos en el rango de fechas
     graph_productos_html = ""
     if conn:
         conn = conectar_bd()
@@ -755,7 +743,6 @@ def crear_reporte():
                                    labels={"nombre": "Producto", "total_vendido": "Cantidad Vendida"})
             graph_productos_html = fig_productos.to_html(full_html=False)
 
-    # Obtener gráfico de ventas por categoría en el rango de fechas
     graph_categoria_html = ""
     if conn:
         conn = conectar_bd()
@@ -778,16 +765,11 @@ def crear_reporte():
                                    labels={"nombre": "Categoría", "total_ventas": "Ventas Totales ($)"})
             graph_categoria_html = fig_categoria.to_html(full_html=False)
 
-    # Retornar los gráficos generados al frontend
     return jsonify({
         'graph_ventas_html': graph_ventas_html,
         'graph_productos_html': graph_productos_html,
         'graph_categoria_html': graph_categoria_html
     })
-    
-    
-
- 
     
     
 

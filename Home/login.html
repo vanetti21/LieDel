@@ -38,8 +38,7 @@
             
             const result = await response.json();
             if (result.success) {
-                // Redirige al index después de un inicio de sesión exitoso
-                window.location.href = "http://localhost:5173/";
+                window.location.href = "http://localhost:5173";
             } else {
                 document.getElementById("error").innerText = "Credenciales incorrectas";
             }

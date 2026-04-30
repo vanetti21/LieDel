@@ -14,7 +14,7 @@ import UserSave from "./components/settings/usersave";
 
 function App() {
 	return (
-		<div className='flex h-screen text-black-100 overflow-hidden' style={{ backgroundColor: 'rgb(198, 213, 252)' }}>
+		<div className='flex h-screen text-black-100 overflow-hidden' style={{ backgroundColor: 'rgb(169, 193, 255)' }}>
 			{/* BG */}
 			<div className='fixed inset-0 z-0'>
 				<div className='absolute inset-0' />
