@@ -4,6 +4,7 @@ from flask_cors import CORS
 import plotly.express as px
 import pandas as pd
 import datetime
+import io
 
 
 # Configuración de Flask
@@ -771,7 +772,73 @@ def crear_reporte():
         'graph_categoria_html': graph_categoria_html
     })
     
-    
+
+# Excel
+@app.route('/api/exportar-excel', methods=['GET'])
+def exportar_excel():
+    inicio = request.args.get('inicio')
+    fin    = request.args.get('fin')
+
+    conn = conectar_bd()
+    if not conn:
+        return jsonify({"error": "No se pudo conectar a la BD"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            v.idventa,
+            v.fecha,
+            v.cliente,
+            v.importe,
+            CONCAT(e.nombre, ' ', e.apellido) AS empleado,
+            c.nombre   AS categoria,
+            p.nombre   AS producto,
+            d.cant     AS cantidad,
+            d.precio   AS precio_unitario,
+            d.subtotal
+        FROM venta v
+        JOIN empleado e  ON v.idemp   = e.idemp
+        JOIN detalle d   ON v.idventa = d.idventa
+        JOIN producto p  ON d.idprod  = p.idprod
+        JOIN categoria c ON p.idcat   = c.idcat
+    """
+
+    if inicio and fin:
+        query += " WHERE v.fecha BETWEEN %s AND %s"
+        cursor.execute(query, (inicio, fin))
+    else:
+        cursor.execute(query)
+
+    df = pd.DataFrame(cursor.fetchall())
+    cursor.close()
+    conn.close()
+
+    if df.empty:
+        return jsonify({"mensaje": "Sin datos"}), 204
+
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        # Hoja 1 — detalle completo
+        df.to_excel(writer, index=False, sheet_name='Ventas')
+
+        # Hoja 2 — resumen por categoría
+        df.groupby('categoria').agg(
+            total_vendido=('subtotal', 'sum'),
+            cantidad=('cantidad', 'sum')
+        ).reset_index().to_excel(writer, index=False, sheet_name='Por_Categoria')
+
+        # Hoja 3 — resumen por empleado
+        df.groupby('empleado').agg(
+            total_ventas=('importe', 'sum')
+        ).reset_index().to_excel(writer, index=False, sheet_name='Por_Empleado')
+
+    buf.seek(0)
+    return app.response_class(
+        buf.getvalue(),
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={"Content-Disposition": "attachment; filename=ventas.xlsx"}
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)

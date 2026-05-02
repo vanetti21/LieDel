@@ -8,6 +8,7 @@ import UsersPage from "./pages/UsersPage";
 import SalesPage from "./pages/SalesPage";
 import OrdersPage from "./pages/OrdersPage";
 import ReportsPage from "./pages/ReportsPage";
+import ExcelPage from "./pages/ExcelPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
 import UserSave from "./components/settings/usersave";
@@ -29,6 +30,7 @@ function App() {
 				<Route path='/sales' element={<SalesPage />} />
 				<Route path='/orders' element={<OrdersPage />} />
 				<Route path='/reports' element={<ReportsPage />} />
+				<Route path='/excel' element={<ExcelPage />} />
 				<Route path='/analytics' element={<AnalyticsPage />} />
 				<Route path='/usersave' element={<UserSave />} />
 				<Route path='/settings' element={<SettingsPage />} />

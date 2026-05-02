@@ -72,7 +72,7 @@ const ReportsPage = () => {
   
 
   return (
-    <div className="p-6 text-white">
+    <div className="p-5 text-white">
       <div className="flex gap-4 mb-6">
         <input
           type="date"
@@ -89,7 +89,7 @@ const ReportsPage = () => {
       </div>
 
       {data ? (
-        <div className="p-8 rounded-xl shadow space-y-8 border-gray-100" id="reportContent" style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
+        <div className="p-6 rounded-xl shadow space-y-8" id="reportContent" style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
           <h2 className="text-4xl font-medium mb-3 text-black text-center">
             Reporte General desde{" "}
             <span className="text-black">{startDate}</span> hasta{" "}

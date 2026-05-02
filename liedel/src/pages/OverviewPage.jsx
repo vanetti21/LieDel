@@ -43,13 +43,13 @@ const OverviewPage = () => {
 						name='Total Sales'
 						icon={Zap}
 						value={`$${parseFloat(data.total_sales).toFixed(2)}`}
-						color='#7c44ff'
+						color='#7032ff'
 					/>
 					<StatCard
 						name='Total Employees'
 						icon={Users}
 						value={data.employees}
-						color='#a96ce9'
+						color='rgb(198, 56, 254)'
 					/>
 					<StatCard
 						name='Total Products'

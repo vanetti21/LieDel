@@ -1,4 +1,4 @@
-import { BarChart2, DollarSign, Menu, Settings, ShoppingBag, ShoppingCart, TrendingUp, Users } from "lucide-react";
+import { BarChart2, DollarSign, Menu, Settings, ShoppingBag, FileSpreadsheet, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -14,6 +14,7 @@ const SIDEBAR_ITEMS = [
 	{ name: "Employees", icon: Users, color: "#ec3f95", href: "/users" },
 	{ name: "Sales", icon: DollarSign, color: "#10ac78", href: "/sales" },
 	{ name: "Reports", icon: TrendingUp, color: "#337ef8", href: "/reports" },
+	{ name: "Excel", icon: FileSpreadsheet, color: "#cd8b30", href: "/excel" },
 	{ name: "Settings", icon: Settings, color: "#6d9f8b", href: "/settings" },
 ];
 
@@ -25,7 +26,7 @@ const Sidebar = () => {
 			className={`relative z-10 transition-all duration-300 ease-in-out flex-shrink-0 ${
 				isSidebarOpen ? "w-64" : "w-20"
 			}`}
-			animate={{ width: isSidebarOpen ? 256 : 80 }}
+			animate={{ width: isSidebarOpen ? 256 : 86 }}
 		>
 			<div className='h-full backdrop-blur-md p-4 flex flex-col border-r border-gray-400' style={{ backgroundColor: 'rgb(240, 243, 246)'}}>
 				<motion.button
