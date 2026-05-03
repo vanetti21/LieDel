@@ -1,6 +1,3 @@
-import { CheckCircle, Clock, DollarSign, ShoppingBag } from "lucide-react";
-import { motion } from "framer-motion";
-
 import Header from "../components/common/Header";
 import Ventas_Fecha from "../components/reports/Ventas_Fecha";
 

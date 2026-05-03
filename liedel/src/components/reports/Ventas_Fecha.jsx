@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { DollarSign } from "lucide-react";
+import { motion } from "framer-motion";
+import { DollarSign, Download, CheckCircle } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -20,10 +21,15 @@ const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
 const ReportsPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [loadingPDF, setLoadingPDF] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoadingReport(true);
+      setSuccess(false);
       if (startDate && endDate) {
         console.log(`Consultando reporte desde ${startDate} hasta ${endDate}`);
         try {
@@ -34,6 +40,8 @@ const ReportsPage = () => {
           setData(result);
         } catch (error) {
           console.error("Error al obtener el reporte:", error);
+        } finally {
+          setLoadingReport(false);
         }
       }
     };
@@ -43,10 +51,16 @@ const ReportsPage = () => {
 
   // Función para generar el PDF
   const generatePDF = () => {
+    setLoadingPDF(true);
+    setSuccess(false);
+
     const input = document.getElementById("reportContent");
+
     html2canvas(input, { scale: 2 }).then((canvas) => {
+
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
   
@@ -60,13 +74,18 @@ const ReportsPage = () => {
       heightLeft -= pdfHeight;
   
       while (heightLeft > 0) {
-        position = position - pdfHeight;
+        position -= pdfHeight;
         pdf.addPage();
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
   
-      pdf.save("reporte-ventas.pdf");
+      pdf.save("reporte_ventas.pdf");
+
+      setLoadingPDF(false);
+      setSuccess(true);
+
+      setTimeout(() => setSuccess(false), 3000);
     });
   };
   
@@ -74,23 +93,29 @@ const ReportsPage = () => {
   return (
     <div className="p-5 text-white">
       <div className="flex gap-4 mb-6">
-        <input
+        <motion.input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="bg-gray-700 p-2 rounded"
+          className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         />
-        <input
+        <motion.input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="bg-gray-700 p-2 rounded"
+          className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         />
       </div>
 
       {data ? (
         <div className="p-6 rounded-xl shadow space-y-8" id="reportContent" style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
-          <h2 className="text-4xl font-medium mb-3 text-black text-center">
+          <h2 className="text-3xl font-medium mb-3 text-black text-center">
             Reporte General desde{" "}
             <span className="text-black">{startDate}</span> hasta{" "}
             <span className="text-black">{endDate}</span>
@@ -148,7 +173,7 @@ const ReportsPage = () => {
 
           {/* Empleados con más ventas */}
           <div>
-            <h3 className="py-4 text-xl font-semibold mb-2 text-black">Empleados con más ventas</h3>
+            <h3 className="py-2 text-xl font-semibold mb-2 text-black">Empleados con más ventas</h3>
             {data.empleados.length > 0 ? (
               <ResponsiveContainer width="100%" height={550}>
                 <PieChart>
@@ -160,7 +185,7 @@ const ReportsPage = () => {
                     dataKey="total"
                     nameKey="nombre"
                     cx="50%"
-                    cy="50%"
+                    cy="45%"
                     outerRadius={180}
                     label={({ name, total }) => `${name} - $${total.toFixed(2)}`}
                   >
@@ -179,9 +204,25 @@ const ReportsPage = () => {
           {/* Botón para descargar el PDF */}
           <button
             onClick={generatePDF}
-            className="mt-4 bg-green-700 text-white py-2 px-4 rounded-lg"
+            disabled={loadingPDF}
+            className="mt-4 bg-green-700 hover:bg-green-600 disabled:bg-gray-500 text-white py-2 px-6 rounded-lg flex items-center gap-2 transition-colors"
           >
-            Descargar Reporte en PDF
+            {loadingPDF ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Exportando...
+            </>
+          ) : success ? (
+            <>
+              <CheckCircle className="w-4 h-4" />
+              ¡Descargado!
+            </> 
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Descargar PDF
+            </>
+          )}
           </button>
         </div>
       ) : (

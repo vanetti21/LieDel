@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { FileSpreadsheet, Download, CheckCircle } from "lucide-react";
+import { Sheet, Download, CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
+
 
 const Excel = () => {
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate]     = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [success, setSuccess]     = useState(false);
+  const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const exportarExcel = async () => {
     setLoading(true);
@@ -36,27 +38,36 @@ const Excel = () => {
 
       {/* Filtro de fechas — igual que ReportsPage */}
       <div className="flex gap-4 mb-6">
-        <input
+        <motion.input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="bg-gray-700 p-2 rounded"
+          className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         />
-        <input
+        <motion.input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="bg-gray-700 p-2 rounded"
+          className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         />
       </div>
 
       {/* Contenido principal */}
-      <div
+      <motion.div
         className="p-5 rounded-xl shadow space-y-8"
         style={{ backgroundColor: "rgb(240, 243, 249)" }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
       >
         {/* Título */}
-        <h2 className="text-4xl font-medium mb-3 text-black text-center">
+        <h2 className="text-3xl font-medium mb-3 text-black text-center">
           Exportar datos a Excel
           {startDate && endDate && (
             <>
@@ -68,13 +79,13 @@ const Excel = () => {
 
         {/* Info del archivo */}
         <div className="bg-green-500 bg-opacity-40 border-gray-200 p-4 rounded-xl flex items-center gap-4">
-          <FileSpreadsheet className="text-green-600 w-8 h-8" />
+          <Sheet className="text-green-500 w-8 h-8" />
           <div>
             <p className="text-sm text-black font-medium">El archivo Excel incluye 3 hojas:</p>
             <ul className="text-sm text-black mt-1 space-y-0.5">
               <li>• <span className="font-mono font-medium">Ventas</span> — detalle completo de ventas</li>
-              <li>• <span className="font-mono font-medium">Por_Categoria</span> — resumen por categoría</li>
-              <li>• <span className="font-mono font-medium">Por_Empleado</span> — total vendido por empleado</li>
+              <li>• <span className="font-mono font-medium">Por Categoría</span> — resumen por categoría</li>
+              <li>• <span className="font-mono font-medium">Por Empleado</span> — total vendido por empleado</li>
             </ul>
           </div>
         </div>
@@ -109,7 +120,7 @@ const Excel = () => {
             </>
           )}
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 };
