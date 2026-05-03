@@ -788,7 +788,7 @@ def exportar_excel():
     query = """
         SELECT
             v.idventa,
-            v.fecha,
+            DATE_FORMAT(v.fecha, '%Y-%m-%d') AS fecha,
             v.cliente,
             v.importe,
             CONCAT(e.nombre, ' ', e.apellido) AS empleado,

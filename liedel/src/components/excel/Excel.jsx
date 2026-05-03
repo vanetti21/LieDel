@@ -81,8 +81,8 @@ const Excel = () => {
         <div className="bg-green-500 bg-opacity-40 border-gray-200 p-4 rounded-xl flex items-center gap-4">
           <Sheet className="text-green-500 w-8 h-8" />
           <div>
-            <p className="text-sm text-black font-medium">El archivo Excel incluye 3 hojas:</p>
-            <ul className="text-sm text-black mt-1 space-y-0.5">
+            <p className="text-base text-black font-medium">El archivo Excel incluye 3 hojas:</p>
+            <ul className="text-base text-black mt-1 space-y-0.5">
               <li>• <span className="font-mono font-medium">Ventas</span> — detalle completo de ventas</li>
               <li>• <span className="font-mono font-medium">Por Categoría</span> — resumen por categoría</li>
               <li>• <span className="font-mono font-medium">Por Empleado</span> — total vendido por empleado</li>
