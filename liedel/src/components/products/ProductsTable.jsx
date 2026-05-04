@@ -36,33 +36,33 @@ const ProductTable = () => {
 
   return (
     <motion.div
-      className="rounded-xl p-5 border border-gray-200 m-7"
+      className="rounded-xl p-6 border border-gray-200 m-7"
       style={{ backgroundColor: "rgb(240, 243, 249)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-5">
         {/* Título dentro de un formulario */}
         <motion.h2
-          className="text-xl font-semibold text-black-100"
+          className="text-xl p-1 font-semibold text-black-100"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          Productos
+          Products
         </motion.h2>
 
         <div className="relative">
           {/* Campo de búsqueda */}
           <input
             type="text"
-            placeholder="Buscar productos..."
-            className="bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2"
+            placeholder="Search Products..."
+            className="bg-gray-200 border border-gray-900 hover:bg-gray-300 text-black placeholder:text-gray-400 rounded-lg pl-10 pr-4 py-2 outline-none"
             value={searchTerm}
             onChange={handleSearch}
           />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-2.5 text-gray-600" size={18} />
         </div>
       </div>
 
@@ -70,20 +70,20 @@ const ProductTable = () => {
         <table className="min-w-full divide-y divide-gray-700">
           <thead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-400 uppercase tracking-wider">
-                Producto
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+                Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-400 uppercase tracking-wider">
-                Categoría
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+                Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-400 uppercase tracking-wider">
-                Precio
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+                Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
                 Stock
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-400 uppercase tracking-wider">
-                Total Ganado
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+                Total Earned
               </th>
             </tr>
           </thead>
@@ -99,7 +99,7 @@ const ProductTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap">{product.categoria}</td>
                 <td className="px-6 py-4 whitespace-nowrap">${parseFloat(product.precio).toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-green-400 font-bold">
+                <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">
                   ${parseFloat(product.total_ganado).toFixed(2)}
                 </td>
               </motion.tr>

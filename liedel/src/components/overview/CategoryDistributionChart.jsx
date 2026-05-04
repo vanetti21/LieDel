@@ -21,9 +21,9 @@ const CategoryDistributionChart = () => {
 			style={{ backgroundColor: 'rgb(240, 243, 249)' }}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.3 }}
+			transition={{ delay: 0.2 }}
 		>
-			<h2 className='text-lg font-medium mb-6 text-black-100'>Distribución por Categoría</h2>
+			<h2 className='text-xl font-semibold mb-5 text-black-100'>Category Distribution</h2>
 
 			<div className='h-80'>
 				<ResponsiveContainer width="100%" height="100%">
@@ -34,7 +34,7 @@ const CategoryDistributionChart = () => {
 							cy="50%"
 							labelLine={false}
 							label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-							outerRadius={123}
+							outerRadius={119}
 							fill="#8884d8"
 							dataKey="value"
 						>
@@ -54,14 +54,14 @@ const CategoryDistributionChart = () => {
 			</div>
 
 			{/* Leyenda personalizada abajo */}
-			<div className="flex flex-wrap justify-center mt-6 gap-6">
+			<div className="flex flex-wrap justify-center mt-5 gap-5">
 				{categoryData.map((entry, index) => (
 					<div key={index} className="flex items-center space-x-2">
 						<div
 							className="w-4 h-4 rounded"
 							style={{ backgroundColor: COLORS[index % COLORS.length] }}
 						></div>
-						<span className="text-sm text-gray-500">{entry.name}</span>
+						<span className="text-sm #4B5563">{entry.name}</span>
 					</div>
 				))}
 			</div>

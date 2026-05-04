@@ -36,14 +36,14 @@ const SalesOverviewChart = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <h2 className='text-lg font-medium mb-6 text-black-100'>Ventas mensuales</h2>
+      <h2 className='text-xl font-semibold mb-6 text-black-100'>Monthly Sales</h2>
 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={salesData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
-          <XAxis dataKey="name" stroke="#9ca3af" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#505a69" />
+          <XAxis dataKey="name" stroke="#60676f" />
           <YAxis
-            stroke="#9ca3af"
+            stroke="#60676f"
             domain={[minSales, maxSales]} // Ajuste dinámico del dominio
           />
           <Tooltip

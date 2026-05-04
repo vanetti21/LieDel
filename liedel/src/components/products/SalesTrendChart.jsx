@@ -25,15 +25,16 @@ const SalesTrendChart = () => {
       style={{ backgroundColor: 'rgb(240, 243, 249)' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
+      transition={{ delay: 0.2 }}
     >
-      <h2 className='text-xl font-semibold text-black-100 mb-4'>Ventas Trend</h2>
-      <div style={{ width: "100%", height: 300 }}>
+      <h2 className='text-xl font-semibold text-black-100 mb-6'>Sales Trend</h2>
+
+      <div style={{ width: "100%", height: 400 }}>
         <ResponsiveContainer>
           <LineChart data={salesData}>
-            <CartesianGrid strokeDasharray='3 3' stroke='#374151' />
-            <XAxis dataKey='month' stroke='#9CA3AF' />
-            <YAxis stroke='#9CA3AF' />
+            <CartesianGrid strokeDasharray='3 3' stroke='#505a69' />
+            <XAxis dataKey='month' stroke='#60676f' />
+            <YAxis stroke='#60676f' />
             <Tooltip
               contentStyle={{
                 backgroundColor: "rgba(31, 41, 55, 0.8)",
