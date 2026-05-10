@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 
-const StatCard = ({name, icon:Icon, value, color}) => {
+const StatCard = ({name, icon:Icon, value, color, onClick }) => {
   return (
+    
     <motion.div
+        onClick={onClick}
         className="overflow-hidden rounded-xl border border-gray-200" style={{ backgroundColor: 'rgb(240, 243, 249)' }}
         whileHover={{ y: -5, boxShadow: "0px 25px 50px -12px rgba(172, 168, 168, 0.5)" }}
     >

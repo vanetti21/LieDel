@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-
+import { useNavigate } from "react-router-dom";
 import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
 import ProductTable from "../components/products/ProductsTable";
@@ -10,6 +10,7 @@ import CategoryDistributionChart from "../components/overview/CategoryDistributi
 import { AlertTriangle, DollarSign, Package, TrendingUp } from "lucide-react";
 
 const ProductPage = () => {
+	const navigate = useNavigate();
 	const [stats, setStats] = useState({
 		total_productos: 0,
 		top_selling: 0,
@@ -45,7 +46,8 @@ const ProductPage = () => {
 				>
 					<StatCard name='Total Products' icon={Package} value={stats.total_productos} color='#6366F1' />
 					<StatCard name='Top Selling' icon={TrendingUp} value={stats.top_selling} color='#10B981' />
-					<StatCard name='Low Stock' icon={AlertTriangle} value={stats.low_stock} color='#F59E0B' />
+					<StatCard name='Low Stock'  icon={AlertTriangle}  value={stats.low_stock}  color='#F59E0B' onClick={() => navigate("/products/low-stock")}
+/>
 					<StatCard name='Total Revenue' icon={DollarSign} value={`$${stats.total_revenue.toFixed(2)}`} color='#EF4444' />
 				</motion.div>
 

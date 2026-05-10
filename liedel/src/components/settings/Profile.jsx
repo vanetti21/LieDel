@@ -1,27 +1,43 @@
-
+import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import SettingSection from "./SettingSection";
 
 const Profile = () => {
-	return (
-		<SettingSection icon={User} title={"Profile"}>
-			<div className='flex flex-col sm:flex-row items-center mb-6'>
-				<img
-					src='https://randomuser.me/api/portraits/men/3.jpg'
-					alt='Profile'
-					className='rounded-full w-20 h-20 object-cover mr-4'
-				/>
+    const [perfil, setPerfil] = useState(null);
 
-				<div>
-					<h3 className='text-lg font-semibold text-black-100'>John Doe</h3>
-					<p className='text-black-100'>john.doe@example.com</p>
-				</div>
-			</div>
+   useEffect(() => {
+    const nombre = localStorage.getItem("nombre");
+    const Contacto_email = localStorage.getItem("Contacto_email");
+	const Cargo = localStorage.getItem("Cargo");
 
-			<button className='bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 w-full sm:w-auto'>
-				Edit Profile
-			</button>
-		</SettingSection>
-	);
+    console.log("Datos del perfil:", { nombre, Contacto_email, Cargo });
+
+    if (nombre) {
+        setPerfil({ nombre, Contacto_email, Cargo });
+    }
+}, []);
+
+    return (
+        <SettingSection icon={User} title={"Profile"}>
+            <div className='flex flex-col sm:flex-row items-center mb-6'>
+                <div className='w-20 h-20 rounded-full bg-indigo-200 flex items-center justify-center mr-4 text-indigo-700 text-3xl font-bold'>
+                    {perfil ? perfil.nombre.charAt(0).toUpperCase() : "?"}
+                </div>
+                <div>
+                  {perfil && !perfil.error ? (
+					<>
+						<h3 className='text-lg font-semibold text-black-100'>
+							{perfil.nombre}
+						</h3>
+						<p className='text-black-100'>{perfil.Contacto_email}</p>
+						<p className='text-gray-500 text-sm'>{perfil.Cargo}</p>
+					</>
+				) : (
+					<p className='text-gray-400'>Cargando perfil...</p>
+				)}
+                </div>
+            </div>
+        </SettingSection>
+    );
 };
 export default Profile;

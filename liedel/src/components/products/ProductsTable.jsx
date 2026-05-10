@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 
 const ProductTable = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [productos, setProductos] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -28,8 +31,8 @@ const ProductTable = () => {
     setSearchTerm(term);
     const filtered = productos.filter(
       (product) =>
-        product.producto.toLowerCase().includes(term) ||
-        product.categoria.toLowerCase().includes(term)
+        product.product.toLowerCase().includes(term) ||
+        product.category.toLowerCase().includes(term)
     );
     setFilteredProducts(filtered);
   };
@@ -90,17 +93,18 @@ const ProductTable = () => {
           <tbody className="divide-y divide-gray-400">
             {filteredProducts.map((product) => (
               <motion.tr
-                key={product.idprod}
+                key={product.Id_producto}
+                onDoubleClick={() => navigate(`/products/${product.Id_producto}`)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <td className="px-6 py-4 whitespace-nowrap">{product.producto}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{product.categoria}</td>
-                <td className="px-6 py-4 whitespace-nowrap">${parseFloat(product.precio).toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{product.product}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{product.category}</td>
+                <td className="px-6 py-4 whitespace-nowrap">${parseFloat(product.price).toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">
-                  ${parseFloat(product.total_ganado).toFixed(2)}
+                  ${parseFloat(product.total_earned).toFixed(2)}
                 </td>
               </motion.tr>
             ))}

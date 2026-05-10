@@ -17,7 +17,7 @@ db_config = {
     "host": "127.0.0.1",
     "user": "root",
     "password": "Admin12345",
-    "database": "ventas"
+    "database": "tienda_muebles"
 }
 
 def conectar_bd():
@@ -38,9 +38,9 @@ def obtener_ventas():
 
     query = """
     SELECT 
-        MONTH(fecha) AS month, 
-        YEAR(fecha) AS year, 
-        SUM(importe) AS sales
+        MONTH(Fecha_venta) AS month, 
+        YEAR(Fecha_venta) AS year, 
+        SUM(Total) AS sales
     FROM venta
     GROUP BY year, month
     ORDER BY year, month;
@@ -72,11 +72,11 @@ def obtener_categoria_distribucion():
 
     query = """
     SELECT 
-        CONCAT(UPPER(LEFT(c.nombre, 1)), LOWER(SUBSTRING(c.nombre, 2))) AS categoria,
+        CONCAT(UPPER(LEFT(c.Nombre, 1)), LOWER(SUBSTRING(c.Nombre, 2))) AS categoria,
         SUM(d.subtotal) AS total
-    FROM detalle d
-    JOIN producto p ON d.idprod = p.idprod
-    JOIN categoria c ON p.idcat = c.idcat
+    FROM detalle_venta d
+    JOIN productos p ON d.Id_producto = p.Id_producto
+    JOIN categoria c ON p.Id_categoria = c.Id_categoria
     GROUP BY categoria
     ORDER BY total DESC;
     """
@@ -96,10 +96,10 @@ def obtener_productos_mas_vendidos():
 
     query = """
     SELECT 
-        CONCAT(UCASE(LEFT(p.nombre, 1)), LCASE(SUBSTRING(p.nombre, 2))) AS product_name,
-        SUM(d.cant) AS total_sales
-    FROM detalle d
-    JOIN producto p ON d.idprod = p.idprod
+        CONCAT(UCASE(LEFT(p.Nombre, 1)), LCASE(SUBSTRING(p.Nombre, 2))) AS product_name,
+        SUM(d.Cantidad) AS total_sales
+    FROM detalle_venta d
+    JOIN productos p ON d.Id_producto = p.Id_producto
     GROUP BY product_name
     ORDER BY total_sales DESC
     LIMIT 10;  # Muestra solo los 10 productos más vendidos
@@ -132,19 +132,19 @@ def obtener_resumen():
     cursor = conn.cursor(dictionary=True)
 
     # Total Sales
-    cursor.execute("SELECT SUM(importe) AS total_sales FROM venta")
+    cursor.execute("SELECT SUM(Total) AS total_sales FROM venta")
     total_sales = cursor.fetchone()['total_sales']
     if total_sales is None:
         total_sales = 0
 
     # Total Employees (empleado)
-    cursor.execute("SELECT COUNT(DISTINCT idemp) AS employees FROM empleado")
+    cursor.execute("SELECT COUNT(DISTINCT Id_empleado) AS employees FROM empleados")
     employees = cursor.fetchone()['employees']
     if employees is None:
         employees = 0
 
     # Total Products
-    cursor.execute("SELECT COUNT(*) AS total_products FROM producto")
+    cursor.execute("SELECT COUNT(*) AS total_products FROM productos")
     total_products = cursor.fetchone()['total_products']
     if total_products is None:
         total_products = 0
@@ -175,16 +175,16 @@ def obtener_ventas_por_fecha():
 
     query = """
         SELECT 
-            fecha,
-            SUM(importe) AS total
+            Fecha_venta,
+            SUM(Total) AS total
         FROM 
             venta
         WHERE 
-            fecha BETWEEN %s AND %s
+            Fecha_venta BETWEEN %s AND %s
         GROUP BY 
-            fecha
+            Fecha_venta
         ORDER BY 
-            fecha;
+            Fecha_venta;
     """
     cursor.execute(query, (inicio, fin))
     resultados = cursor.fetchall()
@@ -204,13 +204,13 @@ def categorias_mas_vendidas():
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute("""
-        SELECT c.nombre AS categoria, SUM(d.cant * d.precio) AS total
-        FROM detalle d
-        JOIN producto p ON d.idprod = p.idprod
-        JOIN categoria c ON p.idcat = c.idcat
-        JOIN venta v ON d.idventa = v.idventa
-        WHERE v.fecha BETWEEN %s AND %s
-        GROUP BY c.idcat
+        SELECT c.Nombre AS categoria, SUM(d.Cantidad * d.Precio_unitario) AS total
+        FROM detalle_venta d
+        JOIN productos p ON d.Id_producto = p.Id_producto
+        JOIN categoria c ON p.Id_categoria = c.Id_Categoria
+        JOIN venta v ON d.Id_venta = v.Id_venta
+        WHERE v.Fecha_venta BETWEEN %s AND %s
+        GROUP BY c.Id_categoria
         ORDER BY total DESC;
     """, (inicio, fin))
 
@@ -235,38 +235,38 @@ def reporte_por_fechas():
 
     # Total vendido
     cursor.execute("""
-        SELECT SUM(importe) as total FROM venta
-        WHERE fecha BETWEEN %s AND %s
+        SELECT SUM(Total) as total FROM venta
+        WHERE Fecha_venta BETWEEN %s AND %s
     """, (inicio, fin))
     total = cursor.fetchone()["total"] or 0
 
     # Categorías más vendidas
     cursor.execute("""
-            SELECT c.nombre, COUNT(*) as total FROM detalle d
-            JOIN producto p ON d.idprod = p.idprod
-            JOIN categoria c ON p.idcat = c.idcat
-            JOIN venta v ON d.idventa = v.idventa
-            WHERE v.fecha BETWEEN %s AND %s
-            GROUP BY c.idcat ORDER BY total DESC
+            SELECT c.Nombre, COUNT(*) as total FROM detalle_venta d
+            JOIN productos p ON d.Id_producto = p.Id_producto
+            JOIN categoria c ON p.Id_Categoria = c.Id_Categoria
+            JOIN venta v ON d.Id_venta = v.Id_venta
+            WHERE v.Fecha_venta BETWEEN %s AND %s
+            GROUP BY c.Id_categoria ORDER BY total DESC
     """, (inicio, fin))
     categorias = cursor.fetchall()
 
     # Productos más vendidos
     cursor.execute("""
-        SELECT p.nombre, SUM(d.cant) as cant FROM detalle d
-        JOIN producto p ON d.idprod = p.idprod
-        JOIN venta v ON d.idventa = v.idventa
-        WHERE v.fecha BETWEEN %s AND %s
-        GROUP BY p.idprod ORDER BY cant DESC
+        SELECT p.Nombre, SUM(d.Cantidad) as cant FROM detalle_venta d
+        JOIN productos p ON d.Id_producto = p.Id_producto
+        JOIN venta v ON d.Id_venta = v.Id_venta
+        WHERE v.Fecha_venta BETWEEN %s AND %s
+        GROUP BY p.Id_producto ORDER BY cant DESC
     """, (inicio, fin))
     productos = cursor.fetchall()
 
     # Empleados con más ventas
     cursor.execute("""
-        SELECT e.nombre, SUM(v.importe) as total FROM venta v
-        JOIN empleado e ON v.idemp = e.idemp
-        WHERE v.fecha BETWEEN %s AND %s
-        GROUP BY e.idemp ORDER BY total DESC
+        SELECT e.Nombre, SUM(v.Total) as total FROM venta v
+        JOIN empleados e ON v.Id_empleado = e.Id_empleado
+        WHERE v.Fecha_venta BETWEEN %s AND %s
+        GROUP BY e.Id_empleado ORDER BY total DESC
     """, (inicio, fin))
     empleados = cursor.fetchall()
 
@@ -280,6 +280,90 @@ def reporte_por_fechas():
         "empleados": empleados
     })
 
+@app.route('/sales_stats', methods=['GET'])
+def sales_stats():
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        # Total Revenue
+        cursor.execute("""
+            SELECT COALESCE(SUM(Total),0) AS total_revenue
+            FROM venta
+        """)
+        total_revenue = cursor.fetchone()['total_revenue']
+
+        # Average Order Value
+        cursor.execute("""
+            SELECT COALESCE(AVG(Total),0) AS average_order
+            FROM venta
+        """)
+        average_order = cursor.fetchone()['average_order']
+
+        # Ventas mes actual
+        cursor.execute("""
+            SELECT COALESCE(SUM(Total),0) AS current_month
+            FROM venta
+            WHERE MONTH(Fecha_venta) = MONTH(CURDATE())
+            AND YEAR(Fecha_venta) = YEAR(CURDATE())
+        """)
+        current_month = float(cursor.fetchone()['current_month'])
+
+        # Ventas mes anterior
+        cursor.execute("""
+            SELECT COALESCE(SUM(Total),0) AS last_month
+            FROM venta
+            WHERE MONTH(Fecha_venta) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+            AND YEAR(Fecha_venta) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+        """)
+        last_month = float(cursor.fetchone()['last_month'])
+
+        # Growth %
+        sales_growth = 0
+
+        if last_month > 0:
+            sales_growth = ((current_month - last_month) / last_month) * 100
+
+        return jsonify({
+            "totalRevenue": round(float(total_revenue), 2),
+            "averageOrderValue": round(float(average_order), 2),
+            "salesGrowth": round(sales_growth, 2)
+        })
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "Error obteniendo estadísticas"}), 500    
+
+@app.route('/top_empleados_ventas', methods=['GET'])
+def top_empleados_ventas():
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+        SELECT 
+            e.Nombre AS empleado,
+            COALESCE(SUM(v.Total), 0) AS total_vendido
+        FROM venta v
+        JOIN empleados e
+            ON v.Id_empleado = e.Id_empleado
+        GROUP BY e.Id_empleado, e.Nombre
+        ORDER BY total_vendido DESC
+        LIMIT 5
+        """
+
+        cursor.execute(query)
+        resultados = cursor.fetchall()
+
+        return jsonify(resultados)
+
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Error obteniendo empleados"}), 500    
+    
+    
+    
+
 #Products
 @app.route("/api/productos-reporte", methods=["GET"])
 def productos_reporte():
@@ -287,18 +371,46 @@ def productos_reporte():
         conn = conectar_bd()
         cursor = conn.cursor(dictionary=True)
         query = """
-        SELECT 
-            p.idprod,
-            p.nombre AS producto,
-            c.nombre AS categoria,
-            p.precio,
-            p.stock,
-            COALESCE(SUM(d.cant * d.precio), 0) AS total_ganado
-        FROM producto p
-        JOIN categoria c ON p.idcat = c.idcat
-        LEFT JOIN detalle d ON p.idprod = d.idprod
-        GROUP BY p.idprod, p.nombre, c.nombre, p.precio, p.stock
-        ORDER BY total_ganado DESC;
+                SELECT 
+                    p.Id_producto,
+                    p.Nombre AS product,
+                    c.Nombre AS category,
+                    p.Precio_venta AS price,
+
+                    -- Stock más reciente y único
+                    MAX(i.Cantidad_actual) AS stock,
+
+                    -- Total ganado
+                    COALESCE(SUM(DISTINCT dv.Subtotal), 0) AS total_earned
+
+                FROM productos p
+
+                LEFT JOIN categoria c
+                    ON p.Id_categoria = c.Id_categoria
+
+                LEFT JOIN inventario i
+                    ON p.Id_producto = i.Id_producto
+
+                LEFT JOIN (
+                    SELECT 
+                        Id_producto,
+                        MAX(Ultima_actualizacion) AS ultima_fecha
+                    FROM inventario
+                    GROUP BY Id_producto
+                ) ultimos
+                    ON i.Id_producto = ultimos.Id_producto
+                    AND i.Ultima_actualizacion = ultimos.ultima_fecha
+
+                LEFT JOIN detalle_venta dv
+                    ON p.Id_producto = dv.Id_producto
+
+                GROUP BY 
+                    p.Id_producto,
+                    p.Nombre,
+                    c.Nombre,
+                    p.Precio_venta
+
+                ORDER BY total_earned DESC;
         """
         cursor.execute(query)
         resultados = cursor.fetchall()
@@ -313,19 +425,30 @@ def productos_stats():
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT COUNT(*) AS total_productos FROM producto")
+    cursor.execute("SELECT COUNT(*) AS total_productos FROM productos")
     total_productos = cursor.fetchone()["total_productos"]
 
     cursor.execute("""
-        SELECT SUM(d.cant) AS top_selling 
-        FROM detalle d
+        SELECT SUM(d.Cantidad) AS top_selling 
+        FROM detalle_venta d
     """)
     top_selling = cursor.fetchone()["top_selling"] or 0
 
-    cursor.execute("SELECT COUNT(*) AS low_stock FROM producto WHERE stock < 5")
+    cursor.execute("""SELECT COUNT(*) AS low_stock
+                FROM inventario i
+                JOIN (
+                    SELECT 
+                        Id_producto,
+                        MAX(Ultima_actualizacion) AS ultima_fecha
+                    FROM inventario
+                    GROUP BY Id_producto
+                ) ultimos
+                ON i.Id_producto = ultimos.Id_producto
+                AND i.Ultima_actualizacion = ultimos.ultima_fecha
+                WHERE i.Cantidad_actual < i.Cantidad_minima;""")
     low_stock = cursor.fetchone()["low_stock"]
 
-    cursor.execute("SELECT SUM(subtotal) AS total_revenue FROM detalle")
+    cursor.execute("SELECT SUM(subtotal) AS total_revenue FROM detalle_venta")
     total_revenue = cursor.fetchone()["total_revenue"] or 0
 
     return jsonify({
@@ -341,8 +464,8 @@ def get_sales_by_month():
     try:
         query = """
             SELECT 
-                DATE_FORMAT(fecha, '%Y-%m') AS month, 
-                SUM(importe) AS sales
+                DATE_FORMAT(Fecha_venta, '%Y-%m') AS month, 
+                SUM(Total) AS sales
             FROM venta
             GROUP BY month
             ORDER BY month;
@@ -358,13 +481,62 @@ def get_sales_by_month():
         cursor.close()
         conn.close()
 
+@app.route('/product/<int:id>/insights')
+def product_insights(id):
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    # 🏢 SUCURSALES
+    cursor.execute("""
+        SELECT 
+            s.Nombre AS sucursal,
+            SUM(dv.Cantidad) AS total_vendido
+        FROM detalle_venta dv
+        JOIN venta v ON dv.Id_venta = v.Id_venta
+        JOIN sucursal s ON v.Id_sucursal = s.Id_sucursal
+        WHERE dv.Id_producto = %s
+        GROUP BY s.Nombre
+        ORDER BY total_vendido DESC
+    """, (id,))
+    stores = cursor.fetchall()
+
+    # 📅 MESES
+    cursor.execute("""
+        SELECT 
+            DATE_FORMAT(v.Fecha_venta, '%Y-%m') AS mes,
+            SUM(dv.Cantidad) AS total_vendido
+        FROM detalle_venta dv
+        JOIN venta v ON dv.Id_venta = v.Id_venta
+        WHERE dv.Id_producto = %s
+        GROUP BY mes
+        ORDER BY mes DESC
+    """, (id,))
+    months = cursor.fetchall()
+
+    # 📅 ÚLTIMA VENTA
+    cursor.execute("""
+        SELECT MAX(v.Fecha_venta) AS ultima_venta
+        FROM detalle_venta dv
+        JOIN venta v ON dv.Id_venta = v.Id_venta
+        WHERE dv.Id_producto = %s
+    """, (id,))
+    last_sale = cursor.fetchone()
+
+    return jsonify({
+        "stores": stores,
+        "months": months,
+        "last_sale": last_sale["ultima_venta"] if last_sale else None
+    })
+    
+    
+
 
 #Settings
 @app.route('/api/empleados', methods=['GET'])
 def verificar_empleados():
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT idemp, nombre, apellido FROM empleado")
+    cursor.execute("SELECT Id_empleado, nombre FROM empleados")
     empleados = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -374,7 +546,7 @@ def verificar_empleados():
 @app.route('/api/usuarios', methods=['POST'])
 def crear_usuario():
     datos = request.get_json()
-    idemp = datos.get('idemp')
+    Id_empleado = datos.get('Id_empleado')
     usuario = datos.get('usuario')
     clave = datos.get('clave')
     estado = datos.get('estado')
@@ -382,8 +554,8 @@ def crear_usuario():
     conn = conectar_bd()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO usuario (idemp, usuario, clave, estado) VALUES (%s, %s, %s, %s)",
-                       (idemp, usuario, clave, estado))
+        cursor.execute("INSERT INTO usuario (Id_empleado, usuario, clave, estado) VALUES (%s, %s, %s, %s)",
+                       (Id_empleado, usuario, clave, estado))
         conn.commit()
         return jsonify({'mensaje': 'Usuario creado exitosamente'})
     except Exception as e:
@@ -404,11 +576,11 @@ def obtener_empleados():
     cursor = conn.cursor(dictionary=True)
 
     # Total empleados
-    cursor.execute("SELECT COUNT(*) AS total FROM empleado")
+    cursor.execute("SELECT COUNT(*) AS total FROM empleados")
     total = cursor.fetchone()['total']
 
     # Empleados activos
-    cursor.execute("SELECT COUNT(*) AS activos FROM empleado WHERE estado = 'activo'")
+    cursor.execute("SELECT COUNT(*) AS activos FROM empleados WHERE estado = 'activo'")
     activos = cursor.fetchone()['activos']
 
     # Empleados inactivos (para churn)
@@ -431,15 +603,14 @@ def get_employees():
         cursor.execute("" \
         """ 
         SELECT 
-            idemp, 
-            nombre, 
-            apellido, 
-            email, 
-            telefono, 
-            estado, 
-            hire 
+            Id_empleado, 
+            Nombre, 
+            Contacto_telefono, 
+            Contacto_email, 
+            Estado, 
+            Fecha_ingreso 
         FROM 
-            empleado;
+            empleados;
  
         """
         )
@@ -449,12 +620,12 @@ def get_employees():
         employees = []
         for row in results:
             employees.append({
-                'id': row['idemp'],
-                'name': f"{row['nombre']} {row['apellido']}",
-                'email': row['email'],
-                'phone': row['telefono'],
-                'status': "Active" if row['estado'].lower() == 'activo' else "Inactive",
-                'hireDate': row['hire']
+                'id': row['Id_empleado'],
+                'name': row['Nombre'],
+                'email': row['Contacto_email'],
+                'phone': row['Contacto_telefono'],
+                'status': "Active" if row['Estado'].lower() == 'activo' else "Inactive",
+                'hireDate': row['Fecha_ingreso']
             })
 
         return jsonify(employees)
@@ -474,10 +645,10 @@ def employee_growth():
     cursor = conn.cursor(dictionary=True)
     query = """
         SELECT 
-            DATE_FORMAT(hire, '%b %Y') AS month, 
+            DATE_FORMAT(Fecha_ingreso, '%b %Y') AS month, 
             COUNT(*) AS hires
-        FROM empleado
-        WHERE hire IS NOT NULL
+        FROM empleados
+        WHERE Fecha_ingreso IS NOT NULL
         GROUP BY month
         ORDER BY STR_TO_DATE(month, '%b %Y')
     """
@@ -492,7 +663,497 @@ def employee_growth():
 
     return jsonify(rows)
 
+@app.route('/actividad_empleados', methods=['GET'])
+def actividad_empleados():
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
 
+        query = """
+        SELECT 
+            DAYOFWEEK(Fecha_venta) AS dia_num,
+            COUNT(*) AS total_ventas
+        FROM venta
+        GROUP BY DAYOFWEEK(Fecha_venta)
+        ORDER BY dia_num
+        """
+
+        cursor.execute(query)
+        resultados = cursor.fetchall()
+
+        dias = {
+            1: {"name": "Sun", "ventas": 0},
+            2: {"name": "Mon", "ventas": 0},
+            3: {"name": "Tue", "ventas": 0},
+            4: {"name": "Wed", "ventas": 0},
+            5: {"name": "Thu", "ventas": 0},
+            6: {"name": "Fri", "ventas": 0},
+            7: {"name": "Sat", "ventas": 0},
+        }
+
+        for row in resultados:
+            dias[row["dia_num"]]["ventas"] = row["total_ventas"]
+
+        return jsonify(list(dias.values()))
+
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": "Error obteniendo actividad"}), 500
+
+#Clientes
+@app.route('/clientes_por_ubicacion')
+def clientes_por_ubicacion():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        Ubicacion AS ubicacion,
+        COUNT(*) AS total
+    FROM clientes
+    GROUP BY Ubicacion
+    ORDER BY total DESC
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+@app.route('/top_clientes')
+def top_clientes():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        c.Nombre AS cliente,
+        COUNT(v.Id_venta) AS compras,
+        COALESCE(SUM(v.Total),0) AS total_gastado
+    FROM clientes c
+    LEFT JOIN venta v
+        ON c.Id_cliente = v.Id_cliente
+    GROUP BY c.Id_cliente, c.Nombre
+    ORDER BY total_gastado DESC
+    LIMIT 5
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+#Proveedores
+@app.route('/proveedores_por_pais')
+def proveedores_por_pais():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        Pais AS pais,
+        COUNT(*) AS total
+    FROM proveedores
+    GROUP BY Pais
+    ORDER BY total DESC
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+@app.route('/top_proveedores')
+def top_proveedores():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        Nombre,
+        Pais,
+        Ubicacion
+    FROM proveedores
+    LIMIT 5
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/proveedores_mapa')
+def proveedores_mapa():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        Pais,
+        COUNT(*) AS total
+    FROM proveedores
+    GROUP BY Pais
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/top_proveedores_rendimiento')
+def top_proveedores_rendimiento():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        p.Nombre AS proveedor,
+        p.Pais,
+
+        COUNT(oc.Id_orden_compra) AS total_ordenes,
+
+        ROUND(AVG(
+            DATEDIFF(
+                oc.Fecha_entrega_real,
+                oc.Fecha_orden
+            )
+        ), 1) AS promedio_entrega,
+
+        SUM(oc.Costo_total) AS total_compras
+
+    FROM proveedores p
+
+    JOIN orden_compra oc
+        ON p.Id_proveedor = oc.Id_proveedor
+
+    WHERE oc.Fecha_entrega_real IS NOT NULL
+
+    GROUP BY 
+        p.Id_proveedor,
+        p.Nombre,
+        p.Pais
+
+    ORDER BY promedio_entrega ASC, total_compras DESC
+    LIMIT 5
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/suppliers_stats')
+def suppliers_stats():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        (SELECT COUNT(*) FROM proveedores) AS total_suppliers,
+
+        (SELECT COUNT(*) FROM orden_compra) AS total_orders,
+
+        (
+            SELECT COALESCE(SUM(Costo_total),0)
+            FROM orden_compra
+        ) AS supplier_revenue
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchone()
+
+    return jsonify({
+        "totalSuppliers": int(data["total_suppliers"] or 0),
+        "productsSupplied": int(data["total_orders"] or 0),
+        "supplierRevenue": float(data["supplier_revenue"] or 0)
+    })
+
+#Low Stock
+@app.route('/products/low-stock')
+def low_stock():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        p.Id_producto,
+        p.Nombre,
+        i.Cantidad_actual,
+        i.Cantidad_minima,
+        i.Ultima_actualizacion,
+
+        (
+            SELECT MAX(v.Fecha_venta)
+            FROM detalle_venta dv
+            JOIN venta v ON dv.Id_venta = v.Id_venta
+            WHERE dv.Id_producto = p.Id_producto
+        ) AS ultima_venta,
+
+        (
+            SELECT MAX(oc.Fecha_orden)
+            FROM detalle_compra dc
+            JOIN orden_compra oc ON dc.Id_orden_compra = oc.Id_orden_compra
+            WHERE dc.Id_producto = p.Id_producto
+        ) AS ultima_compra
+
+    FROM productos p
+    JOIN inventario i 
+        ON p.Id_producto = i.Id_producto
+
+    WHERE i.Cantidad_actual <= i.Cantidad_minima
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+@app.route('/product/<int:id>')
+def product_detail(id):
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        p.*,
+        c.Nombre AS categoria,
+        i.Cantidad_actual,
+        i.Cantidad_minima,
+        i.Ultima_actualizacion
+    FROM productos p
+    JOIN categoria c ON p.Id_categoria = c.Id_categoria
+    JOIN inventario i ON p.Id_producto = i.Id_producto
+    WHERE p.Id_producto = %s
+    """
+
+    cursor.execute(query, (id,))
+    return jsonify(cursor.fetchone())
+
+@app.route('/product/<int:id>/sales')
+def product_sales(id):
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        SUM(dv.Cantidad) AS total_vendido,
+        MAX(v.Fecha_venta) AS ultima_venta,
+        s.Nombre AS sucursal
+    FROM detalle_venta dv
+    JOIN venta v ON dv.Id_venta = v.Id_venta
+    JOIN sucursal s ON v.Id_sucursal = s.Id_sucursal
+    WHERE dv.Id_producto = %s
+    GROUP BY s.Id_sucursal
+    """
+
+    cursor.execute(query, (id,))
+    return jsonify(cursor.fetchall())
+
+@app.route('/product/<int:id>/purchases')
+def product_purchases(id):
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT 
+        MAX(oc.Fecha_orden) AS ultima_orden,
+        pr.Nombre AS proveedor,
+        SUM(dc.Cantidad) AS total_comprado
+    FROM detalle_compra dc
+    JOIN orden_compra oc ON dc.Id_orden_compra = oc.Id_orden_compra
+    JOIN proveedores pr ON oc.Id_proveedor = pr.Id_proveedor
+    WHERE dc.Id_producto = %s
+    GROUP BY pr.Id_proveedor
+    """
+
+    cursor.execute(query, (id,))
+    return jsonify(cursor.fetchall())
+
+
+@app.route('/product/<int:id>/price-history')
+def price_history(id):
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT Precio, Fecha_cambio, Motivo_cambio
+    FROM precio_historico
+    WHERE Id_producto = %s
+    ORDER BY Fecha_cambio ASC
+    """
+
+    cursor.execute(query, (id,))
+    return jsonify(cursor.fetchall())
+
+
+
+
+#Ordenes
+@app.route('/orders_stats')
+def orders_stats():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        COUNT(*) AS total_orders,
+
+        COUNT(
+            CASE 
+                WHEN LOWER(Estado) = 'pendiente'
+                THEN 1
+            END
+        ) AS pending_orders,
+
+        COUNT(
+            CASE 
+                WHEN LOWER(Estado) IN ('completada', 'entregada')
+                THEN 1
+            END
+        ) AS completed_orders,
+
+        COALESCE(SUM(Costo_total),0) AS total_revenue
+
+    FROM orden_compra
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchone()
+
+    print(data)
+
+    return jsonify({
+        "totalOrders": int(data["total_orders"] or 0),
+        "pendingOrders": int(data["pending_orders"] or 0),
+        "completedOrders": int(data["completed_orders"] or 0),
+        "totalRevenue": float(data["total_revenue"] or 0)
+    })
+
+@app.route('/daily_orders')
+def daily_orders():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        Fecha_orden AS fecha,
+        COUNT(*) AS total
+    FROM orden_compra
+    GROUP BY Fecha_orden
+    ORDER BY Fecha_orden
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/orders_distribution')
+def orders_distribution():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        Estado,
+        COUNT(*) AS total
+    FROM orden_compra
+    GROUP BY Estado
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/orders_table')
+def orders_table():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        oc.Id_orden_compra,
+        p.Nombre AS proveedor,
+        oc.Fecha_orden,
+        oc.Fecha_entrega_real,
+        oc.Estado,
+        oc.Costo_total,
+        oc.Tipo_envio
+
+    FROM orden_compra oc
+
+    JOIN proveedores p
+        ON oc.Id_proveedor = p.Id_proveedor
+
+    ORDER BY oc.Fecha_orden DESC
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/delivery_performance')
+def delivery_performance():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            SUM(
+                CASE
+                    WHEN Fecha_entrega_real <= Fecha_entrega_estimada THEN 1
+                    ELSE 0
+                END
+            ) AS on_time,
+
+            SUM(
+                CASE
+                    WHEN Fecha_entrega_real > Fecha_entrega_estimada THEN 1
+                    ELSE 0
+                END
+            ) AS `delayed`
+
+        FROM orden_compra
+        WHERE Fecha_entrega_real IS NOT NULL;
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchone()
+
+    return jsonify(data)
+
+
+@app.route('/monthly_purchase_trend')
+def monthly_purchase_trend():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        DATE_FORMAT(Fecha_orden, '%Y-%m') AS mes,
+        SUM(Costo_total) AS total
+    FROM orden_compra
+    GROUP BY mes
+    ORDER BY mes
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+
+
+#login
 @app.route('/images/<path:filename>')
 def serve_images(filename):
     return send_from_directory('Home/images', filename)
@@ -510,12 +1171,24 @@ def login():
     conn = conectar_bd()
     if conn: 
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuario WHERE usuario = %s AND clave = %s", (username, password))
+        cursor.execute("""
+            SELECT u.usuario, e.nombre, e.Contacto_email, e.Cargo
+            FROM usuario u
+            JOIN empleados e ON u.Id_Empleado = e.Id_Empleado
+            WHERE u.usuario = %s AND u.clave = %s
+        """, (username, password))
         user = cursor.fetchone()
         conn.close()
 
         if user:
-            return jsonify({"success": True, "message": "Inicio de sesión exitoso", "redirect": "/homes"}), 200
+            print(f"✅ Login: {user}")
+            return jsonify({
+                "success": True,
+                "usuario": user["usuario"],
+                "nombre": user["nombre"],
+                "Contacto_email": user["Contacto_email"],
+                "Cargo": user["Cargo"]
+            }), 200
         else:
             return jsonify({"success": False, "message": "Usuario o contraseña incorrectos"}), 401
     else:
@@ -771,7 +1444,38 @@ def crear_reporte():
         'graph_productos_html': graph_productos_html,
         'graph_categoria_html': graph_categoria_html
     })
-    
+   
+   
+# Perfil
+@app.route('/api/usuario-perfil', methods=['GET'])
+def usuario_perfil():
+    usuario = request.args.get('usuario')
+    if not usuario:
+        return jsonify({"error": "Usuario requerido"}), 400
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT e.Nombre, e.Contacto_email
+        FROM usuario u
+        JOIN empleados e ON u.Id_Empleado = e.Id_empleado
+        WHERE u.usuario = %s
+    """, (usuario,))
+    perfil = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if perfil:
+        print(f"✅ Perfil encontrado: {perfil}")  # ← AGREGA ESTO
+        return jsonify(perfil)
+    print(f"❌ Usuario no encontrado: {usuario}")
+    return jsonify({"error": "Usuario no encontrado"}), 404  
+
+# Logout
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    return jsonify({"success": True, "redirect": "/"})
+
 
 # Excel
 @app.route('/api/exportar-excel', methods=['GET'])
