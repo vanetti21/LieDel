@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from sklearn.linear_model import LinearRegression
 import mysql.connector
 from flask_cors import CORS
 import plotly.express as px
 import pandas as pd
 import datetime
 import io
-
+import numpy as np
 
 # Configuración de Flask
 app = Flask(__name__, template_folder='Home', static_folder='Home/estilo')
@@ -528,7 +529,417 @@ def product_insights(id):
         "last_sale": last_sale["ultima_venta"] if last_sale else None
     })
     
-    
+#Predictions
+@app.route('/predicciones_ventas')
+def predicciones_ventas():
+
+    conn = conectar_bd()
+
+    query = """
+    SELECT
+        Fecha_venta,
+        SUM(Total) AS total
+    FROM venta
+    GROUP BY Fecha_venta
+    ORDER BY Fecha_venta
+    """
+
+    df = pd.read_sql(query, conn)
+
+    df["Fecha_venta"] = pd.to_datetime(df["Fecha_venta"])
+
+    df["dias"] = (
+        df["Fecha_venta"] - df["Fecha_venta"].min()
+    ).dt.days
+
+    X = df[["dias"]]
+    y = df["total"]
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    futuros = np.array([
+        df["dias"].max() + i
+        for i in range(1, 31)
+    ]).reshape(-1, 1)
+
+    predicciones = model.predict(futuros)
+
+    resultados = []
+
+    ultima_fecha = df["Fecha_venta"].max()
+
+    for i, pred in enumerate(predicciones):
+        resultados.append({
+            "fecha": str(
+                (ultima_fecha + pd.Timedelta(days=i+1)).date()
+            ),
+            "prediccion": round(float(pred), 2)
+        })
+
+    return jsonify(resultados)    
+
+@app.route('/prediccion_stock')
+def prediccion_stock():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        p.Nombre AS producto,
+
+        MAX(i.Cantidad_actual) AS stock_actual,
+
+        COALESCE(AVG(dv.Cantidad),0) AS promedio_ventas
+
+    FROM productos p
+
+    LEFT JOIN inventario i
+        ON p.Id_producto = i.Id_producto
+
+    LEFT JOIN detalle_venta dv
+        ON p.Id_producto = dv.Id_producto
+
+    GROUP BY p.Id_producto, p.Nombre
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    resultados = []
+
+    for row in data:
+
+        promedio = float(row["promedio_ventas"])
+        stock = int(row["stock_actual"] or 0)
+
+        if promedio > 0:
+            dias_restantes = round(stock / promedio)
+        else:
+            dias_restantes = "∞"
+
+        resultados.append({
+            "producto": row["producto"],
+            "stock": stock,
+            "promedio_ventas": round(promedio,2),
+            "dias_restantes": dias_restantes
+        })
+
+    return jsonify(resultados)
+
+
+@app.route('/riesgo_proveedores')
+def riesgo_proveedores():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+
+        p.Nombre,
+
+        COUNT(*) AS total_ordenes,
+
+        SUM(
+            CASE
+                WHEN oc.Fecha_entrega_real >
+                     oc.Fecha_entrega_estimada
+                THEN 1
+                ELSE 0
+            END
+        ) AS retrasos
+
+    FROM orden_compra oc
+
+    JOIN proveedores p
+        ON oc.Id_proveedor = p.Id_proveedor
+
+    GROUP BY p.Nombre
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    resultados = []
+
+    for row in data:
+
+        total = row["total_ordenes"]
+        retrasos = row["retrasos"]
+
+        riesgo = round((retrasos / total) * 100, 2)
+
+        if riesgo < 20:
+            nivel = "Low"
+
+        elif riesgo < 50:
+            nivel = "Medium"
+
+        else:
+            nivel = "High"
+
+        resultados.append({
+            "proveedor": row["Nombre"],
+            "riesgo": riesgo,
+            "nivel": nivel
+        })
+
+    return jsonify(resultados)
+
+
+@app.route('/api/ai-business-insights')
+def ai_business_insights():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    insights = []
+
+    # =========================
+    # LOW STOCK + HIGH DEMAND
+    # =========================
+
+    query_stock = """
+    SELECT
+        p.Nombre,
+        MAX(i.Cantidad_actual) AS stock,
+        COALESCE(SUM(dv.Cantidad),0) AS ventas
+    FROM productos p
+    LEFT JOIN inventario i
+        ON p.Id_producto = i.Id_producto
+    LEFT JOIN detalle_venta dv
+        ON p.Id_producto = dv.Id_producto
+    GROUP BY p.Id_producto, p.Nombre
+    ORDER BY ventas DESC
+    LIMIT 5
+    """
+
+    cursor.execute(query_stock)
+    stock_data = cursor.fetchall()
+
+    for item in stock_data:
+
+        if item["stock"] is not None and item["stock"] < 10:
+
+            insights.append({
+                "type": "restock",
+                "priority": "high",
+                "title": "Restock Recommended",
+                "message":
+                    f'{item["Nombre"]} has high sales and low stock.'
+            })
+
+    # =========================
+    # LOW SALES PRODUCTS
+    # =========================
+
+    query_low = """
+    SELECT
+        p.Nombre,
+        COALESCE(SUM(dv.Cantidad),0) AS ventas
+    FROM productos p
+    LEFT JOIN detalle_venta dv
+        ON p.Id_producto = dv.Id_producto
+    GROUP BY p.Id_producto, p.Nombre
+    ORDER BY ventas ASC
+    LIMIT 3
+    """
+
+    cursor.execute(query_low)
+    low_products = cursor.fetchall()
+
+    for item in low_products:
+
+        insights.append({
+            "type": "risk",
+            "priority": "medium",
+            "title": "Low Demand Detected",
+            "message":
+                f'{item["Nombre"]} sales are decreasing.'
+        })
+
+    # =========================
+    # SUPPLIER DELAYS
+    # =========================
+
+    query_supplier = """
+    SELECT
+        p.Nombre,
+        AVG(
+            DATEDIFF(
+                Fecha_entrega_real,
+                Fecha_entrega_estimada
+            )
+        ) AS retraso
+    FROM orden_compra oc
+    JOIN proveedores p
+        ON oc.Id_proveedor = p.Id_proveedor
+    WHERE Fecha_entrega_real IS NOT NULL
+    GROUP BY p.Nombre
+    HAVING retraso > 3
+    LIMIT 3
+    """
+
+    cursor.execute(query_supplier)
+    suppliers = cursor.fetchall()
+
+    for item in suppliers:
+
+        insights.append({
+            "type": "supplier",
+            "priority": "high",
+            "title": "Supplier Delay Risk",
+            "message":
+                f'{item["Nombre"]} deliveries are taking longer than expected.'
+        })
+
+    # =========================
+    # VIP CUSTOMERS
+    # =========================
+
+    query_vip = """
+    SELECT
+        c.Nombre,
+        SUM(v.Total) AS total
+    FROM clientes c
+    JOIN venta v
+        ON c.Id_cliente = v.Id_cliente
+    GROUP BY c.Id_cliente, c.Nombre
+    ORDER BY total DESC
+    LIMIT 3
+    """
+
+    cursor.execute(query_vip)
+    vip_clients = cursor.fetchall()
+
+    for item in vip_clients:
+
+        insights.append({
+            "type": "vip",
+            "priority": "low",
+            "title": "VIP Customer Detected",
+            "message":
+                f'{item["Nombre"]} is becoming a high-value customer.'
+        })
+
+    return jsonify(insights)
+
+
+@app.route('/customer_insights')
+def customer_insights():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+
+        c.Nombre,
+
+        COUNT(v.Id_venta) AS compras,
+
+        SUM(v.Total) AS total_gastado
+
+    FROM clientes c
+
+    JOIN venta v
+        ON c.Id_cliente = v.Id_cliente
+
+    GROUP BY c.Nombre
+
+    ORDER BY total_gastado DESC
+
+    LIMIT 10
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+
+@app.route('/api/predict-demand')
+def predict_demand():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        p.Nombre AS producto,
+        v.Fecha_venta,
+        SUM(dv.Cantidad) AS total_vendido
+    FROM detalle_venta dv
+    JOIN venta v
+        ON dv.Id_venta = v.Id_venta
+    JOIN productos p
+        ON dv.Id_producto = p.Id_producto
+    GROUP BY p.Nombre, v.Fecha_venta
+    ORDER BY v.Fecha_venta
+    """
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    df = pd.DataFrame(rows)
+
+    if df.empty:
+        return jsonify([])
+
+    predictions = []
+
+    productos = df["producto"].unique()
+
+    for producto in productos:
+
+        producto_df = df[df["producto"] == producto].copy()
+
+        producto_df["Fecha_venta"] = pd.to_datetime(
+            producto_df["Fecha_venta"]
+        )
+
+        producto_df = producto_df.sort_values("Fecha_venta")
+
+        producto_df["dias"] = (
+            producto_df["Fecha_venta"]
+            - producto_df["Fecha_venta"].min()
+        ).dt.days
+
+        X = producto_df[["dias"]]
+        y = producto_df["total_vendido"]
+
+        if len(producto_df) < 2:
+            continue
+
+        model = LinearRegression()
+        model.fit(X, y)
+
+        future_day = np.array([[producto_df["dias"].max() + 30]])
+
+        prediction = model.predict(future_day)[0]
+
+        tendencia = (
+            "High Demand"
+            if prediction > y.mean()
+            else "Low Demand"
+        )
+
+        predictions.append({
+            "producto": producto,
+            "prediccion": round(float(prediction), 2),
+            "promedio_actual": round(float(y.mean()), 2),
+            "tendencia": tendencia
+        })
+
+    predictions = sorted(
+        predictions,
+        key=lambda x: x["prediccion"],
+        reverse=True
+    )
+
+    return jsonify(predictions)
 
 
 #Settings
