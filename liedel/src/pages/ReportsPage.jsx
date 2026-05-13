@@ -5,7 +5,6 @@ import Ventas_Fecha from "../components/reports/Ventas_Fecha";
 const ReportsPage = () => {
 	return (
 		<div className='flex-1 relative z-10 overflow-auto'>
-			<Header title={"Reports"} />
 
 			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
             <Ventas_Fecha />

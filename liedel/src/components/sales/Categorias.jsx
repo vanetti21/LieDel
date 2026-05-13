@@ -33,7 +33,7 @@ const Categorias = () => {
 	}, [startDate, endDate]);
 
 	return (
-		<div className='p-5 rounded-xl shadow-lg text-white' style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
+		<div className='p-6 rounded-xl shadow-lg text-white' style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
 			<h2 className='text-xl font-semibold mb-4 text-black'>Categorías más vendidas</h2>
 
 			<div className='flex gap-4 mb-4'>
@@ -41,13 +41,13 @@ const Categorias = () => {
 					type='date'
 					value={startDate}
 					onChange={(e) => setStartDate(e.target.value)}
-					className='bg-gray-700 p-2 rounded'
+					className='bg-white border border-gray-400 hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none'
 				/>
 				<input
 					type='date'
 					value={endDate}
 					onChange={(e) => setEndDate(e.target.value)}
-					className='bg-gray-700 p-2 rounded'
+					className='bg-white border border-gray-400 hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none'
 				/>
 			</div>
 

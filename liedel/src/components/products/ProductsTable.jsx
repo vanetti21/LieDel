@@ -61,7 +61,7 @@ const ProductTable = () => {
           <input
             type="text"
             placeholder="Search Products..."
-            className="bg-gray-200 border border-gray-900 hover:bg-gray-300 text-black placeholder:text-gray-400 rounded-lg pl-10 pr-4 py-2 outline-none"
+            className="bg-gray-200 border border-gray-500 hover:bg-gray-300 text-black placeholder:text-gray-400 rounded-lg pl-10 pr-4 py-2 outline-none"
             value={searchTerm}
             onChange={handleSearch}
           />

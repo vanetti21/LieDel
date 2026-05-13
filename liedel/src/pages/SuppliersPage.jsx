@@ -25,7 +25,6 @@ useEffect(() => {
 }, []);
 	return (
 		<div className='flex-1 overflow-auto relative z-10'>
-			<Header title='Suppliers Dashboard' />
 
 			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
 
@@ -56,7 +55,7 @@ useEffect(() => {
                         color='#F59E0B'
                     />
 				</motion.div>
-                <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8'>
+                <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-2'>
 
                     <div className='lg:col-span-2'>
                         <SuppliersWorldMap/>

@@ -1607,7 +1607,7 @@ def login():
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return render_template('login.html')
 
 #Analystics
 @app.route("/revenue_data")
@@ -1902,25 +1902,31 @@ def exportar_excel():
 
     query = """
         SELECT
-            v.idventa,
-            DATE_FORMAT(v.fecha, '%Y-%m-%d') AS fecha,
-            v.cliente,
-            v.importe,
-            CONCAT(e.nombre, ' ', e.apellido) AS empleado,
-            c.nombre   AS categoria,
-            p.nombre   AS producto,
-            d.cant     AS cantidad,
-            d.precio   AS precio_unitario,
-            d.subtotal
+            v.Id_venta,
+            DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d')   AS fecha,
+            cl.Nombre                                  AS cliente,
+            v.Total                                    AS importe,
+            v.Canal,
+            v.Estado,
+            s.Nombre                                   AS sucursal,
+            e.Nombre                                   AS empleado,
+            cat.Nombre                                 AS categoria,
+            p.Nombre                                   AS producto,
+            dv.Cantidad,
+            dv.Precio_unitario,
+            dv.Descuento,
+            dv.Subtotal
         FROM venta v
-        JOIN empleado e  ON v.idemp   = e.idemp
-        JOIN detalle d   ON v.idventa = d.idventa
-        JOIN producto p  ON d.idprod  = p.idprod
-        JOIN categoria c ON p.idcat   = c.idcat
+        JOIN clientes   cl  ON v.Id_cliente  = cl.Id_cliente
+        JOIN empleados  e   ON v.Id_empleado = e.Id_empleado
+        JOIN sucursal   s   ON v.Id_sucursal = s.Id_sucursal
+        JOIN detalle_venta dv ON v.Id_venta  = dv.Id_venta
+        JOIN productos  p   ON dv.Id_producto = p.Id_producto
+        JOIN categoria  cat ON p.Id_categoria = cat.Id_categoria
     """
 
     if inicio and fin:
-        query += " WHERE v.fecha BETWEEN %s AND %s"
+        query += " WHERE v.Fecha_venta BETWEEN %s AND %s"
         cursor.execute(query, (inicio, fin))
     else:
         cursor.execute(query)
@@ -1934,19 +1940,26 @@ def exportar_excel():
 
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+
         # Hoja 1 — detalle completo
         df.to_excel(writer, index=False, sheet_name='Ventas')
 
         # Hoja 2 — resumen por categoría
         df.groupby('categoria').agg(
-            total_vendido=('subtotal', 'sum'),
-            cantidad=('cantidad', 'sum')
+            total_vendido=('Subtotal', 'sum'),
+            cantidad=('Cantidad', 'sum')
         ).reset_index().to_excel(writer, index=False, sheet_name='Por_Categoria')
 
         # Hoja 3 — resumen por empleado
         df.groupby('empleado').agg(
             total_ventas=('importe', 'sum')
         ).reset_index().to_excel(writer, index=False, sheet_name='Por_Empleado')
+
+        # Hoja 4 — resumen por sucursal  (bonus, tenías la info disponible)
+        df.groupby('sucursal').agg(
+            total_ventas=('importe', 'sum'),
+            num_ventas=('Id_venta', 'nunique')
+        ).reset_index().to_excel(writer, index=False, sheet_name='Por_Sucursal')
 
     buf.seek(0)
     return app.response_class(

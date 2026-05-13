@@ -12,14 +12,14 @@ const TopSuppliers = () => {
 
 	return (
 		<motion.div
-			className='rounded-xl p-6 border border-gray-200 h-full'
+			className='rounded-xl p-6 border border-gray-200'
 			style={{ backgroundColor: "rgb(240, 243, 249)" }}
 		>
 			<h2 className='text-xl font-semibold mb-6'>
 				Top Suppliers
 			</h2>
 
-			<div className='space-y-4'>
+			<div className='overflow-y-auto max-h-[521px] pr-2 flex flex-col gap-4'>
 				{suppliers.map((supplier, index) => (
 					<div
 						key={index}

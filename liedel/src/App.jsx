@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
-import Sidebar from "./components/common/Sidebar";
+import Header from "./components/common/Header";
 
 import OverviewPage from "./pages/OverviewPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -20,8 +20,6 @@ import PredictionsPage from "./pages/PredictionsPage";
 
 import { useEffect } from "react";
 
-// ... resto de imports igual
-
 function App() {
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -34,36 +32,33 @@ function App() {
 			window.history.replaceState({}, "", window.location.pathname);
 		}
 	}, []);
-	return (
-		<div className='flex h-screen text-black-100  overflow-y-auto' style={{ backgroundColor: 'rgb(169, 193, 255)' }}>
-			{/* BG */}
-			<div className='fixed inset-0 z-0'>
-				<div className='absolute inset-0' />
-				<div className='absolute inset-0 ' />
-			</div>
 
-			<Sidebar />
-			<main className="flex-1 flex justify-center overflow-y-auto">
-			<div className="w-full max-w-7xl px-4 md:px-8">
-			<Routes>
-				<Route path='/' element={<OverviewPage />} />
-				<Route path='/products' element={<ProductsPage />} />
-				<Route path='/users' element={<UsersPage />} />
-				<Route path='/sales' element={<SalesPage />} />
-				<Route path='/orders' element={<OrdersPage />} />
-				<Route path='/reports' element={<ReportsPage />} />
-				<Route path='/excel' element={<ExcelPage />} />
-				<Route path='/analytics' element={<AnalyticsPage />} />
-				<Route path='/usersave' element={<UserSave />} />
-				<Route path='/settings' element={<SettingsPage />} />
-				<Route path='/clients' element={<ClientsPage />} />
-				<Route path='/suppliers' element={<SuppliersPage />} />
-				<Route path="/products/low-stock" element={<LowStockPage />} />
-				<Route path="/products/:id" element={<ProductDetailPage />} />
-				<Route path='/predictions' element={<PredictionsPage />} />
-				
-			</Routes>
-				</div>
+	return (
+		<div
+			className="flex flex-col min-h-screen text-gray-800"
+			style={{ backgroundColor: "rgb(197, 202, 233)" }}
+		>
+			<Header />
+
+			{/* Page content */}
+			<main className="flex-1 overflow-y-auto">
+				<Routes>
+					<Route path="/"                   element={<OverviewPage />}      />
+					<Route path="/products"           element={<ProductsPage />}      />
+					<Route path="/users"              element={<UsersPage />}         />
+					<Route path="/sales"              element={<SalesPage />}         />
+					<Route path="/orders"             element={<OrdersPage />}        />
+					<Route path="/reports"            element={<ReportsPage />}       />
+					<Route path="/excel"              element={<ExcelPage />}         />
+					<Route path="/analytics"          element={<AnalyticsPage />}     />
+					<Route path="/usersave"           element={<UserSave />}          />
+					<Route path="/settings"           element={<SettingsPage />}      />
+					<Route path="/clients"            element={<ClientsPage />}       />
+					<Route path="/suppliers"          element={<SuppliersPage />}     />
+					<Route path="/products/low-stock" element={<LowStockPage />}      />
+					<Route path="/products/:id"       element={<ProductDetailPage />} />
+					<Route path='/predictions' 		  element={<PredictionsPage />} />
+				</Routes>
 			</main>
 		</div>
 	);

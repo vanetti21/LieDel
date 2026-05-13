@@ -19,7 +19,7 @@ const TopClients = () => {
 				Top Clients
 			</h2>
 
-			<div className='space-y-4'>
+			<div className='space-y-2'>
 				{clients.map((client, index) => (
 					<div
 						key={index}

@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useState, useEffect } from "react";
@@ -45,7 +44,7 @@ const SalesOverviewChart = () => {
         <h2 className='text-xl font-semibold text-black-100'>Sales Overview</h2>
 
         <select
-          className='bg-gray-700 text-white rounded-md px-3 py-1 focus:outline-none focus:ring-2'
+          className='bg-gray-200 text-black border border-gray-500 hover:bg-gray-300 rounded-lg px-3 py-1 outline-none'
           value={selectedTimeRange}
           onChange={(e) => setSelectedTimeRange(e.target.value)}
         >
