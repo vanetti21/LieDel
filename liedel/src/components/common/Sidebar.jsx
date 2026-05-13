@@ -21,8 +21,7 @@ const SIDEBAR_ITEMS = [
 	{ name: "Settings", icon: Settings, color: "#6d9f8b", href: "/settings" },
 	{ name: "Clients", icon: UserRound, color: "#3B82F6", href: "/clients" },
 	{ name: "Suppliers", icon: Truck, color: "#F97316", href: "/suppliers" },
-	{ name: "Predictions", icon: BrainCircuit, color: "#8B5CF6", href: "/predictions",
-	},
+	{ name: "Predictions", icon: BrainCircuit, color: "#8B5CF6", href: "/predictions",	},
 ];
 
 const Sidebar = () => {

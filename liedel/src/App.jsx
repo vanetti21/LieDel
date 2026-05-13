@@ -17,7 +17,8 @@ import UserSave from "./components/settings/usersave";
 import LowStockPage from "./pages/LowStockPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import PredictionsPage from "./pages/PredictionsPage";
-
+import DefectiveProductsPage from "./pages/DefectiveProductsPage";	
+import DeadStockPage from "./pages/DeadStockPage";
 import { useEffect } from "react";
 
 function App() {
@@ -58,6 +59,8 @@ function App() {
 					<Route path="/products/low-stock" element={<LowStockPage />}      />
 					<Route path="/products/:id"       element={<ProductDetailPage />} />
 					<Route path='/predictions' 		  element={<PredictionsPage />} />
+					<Route path="/defective-products" element={<DefectiveProductsPage />}/>
+					<Route path="/products/dead-stock" element={<DeadStockPage />}/>
 				</Routes>
 			</main>
 		</div>

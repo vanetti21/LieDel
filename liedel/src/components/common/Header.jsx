@@ -12,6 +12,7 @@ const NAV_ITEMS = [
 	{ name: "Excel",      href: "/excel"     },
 	{ name: "Reports",    href: "/reports"   },
 	{ name: "Settings",   href: "/settings"  },
+	{ name: "Predictions",   href: "/predictions"  },
 ];
 
 const getTitle = (pathname) => {
@@ -28,7 +29,8 @@ const getTitle = (pathname) => {
 	if (pathname === "/suppliers")               return "Suppliers";
 	if (pathname === "/settings")                return "Settings";
 	if (pathname === "/analytics")               return "Analytics";
-	return "Sales Dashboard";
+	if (pathname === "/predictions")  			 return "Predictions"
+		return "Sales Dashboard";
 };
 
 const Header = () => {

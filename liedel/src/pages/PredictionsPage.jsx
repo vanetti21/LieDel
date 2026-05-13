@@ -1,3 +1,4 @@
+
 import Header from "../components/common/Header";
 
 import SalesForecastChart from "../components/predictions/SalesForecastChart";
@@ -12,11 +13,9 @@ const PredictionsPage = () => {
 	return (
 		<div className='flex-1 overflow-auto relative z-10'>
 
-			<Header title='Predictive Analytics' />
-
 			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
 
-				<div className='mb-8'>
+				<div className='lg:grid-cols-2 gap-8 mb-8' style={{ backgroundColor: "#F0F3F9" }}>
 					<SalesForecastChart />
 				</div>
 

@@ -420,44 +420,245 @@ def productos_reporte():
         print("Error al obtener productos:", e)
         return jsonify({"error": "No se pudieron obtener los productos"}), 500
 
-
 @app.route("/api/productos-stats")
 def productos_stats():
+
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT COUNT(*) AS total_productos FROM productos")
+    # Total productos
+    cursor.execute("""
+        SELECT COUNT(*) AS total_productos
+        FROM productos
+    """)
     total_productos = cursor.fetchone()["total_productos"]
 
+    # Productos vendidos
     cursor.execute("""
         SELECT SUM(d.Cantidad) AS top_selling 
         FROM detalle_venta d
     """)
     top_selling = cursor.fetchone()["top_selling"] or 0
 
-    cursor.execute("""SELECT COUNT(*) AS low_stock
-                FROM inventario i
-                JOIN (
-                    SELECT 
-                        Id_producto,
-                        MAX(Ultima_actualizacion) AS ultima_fecha
-                    FROM inventario
-                    GROUP BY Id_producto
-                ) ultimos
-                ON i.Id_producto = ultimos.Id_producto
-                AND i.Ultima_actualizacion = ultimos.ultima_fecha
-                WHERE i.Cantidad_actual < i.Cantidad_minima;""")
-    low_stock = cursor.fetchone()["low_stock"]
+    # Low stock
+    cursor.execute("""
+        SELECT COUNT(*) AS low_stock
+        FROM inventario i
+        JOIN (
+            SELECT 
+                Id_producto,
+                MAX(Ultima_actualizacion) AS ultima_fecha
+            FROM inventario
+            GROUP BY Id_producto
+        ) ultimos
+        ON i.Id_producto = ultimos.Id_producto
+        AND i.Ultima_actualizacion = ultimos.ultima_fecha
 
-    cursor.execute("SELECT SUM(subtotal) AS total_revenue FROM detalle_venta")
+        WHERE i.Cantidad_actual < i.Cantidad_minima
+    """)
+    low_stock = cursor.fetchone()["low_stock"]
+    
+    #dead stock
+    cursor.execute("""
+    SELECT COUNT(*) AS dead_stock
+    FROM (
+        SELECT
+            p.Id_producto,
+            MAX(v.Fecha_venta) AS ultima_venta
+        FROM productos p
+        LEFT JOIN detalle_venta dv
+            ON p.Id_producto = dv.Id_producto
+        LEFT JOIN venta v
+            ON dv.Id_venta = v.Id_venta
+        GROUP BY p.Id_producto
+        HAVING
+            ultima_venta IS NULL
+            OR ultima_venta < DATE_SUB(CURDATE(), INTERVAL 360 DAY)
+    ) t
+        """)
+
+    dead_stock = cursor.fetchone()["dead_stock"]
+    
+    # Revenue
+    cursor.execute("""
+        SELECT SUM(subtotal) AS total_revenue
+        FROM detalle_venta
+    """)
     total_revenue = cursor.fetchone()["total_revenue"] or 0
+
+    # Productos defectuosos
+    cursor.execute("""
+        SELECT COUNT(DISTINCT Id_producto) AS defective_products
+        FROM inventario
+        WHERE LOWER(estado) = 'defectuoso'
+    """)
+    defective_products = cursor.fetchone()["defective_products"]
 
     return jsonify({
         "total_productos": total_productos,
         "top_selling": int(top_selling),
         "low_stock": low_stock,
-        "total_revenue": float(total_revenue)
+        "total_revenue": float(total_revenue),
+        "defective_products": defective_products,
+        "dead_stock": dead_stock,
     })
+
+
+
+@app.route('/products/dead-stock')
+def dead_stock_products():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+SELECT
+    p.Id_producto,
+    p.Nombre,
+
+    c.Nombre AS categoria,
+
+    MAX(i.Cantidad_actual) AS Cantidad_actual,
+
+    MAX(p.Precio_venta) AS Precio_venta,
+
+    (
+        MAX(i.Cantidad_actual) * MAX(p.Precio_venta)
+    ) AS dinero_estancado,
+
+    MAX(v.Fecha_venta) AS ultima_venta,
+
+    DATEDIFF(
+        CURDATE(),
+        MAX(v.Fecha_venta)
+    ) AS dias_sin_venta
+
+FROM productos p
+
+JOIN inventario i
+    ON p.Id_producto = i.Id_producto
+
+LEFT JOIN categoria c
+    ON p.Id_categoria = c.Id_categoria
+
+LEFT JOIN detalle_venta dv
+    ON p.Id_producto = dv.Id_producto
+
+LEFT JOIN venta v
+    ON dv.Id_venta = v.Id_venta
+
+GROUP BY
+    p.Id_producto,
+    p.Nombre,
+    c.Nombre
+
+HAVING
+    MAX(v.Fecha_venta) IS NULL
+    OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+
+ORDER BY dias_sin_venta DESC
+    """
+
+    cursor.execute(query)
+
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+@app.route('/dead-stock-insights')
+def dead_stock_insights():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    # Categorías con más stock muerto
+    cursor.execute("""
+        SELECT
+            c.Nombre AS categoria,
+            COUNT(*) AS productos,
+            SUM(i.Cantidad_actual * p.Precio_venta) AS dinero_estancado
+        FROM productos p
+
+        JOIN inventario i
+            ON p.Id_producto = i.Id_producto
+
+        LEFT JOIN categoria c
+            ON p.Id_categoria = c.Id_categoria
+
+        LEFT JOIN detalle_venta dv
+            ON p.Id_producto = dv.Id_producto
+
+        LEFT JOIN venta v
+            ON dv.Id_venta = v.Id_venta
+
+        GROUP BY c.Nombre
+
+        HAVING
+            MAX(v.Fecha_venta) IS NULL
+            OR DATEDIFF(CURDATE(), MAX(v.Fecha_venta)) >= 90
+
+        ORDER BY dinero_estancado DESC
+    """)
+
+    categories = cursor.fetchall()
+
+    # Productos nunca vendidos
+    cursor.execute("""
+        SELECT
+            p.Nombre,
+            i.Cantidad_actual,
+            p.Precio_venta,
+            (i.Cantidad_actual * p.Precio_venta) AS perdida
+        FROM productos p
+
+        JOIN inventario i
+            ON p.Id_producto = i.Id_producto
+
+        LEFT JOIN detalle_venta dv
+            ON p.Id_producto = dv.Id_producto
+
+        WHERE dv.Id_producto IS NULL
+
+        ORDER BY perdida DESC
+        LIMIT 5
+    """)
+
+    never_sold = cursor.fetchall()
+
+    # Almacenes con más stock muerto
+    cursor.execute("""
+        SELECT
+            a.Nombre AS almacen,
+            COUNT(*) AS productos
+        FROM inventario i
+
+        JOIN almacen a
+            ON i.Id_almacen = a.Id_almacen
+
+        LEFT JOIN detalle_venta dv
+            ON i.Id_producto = dv.Id_producto
+
+        LEFT JOIN venta v
+            ON dv.Id_venta = v.Id_venta
+
+        GROUP BY a.Nombre
+
+        HAVING
+            MAX(v.Fecha_venta) IS NULL
+            OR DATEDIFF(CURDATE(), MAX(v.Fecha_venta)) >= 90
+
+        ORDER BY productos DESC
+    """)
+
+    warehouses = cursor.fetchall()
+
+    return jsonify({
+        "categories": categories,
+        "never_sold": never_sold,
+        "warehouses": warehouses
+    })
+
+    
 @app.route('/api/ventas-mensuales', methods=['GET'])
 def get_sales_by_month():
     conn = conectar_bd()
@@ -528,6 +729,160 @@ def product_insights(id):
         "months": months,
         "last_sale": last_sale["ultima_venta"] if last_sale else None
     })
+    
+@app.route('/defective_products_stats')
+def defective_products_stats():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT COUNT(DISTINCT Id_producto) AS total
+    FROM inventario
+    WHERE LOWER(estado) = 'defectuoso'
+    """
+
+    cursor.execute(query)
+    data = cursor.fetchone()
+
+    return jsonify(data)
+
+@app.route('/products/defective')
+def defective_products():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        p.Id_producto,
+        p.Nombre,
+
+        i.Cantidad_actual,
+        i.estado,
+        i.Ultima_actualizacion,
+
+        pr.Nombre AS proveedor,
+        pr.Pais,
+	
+        a.Nombre AS almacen,
+        s.Nombre AS sucursal,
+
+        oc.Tipo_envio,
+
+        p.Precio_venta,
+
+        (i.Cantidad_actual * p.Precio_venta) AS perdida_estimada
+
+    FROM inventario i
+
+    JOIN productos p
+        ON i.Id_producto = p.Id_producto
+
+    LEFT JOIN detalle_compra dc
+        ON dc.Id_producto = i.Id_producto
+        AND dc.Id_almacen = i.Id_almacen
+
+    LEFT JOIN orden_compra oc
+        ON oc.Id_orden_compra = dc.Id_orden_compra
+
+    LEFT JOIN proveedores pr
+        ON pr.Id_proveedor = oc.Id_proveedor
+
+    LEFT JOIN almacen a
+        ON a.Id_almacen = i.Id_almacen
+
+    LEFT JOIN sucursal s
+        ON s.Id_sucursal = a.Id_sucursal
+
+    WHERE LOWER(i.estado) = 'defectuoso'
+
+    ORDER BY perdida_estimada DESC
+    """
+
+    cursor.execute(query)
+
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+@app.route('/defect-analysis')
+def defect_analysis():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    # Tipo de envío más frecuente
+    cursor.execute("""
+    SELECT
+        oc.Tipo_envio AS tipo_envio,
+        COUNT(*) AS total
+    FROM inventario i
+    JOIN detalle_compra dc
+        ON i.Id_producto = dc.Id_producto
+        AND i.Id_almacen = dc.Id_almacen
+    JOIN orden_compra oc
+        ON dc.Id_orden_compra = oc.Id_orden_compra
+    WHERE LOWER(i.estado) = 'defectuoso'
+    GROUP BY oc.Tipo_envio
+    ORDER BY total DESC
+""")
+    shipping = cursor.fetchall()
+
+    # Almacenes con más defectos
+    cursor.execute("""
+        SELECT
+            a.Nombre AS almacen,
+            COUNT(*) AS total
+        FROM inventario i
+        JOIN almacen a
+            ON i.Id_almacen = a.Id_almacen
+        WHERE LOWER(i.estado) = 'defectuoso'
+        GROUP BY a.Nombre
+        ORDER BY total DESC
+    """)
+    warehouses = cursor.fetchall()
+
+    # Proveedores con más defectos
+    cursor.execute("""
+        SELECT
+            pr.Nombre AS proveedor,
+            COUNT(*) AS total
+        FROM inventario i
+        JOIN detalle_compra dc
+            ON i.Id_producto = dc.Id_producto
+            AND i.Id_almacen = dc.Id_almacen
+        JOIN orden_compra oc
+            ON dc.Id_orden_compra = oc.Id_orden_compra
+        JOIN proveedores pr
+            ON oc.Id_proveedor = pr.Id_proveedor
+        WHERE LOWER(i.estado) = 'defectuoso'
+        GROUP BY pr.Nombre
+        ORDER BY total DESC
+    """)
+    suppliers = cursor.fetchall()
+
+    # Productos con más transferencias
+    cursor.execute("""
+        SELECT
+            p.Nombre AS producto,
+            COUNT(ts.Id_transferencia) AS movimientos
+        FROM transferencia_stock ts
+        JOIN productos p
+            ON ts.Id_producto = p.Id_producto
+        GROUP BY p.Nombre
+        ORDER BY movimientos DESC
+    """)
+    transfers = cursor.fetchall()
+
+    return jsonify({
+        "shipping": shipping,
+        "warehouses": warehouses,
+        "suppliers": suppliers,
+        "transfers": transfers
+    })
+
+
     
 #Predictions
 @app.route('/predicciones_ventas')
@@ -1149,6 +1504,109 @@ def top_clientes():
     """
 
     cursor.execute(query)
+    data = cursor.fetchall()
+
+    return jsonify(data)
+
+@app.route('/api/client-stats')
+def client_stats():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    # Total clientes
+    cursor.execute("""
+        SELECT COUNT(*) AS total_clients
+        FROM clientes
+    """)
+    total_clients = cursor.fetchone()["total_clients"]
+
+    # VIP = clientes que más gastan
+    cursor.execute("""
+        SELECT COUNT(*) AS vip_clients
+        FROM (
+            SELECT v.Id_cliente,
+                   SUM(v.Total) AS gasto_total
+            FROM venta v
+            GROUP BY v.Id_cliente
+            HAVING gasto_total >= 50000
+        ) vip
+    """)
+    vip_clients = cursor.fetchone()["vip_clients"]
+
+    # Fieles = compran desde hace tiempo y siguen comprando
+    cursor.execute("""
+        SELECT COUNT(*) AS loyal_clients
+        FROM (
+            SELECT
+                Id_cliente,
+                MIN(Fecha_venta) AS primera_compra,
+                MAX(Fecha_venta) AS ultima_compra
+            FROM venta
+            GROUP BY Id_cliente
+            HAVING
+                DATEDIFF(CURDATE(), primera_compra) >= 180
+                AND DATEDIFF(CURDATE(), ultima_compra) <= 60
+        ) loyal
+    """)
+    loyal_clients = cursor.fetchone()["loyal_clients"]
+
+    # Inactivos
+    cursor.execute("""
+        SELECT COUNT(*) AS inactive_clients
+        FROM (
+            SELECT
+                Id_cliente,
+                MAX(Fecha_venta) AS ultima_compra
+            FROM venta
+            GROUP BY Id_cliente
+            HAVING DATEDIFF(CURDATE(), ultima_compra) > 120
+        ) inactive
+    """)
+    inactive_clients = cursor.fetchone()["inactive_clients"]
+
+    return jsonify({
+        "total_clients": total_clients,
+        "vip_clients": vip_clients,
+        "loyal_clients": loyal_clients,
+        "inactive_clients": inactive_clients
+    })
+
+
+@app.route('/api/clients-table')
+def clients_table():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+
+        c.Nombre AS cliente,
+
+        c.Ubicacion AS ubicacion,
+
+        COUNT(v.Id_venta) AS total_compras,
+
+        COALESCE(SUM(v.total), 0) AS total_gastado,
+
+        MAX(v.Fecha_venta) AS ultima_compra
+
+    FROM clientes c
+
+    LEFT JOIN venta v
+        ON c.Id_cliente = v.Id_cliente
+
+    GROUP BY
+        c.Id_cliente,
+        c.Nombre,
+        c.Ubicacion
+
+    ORDER BY total_gastado DESC
+    """
+
+    cursor.execute(query)
+
     data = cursor.fetchall()
 
     return jsonify(data)
