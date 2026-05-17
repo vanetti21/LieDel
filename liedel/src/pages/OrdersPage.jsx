@@ -1,4 +1,10 @@
-import { CheckCircle, Clock, DollarSign, ShoppingBag } from "lucide-react";
+import {
+	CheckCircle,
+	Clock,
+	DollarSign,
+	ShoppingBag,
+	XCircle
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 import Header from "../components/common/Header";
@@ -9,8 +15,11 @@ import OrdersTable from "../components/orders/OrdersTable";
 import DeliveryPerformance from "../components/orders/DeliveryPerformance"
 import MonthlyPurchaseTrend from "../components/orders/MonthlyPurchaseTrend"
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 const OrdersPage = () => {
+	const navigate = useNavigate();
 	const [orderStats, setOrderStats] = useState({
 	totalOrders: 0,
 	pendingOrders: 0,
@@ -19,6 +28,7 @@ const OrdersPage = () => {
 });
 
 useEffect(() => {
+	
 	fetch("http://localhost:5000/orders_stats")
 		.then((res) => res.json())
 		.then((data) => setOrderStats(data))
@@ -29,7 +39,7 @@ useEffect(() => {
 
 			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
 				<motion.div
-					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8'
+					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-8'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 1 }}
@@ -46,6 +56,7 @@ useEffect(() => {
 						icon={Clock}
 						value={orderStats.pendingOrders}
 						color='#F59E0B'
+						onClick={() => navigate("/orders/pending")}
 					/>
 
 					<StatCard
@@ -53,6 +64,15 @@ useEffect(() => {
 						icon={CheckCircle}
 						value={orderStats.completedOrders}
 						color='#10B981'
+						onClick={() => navigate("/orders/completed")}
+					/>
+
+					<StatCard
+						name='Cancelled Orders'
+						icon={XCircle}
+						value={orderStats.cancelledOrders}
+						color='#EF4444'
+						onClick={() => navigate("/orders/cancelled")}
 					/>
 
 					<StatCard

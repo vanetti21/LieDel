@@ -19,6 +19,13 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import PredictionsPage from "./pages/PredictionsPage";
 import DefectiveProductsPage from "./pages/DefectiveProductsPage";	
 import DeadStockPage from "./pages/DeadStockPage";
+
+
+import PendingOrdersPage from "./pages/PendingOrdersPage";
+import CompletedOrdersPage from "./pages/CompletedOrdersPage";
+import CancelledOrdersPage from "./pages/CancelledOrdersPage";
+
+
 import { useEffect } from "react";
 
 function App() {
@@ -61,6 +68,9 @@ function App() {
 					<Route path='/predictions' 		  element={<PredictionsPage />} />
 					<Route path="/defective-products" element={<DefectiveProductsPage />}/>
 					<Route path="/products/dead-stock" element={<DeadStockPage />}/>
+					<Route path="/orders/pending" element={<PendingOrdersPage />} />
+					<Route path="/orders/completed" element={<CompletedOrdersPage />} />
+					<Route path="/orders/cancelled" element={<CancelledOrdersPage />} />
 				</Routes>
 			</main>
 		</div>

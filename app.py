@@ -1863,11 +1863,13 @@ def price_history(id):
 #Ordenes
 @app.route('/orders_stats')
 def orders_stats():
+
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
     query = """
     SELECT
+
         COUNT(*) AS total_orders,
 
         COUNT(
@@ -1884,21 +1886,36 @@ def orders_stats():
             END
         ) AS completed_orders,
 
+        COUNT(
+            CASE
+                WHEN LOWER(Estado) = 'cancelada'
+                THEN 1
+            END
+        ) AS cancelled_orders,
+
         COALESCE(SUM(Costo_total),0) AS total_revenue
 
     FROM orden_compra
     """
 
     cursor.execute(query)
+
     data = cursor.fetchone()
 
     print(data)
 
     return jsonify({
+
         "totalOrders": int(data["total_orders"] or 0),
+
         "pendingOrders": int(data["pending_orders"] or 0),
+
         "completedOrders": int(data["completed_orders"] or 0),
+
+        "cancelledOrders": int(data["cancelled_orders"] or 0),
+
         "totalRevenue": float(data["total_revenue"] or 0)
+
     })
 
 @app.route('/daily_orders')
@@ -2019,6 +2036,107 @@ def monthly_purchase_trend():
 
     return jsonify(data)
 
+
+@app.route('/orders/pending')
+def pending_orders():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        oc.Id_orden_compra,
+        pr.Nombre AS proveedor,
+        s.Nombre AS sucursal,
+        oc.Estado,
+        oc.Fecha_orden,
+        oc.Fecha_entrega_estimada,
+        oc.Costo_total,
+        oc.Tipo_envio
+    FROM orden_compra oc
+
+    LEFT JOIN proveedores pr
+        ON oc.Id_proveedor = pr.Id_proveedor
+
+    LEFT JOIN sucursal s
+        ON oc.Id_sucursal = s.Id_sucursal
+
+    WHERE LOWER(oc.Estado) = 'pendiente'
+
+    ORDER BY oc.Fecha_orden DESC
+    """
+
+    cursor.execute(query)
+
+    return jsonify(cursor.fetchall())
+
+
+
+@app.route('/orders/completed')
+def completed_orders():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        oc.Id_orden_compra,
+        pr.Nombre AS proveedor,
+        s.Nombre AS sucursal,
+        oc.Estado,
+        oc.Fecha_orden,
+        oc.Fecha_entrega_estimada,
+        oc.Fecha_entrega_real,
+        oc.Costo_total,
+        oc.Tipo_envio
+    FROM orden_compra oc
+
+    LEFT JOIN proveedores pr
+        ON oc.Id_proveedor = pr.Id_proveedor
+
+    LEFT JOIN sucursal s
+        ON oc.Id_sucursal = s.Id_sucursal
+
+    WHERE LOWER(oc.Estado) = 'entregada'
+
+    ORDER BY oc.Fecha_entrega_real DESC
+    """
+
+    cursor.execute(query)
+
+    return jsonify(cursor.fetchall())
+
+@app.route('/orders/cancelled')
+def cancelled_orders():
+
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        oc.Id_orden_compra,
+        pr.Nombre AS proveedor,
+        s.Nombre AS sucursal,
+        oc.Estado,
+        oc.Fecha_orden,
+        oc.Costo_total,
+        oc.Tipo_envio
+    FROM orden_compra oc
+
+    LEFT JOIN proveedores pr
+        ON oc.Id_proveedor = pr.Id_proveedor
+
+    LEFT JOIN sucursal s
+        ON oc.Id_sucursal = s.Id_sucursal
+
+    WHERE LOWER(oc.Estado) = 'cancelada'
+
+    ORDER BY oc.Fecha_orden DESC
+    """
+
+    cursor.execute(query)
+
+    return jsonify(cursor.fetchall())
 
 
 

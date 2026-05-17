@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+
 import DefectAnalysis from "../components/products/DefectAnalysis";
+
 const DefectiveProductsPage = () => {
 
 	const [data, setData] = useState([]);
+	const [filteredData, setFilteredData] = useState([]);
+	const [searchTerm, setSearchTerm] = useState("");
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -16,6 +21,7 @@ const DefectiveProductsPage = () => {
 			const result = await res.json();
 
 			setData(result);
+			setFilteredData(result);
 
 			setLoading(false);
 		};
@@ -23,6 +29,25 @@ const DefectiveProductsPage = () => {
 		fetchData();
 
 	}, []);
+
+	const handleSearch = (e) => {
+
+		const term = e.target.value.toLowerCase();
+
+		setSearchTerm(term);
+
+		const filtered = data.filter((p) =>
+
+			p.Nombre?.toLowerCase().includes(term) ||
+			p.proveedor?.toLowerCase().includes(term) ||
+			p.Pais?.toLowerCase().includes(term) ||
+			p.almacen?.toLowerCase().includes(term) ||
+			p.sucursal?.toLowerCase().includes(term) ||
+			p.Tipo_envio?.toLowerCase().includes(term)
+		);
+
+		setFilteredData(filtered);
+	};
 
 	const formatDate = (dateStr) => {
 
@@ -47,23 +72,41 @@ const DefectiveProductsPage = () => {
 			<div className="flex items-center gap-3">
 
 				<span className="bg-red-100 text-red-700 text-sm font-semibold px-3 py-1 rounded-full">
-					🚨 {data.length} productos defectuosos
+					🚨 {filteredData.length} productos defectuosos
 				</span>
 
 			</div>
 
 			<div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
 
-				<div className="px-6 py-4 border-b border-gray-100">
+				<div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
 
 					<h3 className="font-semibold text-gray-800 text-base">
 						Productos Defectuosos
 					</h3>
 
+					<div className="relative">
+
+						<input
+							type="text"
+							placeholder="Buscar producto..."
+							className="bg-gray-100 border border-gray-300 rounded-lg pl-10 pr-4 py-2 outline-none"
+							value={searchTerm}
+							onChange={handleSearch}
+						/>
+
+						<Search
+							className="absolute left-3 top-2.5 text-gray-500"
+							size={18}
+						/>
+
+					</div>
+
 				</div>
 
 				<div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    <table className="min-w-full divide-y divide-gray-700">
+
+					<table className="min-w-full divide-y divide-gray-700">
 
 						<thead>
 
@@ -114,17 +157,19 @@ const DefectiveProductsPage = () => {
 							{loading ? (
 
 								<tr>
+
 									<td
 										colSpan="9"
 										className="px-6 py-10 text-center text-gray-400"
 									>
 										Cargando...
 									</td>
+
 								</tr>
 
-							) : data.length > 0 ? (
+							) : filteredData.length > 0 ? (
 
-								data.map((p, index) => (
+								filteredData.map((p, index) => (
 
 									<tr
 										key={index}
@@ -152,9 +197,11 @@ const DefectiveProductsPage = () => {
 										</td>
 
 										<td className="px-6 py-4">
+
 											<span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
 												{p.Tipo_envio || "N/A"}
 											</span>
+
 										</td>
 
 										<td className="px-6 py-4 text-red-600 font-semibold">
@@ -162,16 +209,20 @@ const DefectiveProductsPage = () => {
 										</td>
 
 										<td className="px-6 py-4 font-semibold text-red-700">
+
 											$
 											{Number(
 												p.perdida_estimada
 											).toLocaleString()}
+
 										</td>
 
 										<td className="px-6 py-4 text-gray-500 text-xs">
+
 											{formatDate(
 												p.Ultima_actualizacion
 											)}
+
 										</td>
 
 									</tr>
@@ -200,7 +251,9 @@ const DefectiveProductsPage = () => {
 				</div>
 
 			</div>
-<DefectAnalysis />
+
+			<DefectAnalysis />
+
 		</div>
 	);
 };
