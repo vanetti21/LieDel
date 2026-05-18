@@ -60,7 +60,7 @@ function ContinentLabels() {
 
 // Country name → approximate [lat, lng] centroid
 const COUNTRY_COORDS = {
-	"united states": [37.09, -95.71],
+	"united states of america": [37.09, -95.71],
 	"united kingdom": [55.37, -3.43],
 	germany: [51.16, 10.45],
 	france: [46.22, 2.21],
