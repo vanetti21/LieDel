@@ -58,13 +58,13 @@ const ClientsTable = () => {
 					<input
 						type="text"
 						placeholder="Search Client..."
-						className="bg-gray-200 border border-gray-500 hover:bg-gray-300 text-black placeholder:text-gray-400 rounded-lg pl-10 pr-4 py-2 outline-none"
+						className="bg-gray-200 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 outline-none"
 						value={searchTerm}
 						onChange={handleSearch}
 					/>
 
 					<Search
-						className="absolute left-3 top-2.5 text-gray-600"
+						className="absolute left-3 top-2.5 text-gray-500"
 						size={18}
 					/>
 

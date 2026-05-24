@@ -39,7 +39,14 @@ const SalesOverviewChart = () => {
       <h2 className='text-xl font-semibold mb-6 text-black-100'>Monthly Sales</h2>
 
       <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={salesData}>
+        <LineChart 
+          data={salesData}
+          margin={{ 
+            top: 10, 
+            right: 20, 
+            left: 15, 
+            bottom: 5, }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#505a69" />
           <XAxis dataKey="name" stroke="#60676f" />
           <YAxis

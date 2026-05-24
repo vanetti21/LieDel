@@ -17,7 +17,6 @@ const SIDEBAR_ITEMS = [
 	{ name: "Sales", icon: DollarSign, color: "#10ac78", href: "/sales" },
 	{ name: "Orders", icon: Settings, color: "#6d9f8b", href: "/orders" },
 	{ name: "Reports", icon: TrendingUp, color: "#337ef8", href: "/reports" },
-	{ name: "Excel", icon: FileSpreadsheet, color: "#cd8b30", href: "/excel" },
 	{ name: "Settings", icon: Settings, color: "#6d9f8b", href: "/settings" },
 	{ name: "Clients", icon: UserRound, color: "#3B82F6", href: "/clients" },
 	{ name: "Suppliers", icon: Truck, color: "#F97316", href: "/suppliers" },

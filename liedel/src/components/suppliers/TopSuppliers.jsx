@@ -16,7 +16,7 @@ const TopSuppliers = () => {
 			style={{ backgroundColor: "rgb(240, 243, 249)" }}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.2 }}
+			transition={{ delay: 0.3 }}
 		>
 			<h2 className='text-xl font-semibold mb-4'>
 				Suppliers List

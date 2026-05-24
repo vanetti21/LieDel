@@ -31,7 +31,14 @@ const SalesTrendChart = () => {
 
       <div style={{ width: "100%", height: 400 }}>
         <ResponsiveContainer>
-          <LineChart data={salesData}>
+          <LineChart 
+            data={salesData}
+            margin={{ 
+              top: 10, 
+              right: 20, 
+              left: 8, 
+              bottom: 5, }}
+            >
             <CartesianGrid strokeDasharray='3 3' stroke='#505a69' />
             <XAxis dataKey='month' stroke='#60676f' />
             <YAxis stroke='#60676f' />

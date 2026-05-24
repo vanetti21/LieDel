@@ -24,19 +24,27 @@ const SalesChannelChart = () => {
       className="rounded-xl p-6 lg:col-span-2 border border-gray-200" style={{ backgroundColor: 'rgb(240, 243, 249)' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
+      transition={{ delay: 0.2 }}
     >
-      <h2 className="text-lg font-medium mb-6 text-black-100">Best-Selling Products</h2>
+      <h2 className="text-xl font-medium mb-6 text-black-100">Best-Selling Products</h2>
 
       <div className="h-80">
         <ResponsiveContainer>
-          <BarChart data={salesData}>
+          <BarChart 
+            data={salesData}
+            margin={{ 
+              top: 0, 
+              right: 20, 
+              left: 8, 
+              bottom: 8, }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#505a69" />
             <XAxis 
               dataKey="name" 
               stroke="#60676f" 
               angle={-45} 
-              textAnchor="end" 
+              textAnchor="end"
+              padding={{ left: 10, right: 10 }}
               interval={0} 
             />
             <YAxis stroke="#60676f" />

@@ -1,4 +1,3 @@
-
 import Header from "../components/common/Header";
 
 import SalesForecastChart from "../components/predictions/SalesForecastChart";

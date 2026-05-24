@@ -9,10 +9,9 @@ const NAV_ITEMS = [
 	{ name: "Orders",     href: "/orders"    },
 	{ name: "Clients",    href: "/clients"   },
 	{ name: "Suppliers",  href: "/suppliers" },
-	{ name: "Excel",      href: "/excel"     },
 	{ name: "Reports",    href: "/reports"   },
-	{ name: "Settings",   href: "/settings"  },
 	{ name: "Predictions",   href: "/predictions"  },
+	{ name: "Settings",   href: "/settings"  },
 ];
 
 const getTitle = (pathname) => {
@@ -24,11 +23,9 @@ const getTitle = (pathname) => {
 	if (pathname === "/sales")                   return "Sales";
 	if (pathname === "/orders")                  return "Orders";
 	if (pathname === "/reports")                 return "Reports";
-	if (pathname === "/excel")                   return "Excel";
 	if (pathname === "/clients")                 return "Clients";
 	if (pathname === "/suppliers")               return "Suppliers";
 	if (pathname === "/settings")                return "Settings";
-	if (pathname === "/analytics")               return "Analytics";
 	if (pathname === "/predictions")  			 return "Predictions"
 		return "Sales Dashboard";
 };

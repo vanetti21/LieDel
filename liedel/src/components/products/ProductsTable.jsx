@@ -39,13 +39,14 @@ const ProductTable = () => {
 
   return (
     <motion.div
-      className="rounded-xl p-6 border border-gray-200 m-7"
+      className="rounded-xl p-6 border border-gray-200 mb-8"
       style={{ backgroundColor: "rgb(240, 243, 249)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
       <div className="flex justify-between items-center mb-5">
+
         {/* Título dentro de un formulario */}
         <motion.h2
           className="text-xl p-1 font-semibold text-black-100"
@@ -60,12 +61,12 @@ const ProductTable = () => {
           {/* Campo de búsqueda */}
           <input
             type="text"
-            placeholder="Search Products..."
-            className="bg-gray-200 border border-gray-500 hover:bg-gray-300 text-black placeholder:text-gray-400 rounded-lg pl-10 pr-4 py-2 outline-none"
+            placeholder="Search Product..."
+            className="bg-gray-200 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 outline-none"
             value={searchTerm}
             onChange={handleSearch}
           />
-          <Search className="absolute left-3 top-2.5 text-gray-600" size={18} />
+          <Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
         </div>
       </div>
 
@@ -99,7 +100,7 @@ const ProductTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <td className="px-6 py-4 whitespace-nowrap">{product.product}</td>
+                <td className="px-6 py-4 whitespace-nowrap font-medium">{product.product}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{product.category}</td>
                 <td className="px-6 py-4 whitespace-nowrap">${parseFloat(product.price).toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>

@@ -54,11 +54,11 @@ const PredictDemandTable = () => {
 						placeholder='Search product...'
 						value={searchTerm}
 						onChange={handleSearch}
-						className='bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none'
+						className='bg-gray-200 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 focus:outline-none'
 					/>
 
 					<Search
-						className='absolute left-3 top-2.5 text-gray-400'
+						className='absolute left-3 top-2.5 text-gray-500'
 						size={18}
 					/>
 

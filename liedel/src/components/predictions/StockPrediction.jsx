@@ -42,22 +42,26 @@ const StockPrediction = () => {
 
 			<div className='flex justify-between items-center mb-6'>
 
-				<h2 className='text-xl font-semibold text-black-100'>
-					Stock Prediction
-				</h2>
+				<motion.h2
+					className="text-xl p-1 font-semibold text-black-100"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ delay: 0.2 }}
+				>
+				Stock Prediction
+				</motion.h2>
 
 				<div className='relative'>
-
 					<input
 						type='text'
 						placeholder='Search product...'
-						className='bg-gray-700 text-white placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 focus:outline-none'
+						className='bg-gray-200 border-gray-500 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 outline-none'
 						value={searchTerm}
 						onChange={handleSearch}
 					/>
 
 					<Search
-						className='absolute left-3 top-2.5 text-gray-400'
+						className='absolute left-3 top-2.5 text-gray-500'
 						size={18}
 					/>
 				</div>
