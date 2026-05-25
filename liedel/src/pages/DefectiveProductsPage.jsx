@@ -92,15 +92,15 @@ const DefectiveProductsPage = () => {
 					<table className="min-w-full divide-y divide-gray-700">
 						<thead>
 							<tr>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Producto</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Proveedor</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">País</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Almacén</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Sucursal</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Envío</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Cantidad</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Pérdida</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Actualizado</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Producto</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Proveedor</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">País</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Almacén</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Sucursal</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Envío</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Cantidad</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Pérdida</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Actualizado</th>
 							</tr>
 						</thead>
 
@@ -120,33 +120,33 @@ const DefectiveProductsPage = () => {
 										animate={{ opacity: 1 }}
 										transition={{ duration: 0.3 }}
 									>
-										<td className="px-6 py-4 whitespace-nowrap font-medium">
+										<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 											{p.Nombre}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											{p.proveedor || "N/A"}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											{p.Pais || "N/A"}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											{p.almacen || "N/A"}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											{p.sucursal || "N/A"}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											<span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
 												{p.Tipo_envio || "N/A"}
 											</span>
 										</td>
-										<td className="px-7 py-4 whitespace-nowrap text-red-600 font-semibold">
+										<td className="px-7 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
 											{p.Cantidad_actual}
 										</td>
-										<td className="px-5 py-4 whitespace-nowrap font-semibold text-red-700">
+										<td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
 											${Number(p.perdida_estimada).toLocaleString()}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
+										<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 											{formatDate(p.Ultima_actualizacion)}
 										</td>
 									</motion.tr>

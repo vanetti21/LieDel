@@ -1,5 +1,13 @@
 import { motion } from "framer-motion";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 import { useState, useEffect } from "react";
 
 const SalesOverviewChart = () => {
@@ -7,18 +15,14 @@ const SalesOverviewChart = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState("This Month");
 
   useEffect(() => {
-    // Función para obtener datos de ventas desde el backend
     const fetchSalesData = async () => {
       try {
         const response = await fetch('http://localhost:5000/obtener_ventas');
         const data = await response.json();
-        
-        // Formateamos los datos de la respuesta para que se ajusten al formato necesario
         const formattedData = data.map((item) => ({
-          month: item.name,
+          name: item.name,
           sales: item.sales,
         }));
-        
         setSalesData(formattedData);
       } catch (error) {
         console.error('Error al obtener los datos de ventas:', error);
@@ -26,16 +30,15 @@ const SalesOverviewChart = () => {
     };
 
     fetchSalesData();
-  }, []); // Esto solo se ejecuta cuando el componente se monta.
+  }, []);
 
-
-  // Encuentra el valor máximo y mínimo de las ventas
   const maxSales = Math.max(...salesData.map((item) => item.sales), 0);
   const minSales = Math.min(...salesData.map((item) => item.sales), 0);
 
   return (
     <motion.div
-      className='rounded-xl p-6 border border-gray-200 mb-8' style={{ backgroundColor: 'rgb(240, 243, 249)' }}
+      className='rounded-xl p-6 border border-gray-200 mb-8'
+      style={{ backgroundColor: 'rgb(240, 243, 249)' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
@@ -57,18 +60,30 @@ const SalesOverviewChart = () => {
 
       <div className='w-full h-80'>
         <ResponsiveContainer>
-          <AreaChart data={salesData}>
-            <CartesianGrid strokeDasharray='3 3' stroke='#374151' />
-            <XAxis dataKey='month' stroke='#9CA3AF' />
-            <YAxis 
-              stroke='#9CA3AF'
+          <AreaChart
+            data={salesData}
+            margin={{ top: 10, right: 20, left: 15, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray='3 3' stroke='#505a69' />
+            <XAxis dataKey='name' stroke='#60676f' />
+            <YAxis
+              stroke='#60676f'
               domain={[minSales, maxSales]}
-              />
+            />
             <Tooltip
-              contentStyle={{ backgroundColor: "rgba(31, 41, 55, 0.8)", borderColor: "#4B5563" }}
+              contentStyle={{ 
+                backgroundColor: "rgba(31, 41, 55, 0.8)",
+                borderColor: "#4B5563"
+              }}
               itemStyle={{ color: "#E5E7EB" }}
             />
-            <Area type='monotone' dataKey='sales' stroke='#8B5CF6' fill='#8B5CF6' fillOpacity={0.3} />
+            <Area
+              type='monotone'
+              dataKey='sales'
+              stroke='#8B5CF6'
+              fill='#8B5CF6'
+              fillOpacity={0.3}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>

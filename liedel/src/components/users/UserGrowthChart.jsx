@@ -26,17 +26,25 @@ const UserGrowthChart = () => {
 
   return (
     <motion.div
-      className="rounded-xl p-6" style={{ backgroundColor: 'rgb(240, 243, 249)' }}
+      className="rounded-xl p-6 border border-gray-200" 
+      style={{ backgroundColor: 'rgb(240, 243, 249)' }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
     >
-      <h2 className="text-xl font-semibold text-black mb-4">
+      <h2 className="text-xl font-semibold text-black mb-6">
         Employee Growth
       </h2>
-      <div style={{ width: "100%", height: 300 }}>
+      <div style={{ width: "100%", height: 325 }}>
         <ResponsiveContainer>
-          <LineChart data={data}>
+          <LineChart 
+            data={data}
+            margin={{ 
+              top: 8, 
+              right: 23, 
+              left: -8, 
+              bottom: 3, }}
+            >
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="month" stroke="#9CA3AF" />
             <YAxis stroke="#9CA3AF" allowDecimals={false} />

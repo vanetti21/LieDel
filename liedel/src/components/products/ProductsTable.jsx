@@ -74,19 +74,19 @@ const ProductTable = () => {
         <table className="min-w-full divide-y divide-gray-700">
           <thead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">
                 Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">
                 Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">
                 Stock
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">
                 Total Earned
               </th>
             </tr>
@@ -100,11 +100,11 @@ const ProductTable = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <td className="px-6 py-4 whitespace-nowrap font-medium">{product.product}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{product.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap">${parseFloat(product.price).toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{product.product}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">{product.category}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">${parseFloat(product.price).toFixed(2)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">{product.stock}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">
                   ${parseFloat(product.total_earned).toFixed(2)}
                 </td>
               </motion.tr>

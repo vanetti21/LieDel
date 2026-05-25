@@ -65,7 +65,7 @@ const SalesOverviewChart = () => {
             dataKey="sales"
             stroke="#6366F1"
             strokeWidth={3}
-            dot={{ fill: "#6366F1", strokeWidth: 2, r: 6 }}
+            dot={{ fill: "#6366F1", strokeWidth: 2, r: 5 }}
             activeDot={{ r: 8, strokeWidth: 2 }}
           />
         </LineChart>

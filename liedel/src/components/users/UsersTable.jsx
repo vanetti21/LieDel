@@ -42,7 +42,7 @@ const EmployeesTable = () => {
 
   return (
     <motion.div
-      className="rounded-xl p-6 border border-gray-200 m-7"
+      className="rounded-xl p-6 border border-gray-200 mb-8"
       style={{ backgroundColor: "rgb(240, 243, 249)" }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -118,18 +118,18 @@ const EmployeesTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-black-100">
                   {employee.phone || "—"}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       employee.status === "Active"
-                        ? "bg-green-700 text-green-100"
-                        : "bg-red-700 text-red-100"
+                        ? "bg-green-600 text-green-100"
+                        : "bg-red-600 text-red-100"
                     }`}
                   >
                     {employee.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-black-100">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {formatDate(employee.hireDate)} {/* Formatear la fecha aquí */}
                 </td>
               </motion.tr>

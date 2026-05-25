@@ -29,12 +29,11 @@ const SalesPage = () => {
 
 	return (
 		<div className='flex-1 overflow-auto relative z-10'>
-
-			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
+			<main className='max-w-7xl mx-auto py-8 px-4 lg:px-8'>
 
 				{/* SALES STATS */}
 				<motion.div
-					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8'
+					className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 1 }}
@@ -43,14 +42,14 @@ const SalesPage = () => {
 					<StatCard
 						name='Total Revenue'
 						icon={DollarSign}
-						value={`$${salesStats.totalRevenue}`}
+						value={`$${salesStats.totalRevenue.toLocaleString("es-DO")}`}
 						color='#6366F1'
 					/>
 
 					<StatCard
 						name='Average Order'
 						icon={TrendingUp}
-						value={`$${salesStats.averageOrderValue}`}
+						value={`$${salesStats.averageOrderValue.toLocaleString("es-DO")}`}
 						color='#F59E0B'
 					/>
 
@@ -67,7 +66,7 @@ const SalesPage = () => {
 
 				<TopEmployeesSales />
 
-				<div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8'>
+				<div className='grid grid-cols-1 lg:grid-cols-2 gap-9'>
 					<Ventas />
 					<Categorias />
 				</div>

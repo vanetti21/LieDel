@@ -27,15 +27,22 @@ const UserActivityHeatmap = () => {
 			style={{ backgroundColor: "rgb(240, 243, 249)" }}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.4 }}
+			transition={{ delay: 0.3 }}
 		>
-			<h2 className='text-xl font-semibold text-black-100 mb-4'>
+			<h2 className='text-xl font-semibold text-black-100 mb-6'>
 				Employee Activity Heatmap
 			</h2>
 
-			<div style={{ width: "100%", height: 300 }}>
+			<div style={{ width: "100%", height: 325 }}>
 				<ResponsiveContainer>
-					<BarChart data={userActivityData}>
+					<BarChart 
+						data={userActivityData}
+						margin={{ 
+							top: 8, 
+							right: 23, 
+							left: -8, 
+							bottom: 3, }}
+					>
 						<CartesianGrid strokeDasharray='3 3' stroke='#374151' />
 
 						<XAxis dataKey='name' stroke='#9CA3AF' />

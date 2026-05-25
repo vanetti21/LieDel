@@ -65,10 +65,10 @@ const DefectAnalysis = () => {
 					style={{ backgroundColor: "rgb(240, 243, 249)" }}
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.1 }}
+					transition={{ delay: 0.2 }}
 				>
 					<motion.h2
-						className="text-xl p-1 font-semibold text-black-100 mb-4"
+						className="text-xl font-semibold text-black-100 mb-6"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						transition={{ delay: 0.2 }}
@@ -109,7 +109,7 @@ const DefectAnalysis = () => {
 					transition={{ delay: 0.2 }}
 				>
 					<motion.h2
-						className="text-xl p-1 font-semibold text-black-100 mb-4"
+						className="text-xl font-semibold text-black-100 mb-6"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						transition={{ delay: 0.3 }}
@@ -119,7 +119,14 @@ const DefectAnalysis = () => {
 
 					<div style={{ width: "100%", height: 300 }}>
 						<ResponsiveContainer>
-							<BarChart data={data.warehouses}>
+							<BarChart 
+								data={data.warehouses}
+								margin={{ 
+								top: 8, 
+								right: 25, 
+								left: 5, 
+								bottom: 3, }}
+								>
 								<XAxis dataKey="almacen" />
 								<YAxis />
 								<Tooltip />
@@ -197,13 +204,13 @@ const DefectAnalysis = () => {
 										animate={{ opacity: 1 }}
 										transition={{ duration: 0.3 }}
 									>
-										<td className="px-6 py-4 whitespace-nowrap font-medium">
+										<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 											{s.proveedor}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											{s.total}
 										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											<span
 												className={`px-2 py-1 rounded-full text-xs font-semibold ${
 													riesgo === "Alto"

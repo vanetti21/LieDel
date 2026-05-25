@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
 import {
 	BarChart,
 	Bar,
@@ -33,30 +34,44 @@ const Categorias = () => {
 	}, [startDate, endDate]);
 
 	return (
-		<div className='p-6 rounded-xl shadow-lg text-white' style={{ backgroundColor: 'rgb(240, 243, 249)' }}>
-			<h2 className='text-xl font-semibold mb-4 text-black'>Categorías más vendidas</h2>
+		<motion.div
+			className='rounded-xl p-6 border border-gray-200'
+			style={{ backgroundColor: 'rgb(240, 243, 249)' }}
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ delay: 0.2 }}
+		>
+			<h2 className='text-xl font-semibold mb-4 text-black'>Best-Selling Categories</h2>
 
 			<div className='flex gap-4 mb-4'>
 				<input
 					type='date'
 					value={startDate}
 					onChange={(e) => setStartDate(e.target.value)}
-					className='bg-white border border-gray-400 hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none'
+					className='bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none'
 				/>
 				<input
 					type='date'
 					value={endDate}
 					onChange={(e) => setEndDate(e.target.value)}
-					className='bg-white border border-gray-400 hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none'
+					className='bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none'
 				/>
 			</div>
 
 			<div className='w-full' style={{ height: "450px" }}>
 				<ResponsiveContainer >
-					<BarChart data={data}>
-						<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-						<XAxis dataKey="categoria" stroke="#9CA3AF" />
-						<YAxis stroke="#9CA3AF" domain={[0, 'dataMax + 3500']}/>
+					<BarChart 
+						data={data}
+						margin={{ 
+							top: 18, 
+							right: 20, 
+							left: 10, 
+							bottom: 0 
+						}}
+					>
+						<CartesianGrid strokeDasharray="3 3" stroke="#505a69" />
+						<XAxis dataKey="categoria" stroke="#60676f" />
+						<YAxis stroke="#60676f" domain={[0, (dataMax) => dataMax * 2.35]} />
 						<Tooltip
 							contentStyle={{ backgroundColor: "rgba(31, 41, 55, 0.8)", borderColor: "#4B5563" }}
 							itemStyle={{ color: "#E5E7EB" }}
@@ -65,7 +80,7 @@ const Categorias = () => {
 					</BarChart>
 				</ResponsiveContainer>
 			</div>
-		</div>
+		</motion.div>
 	);
 };
 

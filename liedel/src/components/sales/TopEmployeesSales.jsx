@@ -29,21 +29,29 @@ const TopEmployeesSales = () => {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.3 }}
 		>
-			<h2 className='text-xl font-semibold text-black mb-4'>
+			<h2 className='text-xl font-medium text-black-100 mb-6'>
 				Top Employees by Sales
 			</h2>
 
-			<div style={{ width: "100%", height: 350 }}>
+			<div style={{ width: "100%", height: 335 }}>
 				<ResponsiveContainer>
-					<BarChart data={data}>
-						<CartesianGrid strokeDasharray='3 3' />
+					<BarChart 
+						data={data}
+						margin={{ top: 0, right: 23, left: 8, bottom: 4 }}
+					>
+						<CartesianGrid strokeDasharray='3 3' stroke="#505a69"  />
 
-						<XAxis dataKey='empleado' />
+						<XAxis dataKey='empleado' stroke="#60676f" />
 
-						<YAxis />
+						<YAxis stroke="#60676f" />
 
-						<Tooltip />
-
+						<Tooltip 
+							contentStyle={{
+							backgroundColor: "rgba(31, 41, 55, 0.8)",
+							borderColor: "#4B5563",
+						}}
+						itemStyle={{ color: "#E5E7EB" }}
+						/>
 						<Bar
 							dataKey='total_vendido'
 							fill='#6366F1'

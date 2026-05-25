@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const SalesTrendChart = () => {
-  const [salesData, setSalesData] = useState([]);
+const [salesData, setSalesData] = useState([]);
 
   useEffect(() => {
     const fetchSalesData = async () => {
@@ -27,7 +27,9 @@ const SalesTrendChart = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <h2 className='text-xl font-semibold text-black-100 mb-6'>Sales Trend</h2>
+      <h2 className='text-xl font-semibold text-black-100 mb-6'>
+        Sales Trend
+      </h2>
 
       <div style={{ width: "100%", height: 400 }}>
         <ResponsiveContainer>
