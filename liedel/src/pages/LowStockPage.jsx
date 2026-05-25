@@ -85,12 +85,12 @@ const LowStockPage = () => {
 					<table className="min-w-full divide-y divide-gray-700">
 						<thead>
 							<tr>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Producto</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Stock</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Mínimo</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Última Venta</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Última Compra</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Última Actualización</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Producto</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Stock</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Mínimo</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última Venta</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última Compra</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última Actualización</th>
 							</tr>
 						</thead>
 
@@ -116,25 +116,25 @@ const LowStockPage = () => {
 												{p.Nombre}
 											</td>
 
-											<td className="px-6 py-4 whitespace-nowrap">
+											<td className="px-6 py-4 whitespace-nowrap text-sm">
 												<span className={`inline-flex items-center gap-1 font-semibold ${isCritical ? "text-red-600" : "text-gray-700"}`}>
 													{isCritical && <span className="text-xs">⚠️</span>}
 													{p.Cantidad_actual}
 												</span>
 											</td>
 
-											<td className="px-6 py-4 whitespace-nowrap">
+											<td className="px-6 py-4 whitespace-nowrap text-sm">
 												{p.Cantidad_minima}
 											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
+											<td className="px-6 py-4 whitespace-nowrap text-sm">
 												{formatDate(p.Ultima_venta)}
 											</td>
 
-											<td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
+											<td className="px-6 py-4 whitespace-nowrap text-sm">
 												{formatDate(p.Ultima_compra)}
 											</td>
 
-											<td className="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
+											<td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
 												{formatDate(p.Ultima_actualizacion)}
 											</td>
 										</motion.tr>

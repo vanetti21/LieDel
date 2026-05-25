@@ -78,7 +78,7 @@ useEffect(() => {
 					<StatCard
 						name='Total Revenue'
 						icon={DollarSign}
-						value={`$${orderStats.totalRevenue.toLocaleString()}`}
+						value={`$${orderStats.totalRevenue.toLocaleString("en-DO")}`}
 						color='#EF4444'
 					/>
 				</motion.div>

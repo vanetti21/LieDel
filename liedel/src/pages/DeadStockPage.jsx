@@ -90,12 +90,12 @@ const DeadStockPage = () => {
 					<table className="min-w-full divide-y divide-gray-700">
 						<thead>
 							<tr>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Producto</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Categoría</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Stock</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Días sin venta</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Última venta</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">Dinero estancado</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Producto</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Categoría</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Stock</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Días sin venta</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última venta</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Dinero estancado</th>
 							</tr>
 						</thead>
 
@@ -108,22 +108,22 @@ const DeadStockPage = () => {
 									animate={{ opacity: 1 }}
 									transition={{ duration: 0.3 }}
 								>
-									<td className="px-6 py-4 whitespace-nowrap font-medium">
+									<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
 										{p.Nombre}
 									</td>
-									<td className="px-6 py-4 whitespace-nowrap">
+									<td className="px-6 py-4 whitespace-nowrap text-sm">
 										{p.categoria}
 									</td>
-									<td className="px-6 py-4 whitespace-nowrap">
+									<td className="px-6 py-4 whitespace-nowrap text-sm">
 										{p.Cantidad_actual}
 									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-red-600 font-semibold">
+									<td className="px-6 py-4 whitespace-nowrap text-red-600 text-sm font-semibold">
 										{p.dias_sin_venta || "Nunca vendido"}
 									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
+									<td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
 										{formatDate(p.ultima_venta)}
 									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-purple-700 font-semibold">
+									<td className="px-6 py-4 whitespace-nowrap text-purple-700 text-sm font-semibold">
 										${Number(p.dinero_estancado).toLocaleString()}
 									</td>
 								</motion.tr>
