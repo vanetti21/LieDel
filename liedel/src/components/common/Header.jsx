@@ -2,37 +2,42 @@ import { useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const NAV_ITEMS = [
-	{ name: "Overview",   href: "/"          },
-	{ name: "Products",   href: "/products"  },
-	{ name: "Employees",  href: "/users"     },
-	{ name: "Sales",      href: "/sales"     },
-	{ name: "Orders",     href: "/orders"    },
-	{ name: "Clients",    href: "/clients"   },
-	{ name: "Suppliers",  href: "/suppliers" },
-	{ name: "Reports",    href: "/reports"   },
-	{ name: "Predictions",   href: "/predictions"  },
-	{ name: "Settings",   href: "/settings"  },
+	{ name: "Overview",    href: "/"            },
+	{ name: "Products",    href: "/products"    },
+	{ name: "Employees",   href: "/users"       },
+	{ name: "Sales",       href: "/sales"       },
+	{ name: "Orders",      href: "/orders"      },
+	{ name: "Clients",     href: "/clients"     },
+	{ name: "Suppliers",   href: "/suppliers"   },
+	{ name: "Reports",     href: "/reports"     },
+	{ name: "Predictions", href: "/predictions" },
 ];
 
 const getTitle = (pathname) => {
-	if (pathname === "/")                        return "Sales Dashboard";
-	if (pathname === "/products")                return "Products";
-	if (pathname === "/products/low-stock")      return "Low Stock Products";
-	if (pathname.startsWith("/products/"))       return "Product Detail";
-	if (pathname === "/users")                   return "Employees";
-	if (pathname === "/sales")                   return "Sales";
-	if (pathname === "/orders")                  return "Orders";
-	if (pathname === "/reports")                 return "Reports";
-	if (pathname === "/clients")                 return "Clients";
-	if (pathname === "/suppliers")               return "Suppliers";
-	if (pathname === "/settings")                return "Settings";
-	if (pathname === "/predictions")  			 return "Predictions"
-		return "Sales Dashboard";
+	if (pathname === "/")                   return "Sales Dashboard";
+	if (pathname === "/products")           return "Products";
+	if (pathname === "/products/low-stock") return "Low Stock Products";
+	if (pathname.startsWith("/products/"))  return "Product Detail";
+	if (pathname === "/users")              return "Employees";
+	if (pathname === "/sales")              return "Sales";
+	if (pathname === "/orders")             return "Orders";
+	if (pathname === "/reports")            return "Reports";
+	if (pathname === "/clients")            return "Clients";
+	if (pathname === "/suppliers")          return "Suppliers";
+	if (pathname === "/settings")           return "Settings";
+	if (pathname === "/predictions")        return "Predictions";
+	return "Sales Dashboard";
 };
 
 const Header = () => {
-	const location = useLocation();
-	const title = getTitle(location.pathname);
+	const location  = useLocation();
+	const title     = getTitle(location.pathname);
+
+	// Datos del usuario desde localStorage
+	const nombre  = localStorage.getItem("nombre");
+	const inicial = nombre ? nombre.charAt(0).toUpperCase() : "?";
+
+	const isSettings = location.pathname === "/settings";
 
 	return (
 		<header
@@ -40,7 +45,8 @@ const Header = () => {
 			style={{ backgroundColor: "rgb(240, 243, 255)" }}
 		>
 			<div className="flex items-center justify-between px-6 py-6 gap-4">
-				{/* Title left */}
+
+				{/* Título izquierda */}
 				<motion.h1
 					key={title}
 					initial={{ opacity: 0, y: -4 }}
@@ -51,8 +57,10 @@ const Header = () => {
 					{title}
 				</motion.h1>
 
-				{/* Pills right */}
-				<nav className="mr-8 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+				{/* Nav derecha */}
+				<nav className="mr-8 flex items-center gap-3 overflow-x-auto scrollbar-hide">
+
+					{/* Pills normales */}
 					{NAV_ITEMS.map((item) => {
 						const isActive = location.pathname === item.href;
 						return (
@@ -75,6 +83,25 @@ const Header = () => {
 							</Link>
 						);
 					})}
+
+					{/* Avatar */}
+					<Link to="/settings" className="ml-1">
+						<motion.div
+							className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 text-xs font-bold cursor-pointer flex-shrink-0"
+							style={{
+								border: isSettings
+									? "2px solid #6f71f0"
+									: "1px solid transparent",
+								boxShadow: isSettings
+									? "0 1px 4px rgba(0,0,0,0.15)"
+									: "none",
+							}}
+							transition={{ duration: 0.12 }}
+						>
+							{inicial}
+						</motion.div>
+					</Link>
+
 				</nav>
 			</div>
 		</header>
