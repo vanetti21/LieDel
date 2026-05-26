@@ -23,7 +23,7 @@ const CategoryDistributionChart = () => {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.2 }}
 		>
-			<h2 className='text-xl font-semibold mb-5 text-black-100'>Category Distribution</h2>
+			<h2 className='text-xl font-semibold mb-6 text-black-100'>Category Distribution</h2>
 
 			<div className='h-80'>
 				<ResponsiveContainer width="100%" height="100%">

@@ -44,7 +44,7 @@ const LowStockPage = () => {
 		<div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
 
 			<div className="flex items-center gap-3">
-				<span className="bg-red-100 text-red-600 text-sm font-semibold px-3 py-1 rounded-full">
+				<span className="bg-red-100 text-red-600 text-sm font-semibold px-4 py-2 rounded-full">
 					🔴 {filteredData.length} producto{filteredData.length !== 1 ? "s" : ""} bajo mínimo
 				</span>
 			</div>
@@ -69,7 +69,7 @@ const LowStockPage = () => {
 					<div className="relative">
 						<input
 							type="text"
-							placeholder="Buscar producto..."
+							placeholder="Search product..."
 							className="bg-gray-200 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 outline-none"
 							value={searchTerm}
 							onChange={handleSearch}

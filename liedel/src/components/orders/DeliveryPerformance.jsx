@@ -36,12 +36,15 @@ const DeliveryPerformance = () => {
 		<motion.div
 			className='rounded-xl p-6 border border-gray-200'
 			style={{ backgroundColor: "rgb(240,243,249)" }}
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ delay: 0.2 }}
 		>
-			<h2 className='text-xl font-semibold mb-4'>
+			<h2 className='text-xl font-semibold mb-6 text-black-100'>
 				Delivery Performance
 			</h2>
 
-			<div style={{ width: "100%", height: 300 }}>
+			<div style={{ width: "100%", height: 330 }}>
 				<ResponsiveContainer>
 					<PieChart>
 						<Pie
@@ -59,8 +62,28 @@ const DeliveryPerformance = () => {
 							))}
 						</Pie>
 
-						<Tooltip />
-						<Legend />
+						<Tooltip
+							contentStyle={{
+								backgroundColor: "rgba(31, 41, 55, 0.8)",
+								borderColor: "#4B5563",
+							}}
+							itemStyle={{ color: "#E5E7EB" }} 
+						/>
+						<Legend 
+							iconType="circle"
+							iconSize={12}
+							formatter={(value) => ( <span style={{ marginRight: "15px" }}> {value} </span> )}
+							wrapperStyle={{
+								marginLeft: "14px",
+								paddingTop: "20px",
+								display: "flex",
+								flexWrap: "wrap",
+								justifyContent: "center",
+								gap: "6px",
+								fontSize: "14px",
+								color: "#4B5563"
+							}}
+						/>
 					</PieChart>
 				</ResponsiveContainer>
 			</div>

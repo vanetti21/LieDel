@@ -18,7 +18,7 @@ const UserDemographicsChart = () => {
 			className='rounded-xl p-6 border border-gray-200 lg:col-span-2' style={{ backgroundColor: 'rgb(240, 243, 249)' }}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.5 }}
+			transition={{ delay: 0.2 }}
 		>
 			<h2 className='text-xl font-semibold text-black-100 mb-4'>Employee Demographics</h2>
 			<div style={{ width: "100%", height: 300 }}>

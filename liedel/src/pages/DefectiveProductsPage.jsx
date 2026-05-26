@@ -49,18 +49,18 @@ const DefectiveProductsPage = () => {
 	return (
 		<div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
 			<div className="flex items-center gap-3">
-				<span className="bg-red-100 text-red-700 text-sm font-semibold px-3 py-1 rounded-full">
+				<span className="bg-red-100 text-red-700 text-sm font-semibold px-4 py-2 rounded-full">
 					🚨 {filteredData.length} productos defectuosos
 				</span>
 			</div>
 
-			{/* Tabla — mismo formato que ProductTable */}
+			{/* Tabla */}
 			<motion.div
 				className="rounded-xl p-6 border border-gray-200 mb-8"
 				style={{ backgroundColor: "rgb(240, 243, 249)" }}
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ delay: 0.2 }}
+				transition={{ duration: 0.3 }}
 			>
 				<div className="flex justify-between items-center mb-5">
 
@@ -76,7 +76,7 @@ const DefectiveProductsPage = () => {
 					<div className="relative">
 						<input
 							type="text"
-							placeholder="Buscar producto..."
+							placeholder="Search product..."
 							className="bg-gray-200 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 outline-none"
 							value={searchTerm}
 							onChange={handleSearch}

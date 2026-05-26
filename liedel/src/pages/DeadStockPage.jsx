@@ -59,7 +59,7 @@ const DeadStockPage = () => {
 				style={{ backgroundColor: "rgb(240, 243, 249)" }}
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ delay: 0.2 }}
+				transition={{ duration: 0.3 }}
 			>
 				<div className="flex justify-between items-center mb-5">
 					<motion.h2
@@ -74,7 +74,7 @@ const DeadStockPage = () => {
 					<div className="relative">
 						<input
 							type="text"
-							placeholder="Buscar producto..."
+							placeholder="Search product..."
 							className="bg-gray-200 hover:bg-gray-300 text-black placeholder:text-gray-500 rounded-lg pl-10 pr-4 py-2 outline-none"
 							value={searchTerm}
 							onChange={handleSearch}
@@ -142,13 +142,13 @@ const DeadStockPage = () => {
 					style={{ backgroundColor: "rgb(240, 243, 249)" }}
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.3 }}
+					transition={{ delay: 0.2 }}
 				>
 					<motion.h3
 						className="text-xl p-1 font-semibold text-black-100 mb-4"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
-						transition={{ delay: 0.3 }}
+						transition={{ delay: 0.2 }}
 					>
 						Categorías con más stock muerto
 					</motion.h3>
@@ -172,13 +172,13 @@ const DeadStockPage = () => {
 					style={{ backgroundColor: "rgb(240, 243, 249)" }}
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.4 }}
+					transition={{ delay: 0.2 }}
 				>
 					<motion.h3
 						className="text-xl p-1 font-semibold text-black-100 mb-4"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
-						transition={{ delay: 0.4 }}
+						transition={{ delay: 0.2 }}
 					>
 						Productos nunca vendidos
 					</motion.h3>
@@ -202,13 +202,13 @@ const DeadStockPage = () => {
 					style={{ backgroundColor: "rgb(240, 243, 249)" }}
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.5 }}
+					transition={{ delay: 0.2 }}
 				>
 					<motion.h3
 						className="text-xl p-1 font-semibold text-black-100 mb-4"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
-						transition={{ delay: 0.5 }}
+						transition={{ delay: 0.2 }}
 					>
 						Recomendaciones IA
 					</motion.h3>

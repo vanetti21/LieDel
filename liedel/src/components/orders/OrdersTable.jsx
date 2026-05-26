@@ -7,6 +7,18 @@ const OrdersTable = () => {
 	const [filteredOrders, setFilteredOrders] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
 
+	const formatDate = (dateStr) => {
+		if (!dateStr) return "N/A";
+
+		const d = new Date(dateStr);
+
+		return d.toLocaleDateString("en-DO", {
+			day: "2-digit",
+			month: "short",
+			year: "numeric",
+		});
+	};
+
 	useEffect(() => {
 		fetch("http://localhost:5000/orders_table")
 			.then((res) => res.json())
@@ -32,8 +44,8 @@ const OrdersTable = () => {
 
 	return (
 		<motion.div
-			className='rounded-xl p-6 border border-gray-200 m-7'
-			style={{ backgroundColor: "rgb(240,243,249)" }}
+			className='rounded-xl p-6 border border-gray-200 mb-8'
+			style={{ backgroundColor: "rgb(240, 243, 249)" }}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.2 }}
@@ -65,52 +77,40 @@ const OrdersTable = () => {
 				</div>
 			</div>
 
-			<div className='overflow-x-auto max-h-[350px] overflow-y-auto'>
+			<div className='overflow-x-auto max-h-[400px] overflow-y-auto'>
 				<table className='min-w-full divide-y divide-gray-700'>
 					<thead>
 						<tr>
-							<th className='px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider'>
-								Supplier
-							</th>
-
-							<th className='px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider'>
-								Order Date
-							</th>
-
-							<th className='px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider'>
-								Delivery Date
-							</th>
-
-							<th className='px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider'>
-								Status
-							</th>
-
-							<th className='px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider'>
-								Shipping
-							</th>
-
-							<th className='px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider'>
-								Cost
-							</th>
+							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Supplier</th>
+							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Order Date</th>
+							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Delivery Date</th>
+							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Status</th>
+							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Shipping</th>
+							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Cost</th>
 						</tr>
 					</thead>
 
 					<tbody className='divide-y divide-gray-400'>
 						{filteredOrders.map((order) => (
-							<tr key={order.Id_orden_compra}>
-								<td className='px-6 py-4'>
+							<motion.tr
+								key={order.Id_orden_compra}
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ duration: 0.3 }}
+							>
+								<td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
 									{order.proveedor}
 								</td>
 
-								<td className='px-6 py-4'>
-									{order.Fecha_orden}
+								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+									{formatDate(order.Fecha_orden)}
 								</td>
 
-								<td className='px-6 py-4'>
-									{order.Fecha_entrega_real || "Pending"}
+								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+									{formatDate(order.Fecha_entrega_real)	 || "Pending"}
 								</td>
 
-								<td className='px-6 py-4'>
+								<td className='px-6 py-4 whitespace-nowrap text-sm'>
 									<span
 										className={`px-3 py-1 rounded-full text-xs font-semibold
 										${
@@ -125,14 +125,14 @@ const OrdersTable = () => {
 									</span>
 								</td>
 
-								<td className='px-6 py-4'>
+								<td className='px-6 py-4 whitespace-nowrap text-sm'>
 									{order.Tipo_envio}
 								</td>
 
-								<td className='px-6 py-4 font-semibold text-green-600'>
+								<td className='px-6 py-4 font-semibold text-sm text-green-600'>
 									${Number(order.Costo_total).toLocaleString()}
 								</td>
-							</tr>
+							</motion.tr>
 						))}
 					</tbody>
 				</table>

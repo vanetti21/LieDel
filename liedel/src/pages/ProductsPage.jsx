@@ -19,7 +19,6 @@ import {
 const ProductPage = () => {
 
 	const navigate = useNavigate();
-
 	const [stats, setStats] = useState({
 		total_productos: 0,
 		top_selling: 0,
@@ -30,21 +29,14 @@ const ProductPage = () => {
 	});
 
 	useEffect(() => {
-
 		const fetchStats = async () => {
-
 			try {
-
 				const res = await fetch(
 					"http://localhost:5000/api/productos-stats"
 				);
-
 				const data = await res.json();
-
 				setStats(data);
-
 			} catch (error) {
-
 				console.error(
 					"Error al cargar estadísticas:",
 					error
@@ -64,7 +56,7 @@ const ProductPage = () => {
 					className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 1 }}
+					transition={{ duration: 0.2 }}
 				>
 
 					<StatCard
