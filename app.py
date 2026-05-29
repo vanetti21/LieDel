@@ -371,13 +371,13 @@ def productos_reporte():
         conn = conectar_bd()
         cursor = conn.cursor(dictionary=True)
         query = """
-                SELECT 
+               SELECT 
                     p.Id_producto,
                     p.Nombre AS product,
                     c.Nombre AS category,
                     p.Precio_venta AS price,
 
-                    -- Stock más reciente y único
+                    -- Stock normal más reciente
                     MAX(i.Cantidad_actual) AS stock,
 
                     -- Total ganado
@@ -390,16 +390,7 @@ def productos_reporte():
 
                 LEFT JOIN inventario i
                     ON p.Id_producto = i.Id_producto
-
-                LEFT JOIN (
-                    SELECT 
-                        Id_producto,
-                        MAX(Ultima_actualizacion) AS ultima_fecha
-                    FROM inventario
-                    GROUP BY Id_producto
-                ) ultimos
-                    ON i.Id_producto = ultimos.Id_producto
-                    AND i.Ultima_actualizacion = ultimos.ultima_fecha
+                    AND i.estado = 'Normal'
 
                 LEFT JOIN detalle_venta dv
                     ON p.Id_producto = dv.Id_producto
@@ -443,39 +434,45 @@ def productos_stats():
 
     # Low stock
     cursor.execute("""
-        SELECT COUNT(*) AS low_stock
-        FROM inventario i
-        JOIN (
-            SELECT 
-                Id_producto,
-                MAX(Ultima_actualizacion) AS ultima_fecha
-            FROM inventario
-            GROUP BY Id_producto
-        ) ultimos
-        ON i.Id_producto = ultimos.Id_producto
-        AND i.Ultima_actualizacion = ultimos.ultima_fecha
+       SELECT COUNT(*) AS low_stock
 
-        WHERE i.Cantidad_actual < i.Cantidad_minima
+FROM inventario i
+
+WHERE 
+    i.estado = 'Normal'
+    AND i.Cantidad_actual < i.Cantidad_minima;
     """)
     low_stock = cursor.fetchone()["low_stock"]
     
     #dead stock
     cursor.execute("""
     SELECT COUNT(*) AS dead_stock
-    FROM (
-        SELECT
-            p.Id_producto,
-            MAX(v.Fecha_venta) AS ultima_venta
-        FROM productos p
-        LEFT JOIN detalle_venta dv
-            ON p.Id_producto = dv.Id_producto
-        LEFT JOIN venta v
-            ON dv.Id_venta = v.Id_venta
-        GROUP BY p.Id_producto
-        HAVING
-            ultima_venta IS NULL
-            OR ultima_venta < DATE_SUB(CURDATE(), INTERVAL 360 DAY)
-    ) t
+FROM (
+    SELECT
+        p.Id_producto
+
+    FROM productos p
+
+    JOIN inventario i
+        ON p.Id_producto = i.Id_producto
+
+    LEFT JOIN detalle_venta dv
+        ON p.Id_producto = dv.Id_producto
+
+    LEFT JOIN venta v
+        ON dv.Id_venta = v.Id_venta
+
+    WHERE
+        LOWER(i.estado) = 'normal'
+        AND i.Cantidad_actual > 0
+
+    GROUP BY p.Id_producto
+
+    HAVING
+        MAX(v.Fecha_venta) IS NULL
+        OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+
+) t;
         """)
 
     dead_stock = cursor.fetchone()["dead_stock"]
@@ -489,7 +486,7 @@ def productos_stats():
 
     # Productos defectuosos
     cursor.execute("""
-        SELECT COUNT(DISTINCT Id_producto) AS defective_products
+        SELECT COUNT(Id_producto) AS defective_products
         FROM inventario
         WHERE LOWER(estado) = 'defectuoso'
     """)
@@ -519,13 +516,13 @@ def dead_stock_products():
 
             c.Nombre AS categoria,
 
-            MAX(i.Cantidad_actual) AS Cantidad_actual,
+    SUM(i.Cantidad_actual) AS stock_total,
 
-            MAX(p.Precio_venta) AS Precio_venta,
+    p.Precio_venta,
 
-            (
-                MAX(i.Cantidad_actual) * MAX(p.Precio_venta)
-            ) AS dinero_estancado,
+    (
+        SUM(i.Cantidad_actual) * p.Precio_venta
+    ) AS dinero_estancado,
 
             MAX(v.Fecha_venta) AS ultima_venta,
 
@@ -548,16 +545,21 @@ def dead_stock_products():
         LEFT JOIN venta v
             ON dv.Id_venta = v.Id_venta
 
-        GROUP BY
-            p.Id_producto,
-            p.Nombre,
-            c.Nombre
+WHERE
+    LOWER(i.estado) = 'normal'
+    AND i.Cantidad_actual > 0
+
+GROUP BY
+    p.Id_producto,
+    p.Nombre,
+    c.Nombre,
+    p.Precio_venta
 
         HAVING
             MAX(v.Fecha_venta) IS NULL
             OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
 
-        ORDER BY dias_sin_venta DESC
+ORDER BY dias_sin_venta DESC;
     """
 
     cursor.execute(query)
@@ -757,50 +759,55 @@ def defective_products():
     cursor = conn.cursor(dictionary=True)
 
     query = """
+SELECT
+    p.Id_producto,
+    p.Nombre,
+
+    i.Cantidad_actual,
+    i.estado,
+    i.Ultima_actualizacion,
+
+    pr.Nombre AS proveedor,
+    pr.Pais,
+
+    a.Nombre AS almacen,
+    s.Nombre AS sucursal,
+
+    oc.Tipo_envio,
+
+    p.Precio_venta,
+
+    (i.Cantidad_actual * p.Precio_venta) AS perdida_estimada
+
+FROM inventario i
+
+JOIN productos p
+    ON i.Id_producto = p.Id_producto
+
+LEFT JOIN (
     SELECT
-        p.Id_producto,
-        p.Nombre,
+        dc.Id_producto,
+        MAX(dc.Id_orden_compra) AS ultima_orden
+    FROM detalle_compra dc
+    GROUP BY dc.Id_producto
+) ult_compra
+    ON ult_compra.Id_producto = i.Id_producto
 
-        i.Cantidad_actual,
-        i.estado,
-        i.Ultima_actualizacion,
+LEFT JOIN orden_compra oc
+    ON oc.Id_orden_compra = ult_compra.ultima_orden
 
-        pr.Nombre AS proveedor,
-        pr.Pais,
-	
-        a.Nombre AS almacen,
-        s.Nombre AS sucursal,
+LEFT JOIN proveedores pr
+    ON pr.Id_proveedor = oc.Id_proveedor
 
-        oc.Tipo_envio,
+LEFT JOIN almacen a
+    ON a.Id_almacen = i.Id_almacen
 
-        p.Precio_venta,
+LEFT JOIN sucursal s
+    ON s.Id_sucursal = a.Id_sucursal
 
-        (i.Cantidad_actual * p.Precio_venta) AS perdida_estimada
+WHERE LOWER(i.estado) = 'defectuoso'
 
-    FROM inventario i
-
-    JOIN productos p
-        ON i.Id_producto = p.Id_producto
-
-    LEFT JOIN detalle_compra dc
-        ON dc.Id_producto = i.Id_producto
-        AND dc.Id_almacen = i.Id_almacen
-
-    LEFT JOIN orden_compra oc
-        ON oc.Id_orden_compra = dc.Id_orden_compra
-
-    LEFT JOIN proveedores pr
-        ON pr.Id_proveedor = oc.Id_proveedor
-
-    LEFT JOIN almacen a
-        ON a.Id_almacen = i.Id_almacen
-
-    LEFT JOIN sucursal s
-        ON s.Id_sucursal = a.Id_sucursal
-
-    WHERE LOWER(i.estado) = 'defectuoso'
-
-    ORDER BY perdida_estimada DESC
+ORDER BY perdida_estimada DESC;
     """
 
     cursor.execute(query)
@@ -1750,32 +1757,42 @@ def low_stock():
     cursor = conn.cursor(dictionary=True)
 
     query = """
-    SELECT 
-        p.Id_producto,
-        p.Nombre,
-        i.Cantidad_actual,
-        i.Cantidad_minima,
-        i.Ultima_actualizacion,
+   SELECT 
+    p.Id_producto,
+    p.Nombre,
 
-        (
-            SELECT MAX(v.Fecha_venta)
-            FROM detalle_venta dv
-            JOIN venta v ON dv.Id_venta = v.Id_venta
-            WHERE dv.Id_producto = p.Id_producto
-        ) AS ultima_venta,
+    i.Id_almacen,
+    i.Cantidad_actual,
+    i.Cantidad_minima,
+    i.estado,
+    i.Ultima_actualizacion,
 
-        (
-            SELECT MAX(oc.Fecha_orden)
-            FROM detalle_compra dc
-            JOIN orden_compra oc ON dc.Id_orden_compra = oc.Id_orden_compra
-            WHERE dc.Id_producto = p.Id_producto
-        ) AS ultima_compra
+    (
+        SELECT MAX(v.Fecha_venta)
+        FROM detalle_venta dv
+        JOIN venta v
+            ON dv.Id_venta = v.Id_venta
+        WHERE dv.Id_producto = p.Id_producto
+    ) AS ultima_venta,
 
-    FROM productos p
-    JOIN inventario i 
-        ON p.Id_producto = i.Id_producto
+    (
+        SELECT MAX(oc.Fecha_orden)
+        FROM detalle_compra dc
+        JOIN orden_compra oc
+            ON dc.Id_orden_compra = oc.Id_orden_compra
+        WHERE dc.Id_producto = p.Id_producto
+    ) AS ultima_compra
 
-    WHERE i.Cantidad_actual <= i.Cantidad_minima
+FROM inventario i
+
+JOIN productos p
+    ON p.Id_producto = i.Id_producto
+
+WHERE 
+    LOWER(i.estado) = 'normal'
+    AND i.Cantidad_actual <= i.Cantidad_minima
+
+ORDER BY i.Cantidad_actual ASC;
     """
 
     cursor.execute(query)
