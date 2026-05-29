@@ -362,9 +362,8 @@ def top_empleados_ventas():
         print("Error:", e)
         return jsonify({"error": "Error obteniendo empleados"}), 500    
     
-    
-    
 
+    
 #Products
 @app.route("/api/productos-reporte", methods=["GET"])
 def productos_reporte():
@@ -419,6 +418,8 @@ def productos_reporte():
     except Exception as e:
         print("Error al obtener productos:", e)
         return jsonify({"error": "No se pudieron obtener los productos"}), 500
+
+
 
 @app.route("/api/productos-stats")
 def productos_stats():
@@ -512,51 +513,51 @@ def dead_stock_products():
     cursor = conn.cursor(dictionary=True)
 
     query = """
-SELECT
-    p.Id_producto,
-    p.Nombre,
+        SELECT
+            p.Id_producto,
+            p.Nombre,
 
-    c.Nombre AS categoria,
+            c.Nombre AS categoria,
 
-    MAX(i.Cantidad_actual) AS Cantidad_actual,
+            MAX(i.Cantidad_actual) AS Cantidad_actual,
 
-    MAX(p.Precio_venta) AS Precio_venta,
+            MAX(p.Precio_venta) AS Precio_venta,
 
-    (
-        MAX(i.Cantidad_actual) * MAX(p.Precio_venta)
-    ) AS dinero_estancado,
+            (
+                MAX(i.Cantidad_actual) * MAX(p.Precio_venta)
+            ) AS dinero_estancado,
 
-    MAX(v.Fecha_venta) AS ultima_venta,
+            MAX(v.Fecha_venta) AS ultima_venta,
 
-    DATEDIFF(
-        CURDATE(),
-        MAX(v.Fecha_venta)
-    ) AS dias_sin_venta
+            DATEDIFF(
+                CURDATE(),
+                MAX(v.Fecha_venta)
+            ) AS dias_sin_venta
 
-FROM productos p
+        FROM productos p
 
-JOIN inventario i
-    ON p.Id_producto = i.Id_producto
+        JOIN inventario i
+            ON p.Id_producto = i.Id_producto
 
-LEFT JOIN categoria c
-    ON p.Id_categoria = c.Id_categoria
+        LEFT JOIN categoria c
+            ON p.Id_categoria = c.Id_categoria
 
-LEFT JOIN detalle_venta dv
-    ON p.Id_producto = dv.Id_producto
+        LEFT JOIN detalle_venta dv
+            ON p.Id_producto = dv.Id_producto
 
-LEFT JOIN venta v
-    ON dv.Id_venta = v.Id_venta
+        LEFT JOIN venta v
+            ON dv.Id_venta = v.Id_venta
 
-GROUP BY
-    p.Id_producto,
-    p.Nombre,
-    c.Nombre
+        GROUP BY
+            p.Id_producto,
+            p.Nombre,
+            c.Nombre
 
-HAVING
-    MAX(v.Fecha_venta) IS NULL
-    OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+        HAVING
+            MAX(v.Fecha_venta) IS NULL
+            OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
 
-ORDER BY dias_sin_venta DESC
+        ORDER BY dias_sin_venta DESC
     """
 
     cursor.execute(query)
@@ -564,6 +565,8 @@ ORDER BY dias_sin_venta DESC
     data = cursor.fetchall()
 
     return jsonify(data)
+
+
 
 @app.route('/dead-stock-insights')
 def dead_stock_insights():
