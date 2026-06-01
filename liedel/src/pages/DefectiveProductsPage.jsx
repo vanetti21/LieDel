@@ -28,10 +28,10 @@ const DefectiveProductsPage = () => {
 		const filtered = data.filter((p) =>
 			p.Nombre?.toLowerCase().includes(term) ||
 			p.proveedor?.toLowerCase().includes(term) ||
-			p.Pais?.toLowerCase().includes(term) ||
 			p.almacen?.toLowerCase().includes(term) ||
 			p.sucursal?.toLowerCase().includes(term) ||
-			p.Tipo_envio?.toLowerCase().includes(term)
+			p.Tipo_envio?.toLowerCase().includes(term) ||
+			p.Tipo_resolucion?.toLowerCase().includes(term)
 		);
 		setFilteredData(filtered);
 	};
@@ -46,15 +46,31 @@ const DefectiveProductsPage = () => {
 		});
 	};
 
+	const resolucionColor = {
+		Baja:        "bg-red-100 text-red-700",
+		Liquidacion: "bg-yellow-100 text-yellow-700",
+		Devolucion:  "bg-green-100 text-green-700",
+	};
+
+	const resolucionLabel = {
+		Baja:        "Baja",
+		Liquidacion: "Liquidación",
+		Devolucion:  "Devolución",
+	};
+
+	const estadoColor = {
+		Defectuoso: "bg-red-100 text-red-700",
+		Activo:     "bg-green-100 text-green-700",
+	};
+
 	return (
 		<div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6">
 			<div className="flex items-center gap-3">
 				<span className="bg-red-100 text-red-700 text-sm font-semibold px-4 py-2 rounded-full">
-					🚨 {filteredData.length} productos defectuosos
+					🚨 {filteredData.length} unidades defectuosas
 				</span>
 			</div>
 
-			{/* Tabla */}
 			<motion.div
 				className="rounded-xl p-6 border border-gray-200 mb-8"
 				style={{ backgroundColor: "rgb(240, 243, 249)" }}
@@ -63,7 +79,6 @@ const DefectiveProductsPage = () => {
 				transition={{ duration: 0.3 }}
 			>
 				<div className="flex justify-between items-center mb-5">
-
 					<motion.h2
 						className="text-xl p-1 font-semibold text-black-100"
 						initial={{ opacity: 0 }}
@@ -81,10 +96,7 @@ const DefectiveProductsPage = () => {
 							value={searchTerm}
 							onChange={handleSearch}
 						/>
-						<Search
-							className="absolute left-3 top-2.5 text-gray-500"
-							size={18}
-						/>
+						<Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
 					</div>
 				</div>
 
@@ -93,13 +105,15 @@ const DefectiveProductsPage = () => {
 						<thead>
 							<tr>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Producto</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Estado</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Proveedor</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">País</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Almacén</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Sucursal</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Envío</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Cantidad</th>
-								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Pérdida</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Resolución</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Motivo</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Pérdida estimada</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Actualizado</th>
 							</tr>
 						</thead>
@@ -107,7 +121,7 @@ const DefectiveProductsPage = () => {
 						<tbody className="divide-y divide-gray-400">
 							{loading ? (
 								<tr>
-									<td colSpan="9" className="px-6 py-10 text-center text-gray-400">
+									<td colSpan="11" className="px-6 py-10 text-center text-gray-400">
 										Cargando...
 									</td>
 								</tr>
@@ -124,10 +138,12 @@ const DefectiveProductsPage = () => {
 											{p.Nombre}
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap text-sm">
-											{p.proveedor || "N/A"}
+											<span className={`px-2 py-1 rounded-full text-xs font-semibold ${estadoColor[p.estado_producto] || "bg-gray-100 text-gray-700"}`}>
+												{p.estado_producto || "N/A"}
+											</span>
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap text-sm">
-											{p.Pais || "N/A"}
+											{p.proveedor || "N/A"}
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap text-sm">
 											{p.almacen || "N/A"}
@@ -140,10 +156,22 @@ const DefectiveProductsPage = () => {
 												{p.Tipo_envio || "N/A"}
 											</span>
 										</td>
-										<td className="px-7 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
+										<td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
 											{p.Cantidad_actual}
 										</td>
-										<td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
+										<td className="px-6 py-4 whitespace-nowrap text-sm">
+											{p.Tipo_resolucion ? (
+												<span className={`px-2 py-1 rounded-full text-xs font-semibold ${resolucionColor[p.Tipo_resolucion] || "bg-gray-100 text-gray-700"}`}>
+													{resolucionLabel[p.Tipo_resolucion] || p.Tipo_resolucion}
+												</span>
+											) : (
+												<span className="text-gray-400 text-xs">Sin resolución</span>
+											)}
+										</td>
+										<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+											{p.motivo_defecto || "N/A"}
+										</td>
+										<td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
 											${Number(p.perdida_estimada).toLocaleString()}
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -153,7 +181,7 @@ const DefectiveProductsPage = () => {
 								))
 							) : (
 								<tr>
-									<td colSpan="9" className="px-6 py-10 text-center text-gray-400">
+									<td colSpan="11" className="px-6 py-10 text-center text-gray-400">
 										No hay productos defectuosos
 									</td>
 								</tr>
@@ -164,7 +192,6 @@ const DefectiveProductsPage = () => {
 			</motion.div>
 
 			<DefectAnalysis />
-
 		</div>
 	);
 };

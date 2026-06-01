@@ -31,9 +31,7 @@ useEffect(() => {
 
 return (
     <div className="flex-1 overflow-auto relative z-10">
-
         <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8">
-
         {/* STATS */}
         <motion.div
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8"
@@ -63,7 +61,6 @@ return (
         </motion.div>
 
         <UsersTable />
-
 
         {/* USER CHARTS */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

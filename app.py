@@ -434,47 +434,36 @@ def productos_stats():
 
     # Low stock
     cursor.execute("""
-       SELECT COUNT(*) AS low_stock
-
-FROM inventario i
-
-WHERE 
-    i.estado = 'Normal'
-    AND i.Cantidad_actual < i.Cantidad_minima;
+        SELECT COUNT(*) AS low_stock
+        FROM inventario i
+        WHERE
+            i.estado = 'Normal'
+            AND i.Cantidad_actual < i.Cantidad_minima;
     """)
     low_stock = cursor.fetchone()["low_stock"]
-    
-    #dead stock
+
+    # dead stock
     cursor.execute("""
-    SELECT COUNT(*) AS dead_stock
-FROM (
-    SELECT
-        p.Id_producto
-
-    FROM productos p
-
-    JOIN inventario i
-        ON p.Id_producto = i.Id_producto
-
-    LEFT JOIN detalle_venta dv
-        ON p.Id_producto = dv.Id_producto
-
-    LEFT JOIN venta v
-        ON dv.Id_venta = v.Id_venta
-
-    WHERE
-        LOWER(i.estado) = 'normal'
-        AND i.Cantidad_actual > 0
-
-    GROUP BY p.Id_producto
-
-    HAVING
-        MAX(v.Fecha_venta) IS NULL
-        OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
-
-) t;
-        """)
-
+        SELECT COUNT(*) AS dead_stock
+        FROM (
+            SELECT
+                p.Id_producto
+            FROM productos p
+            JOIN inventario i
+                ON p.Id_producto = i.Id_producto
+            LEFT JOIN detalle_venta dv
+                ON p.Id_producto = dv.Id_producto
+            LEFT JOIN venta v
+                ON dv.Id_venta = v.Id_venta
+            WHERE
+                LOWER(i.estado) = 'normal'
+                AND i.Cantidad_actual > 0
+            GROUP BY p.Id_producto
+            HAVING
+                MAX(v.Fecha_venta) IS NULL
+                OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+        ) t;
+    """)
     dead_stock = cursor.fetchone()["dead_stock"]
     
     # Revenue
@@ -510,56 +499,53 @@ def dead_stock_products():
     cursor = conn.cursor(dictionary=True)
 
     query = """
-        SELECT
+            SELECT
             p.Id_producto,
             p.Nombre,
-
             c.Nombre AS categoria,
-
-    SUM(i.Cantidad_actual) AS stock_total,
-
-    p.Precio_venta,
-
-    (
-        SUM(i.Cantidad_actual) * p.Precio_venta
-    ) AS dinero_estancado,
-
+            SUM(i.Cantidad_actual) AS stock_total,
+            p.Precio_venta,
+            (SUM(i.Cantidad_actual) * p.Precio_venta) AS dinero_estancado,
             MAX(v.Fecha_venta) AS ultima_venta,
+            DATEDIFF(CURDATE(), MAX(v.Fecha_venta)) AS dias_sin_venta,
 
-            DATEDIFF(
-                CURDATE(),
-                MAX(v.Fecha_venta)
-            ) AS dias_sin_venta
+            CASE
+                WHEN MAX(v.Fecha_venta) IS NULL
+                    THEN 'Liquidación'
+                WHEN DATEDIFF(CURDATE(), MAX(v.Fecha_venta)) > 180
+                    THEN 'Baja'
+                ELSE 'Liquidación'
+            END AS recomendacion,
+
+            CASE
+                WHEN MAX(v.Fecha_venta) IS NULL
+                    THEN 'Sin ventas registradas'
+                WHEN DATEDIFF(CURDATE(), MAX(v.Fecha_venta)) > 180
+                    THEN 'Sin rotación por más de 6 meses'
+                ELSE 'Sin rotación, se liquida con descuento'
+            END AS motivo_recomendacion
 
         FROM productos p
+        JOIN inventario i ON p.Id_producto = i.Id_producto
+        LEFT JOIN categoria c ON p.Id_categoria = c.Id_categoria
+        LEFT JOIN detalle_venta dv ON p.Id_producto = dv.Id_producto
+        LEFT JOIN venta v ON dv.Id_venta = v.Id_venta
 
-        JOIN inventario i
-            ON p.Id_producto = i.Id_producto
+        WHERE
+            LOWER(i.estado) = 'normal'
+            AND i.Cantidad_actual > 0
 
-        LEFT JOIN categoria c
-            ON p.Id_categoria = c.Id_categoria
-
-        LEFT JOIN detalle_venta dv
-            ON p.Id_producto = dv.Id_producto
-
-        LEFT JOIN venta v
-            ON dv.Id_venta = v.Id_venta
-
-WHERE
-    LOWER(i.estado) = 'normal'
-    AND i.Cantidad_actual > 0
-
-GROUP BY
-    p.Id_producto,
-    p.Nombre,
-    c.Nombre,
-    p.Precio_venta
+        GROUP BY
+            p.Id_producto,
+            p.Nombre,
+            c.Nombre,
+            p.Precio_venta
 
         HAVING
             MAX(v.Fecha_venta) IS NULL
             OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
 
-ORDER BY dias_sin_venta DESC;
+        ORDER BY dias_sin_venta DESC
     """
 
     cursor.execute(query)
@@ -688,6 +674,7 @@ def get_sales_by_month():
         cursor.close()
         conn.close()
 
+
 @app.route('/product/<int:id>/insights')
 def product_insights(id):
     conn = conectar_bd()
@@ -759,55 +746,69 @@ def defective_products():
     cursor = conn.cursor(dictionary=True)
 
     query = """
-SELECT
-    p.Id_producto,
-    p.Nombre,
-
-    i.Cantidad_actual,
-    i.estado,
-    i.Ultima_actualizacion,
-
-    pr.Nombre AS proveedor,
-    pr.Pais,
-
-    a.Nombre AS almacen,
-    s.Nombre AS sucursal,
-
-    oc.Tipo_envio,
-
-    p.Precio_venta,
-
-    (i.Cantidad_actual * p.Precio_venta) AS perdida_estimada
-
-FROM inventario i
-
-JOIN productos p
-    ON i.Id_producto = p.Id_producto
-
-LEFT JOIN (
     SELECT
-        dc.Id_producto,
-        MAX(dc.Id_orden_compra) AS ultima_orden
-    FROM detalle_compra dc
-    GROUP BY dc.Id_producto
-) ult_compra
-    ON ult_compra.Id_producto = i.Id_producto
+        p.Id_producto,
+        p.Nombre,
 
-LEFT JOIN orden_compra oc
-    ON oc.Id_orden_compra = ult_compra.ultima_orden
+        p.Estado AS estado_producto,
 
-LEFT JOIN proveedores pr
-    ON pr.Id_proveedor = oc.Id_proveedor
+        i.motivo_defecto,
 
-LEFT JOIN almacen a
-    ON a.Id_almacen = i.Id_almacen
+        pr.Nombre AS proveedor,
 
-LEFT JOIN sucursal s
-    ON s.Id_sucursal = a.Id_sucursal
+        a.Nombre AS almacen,
+        s.Nombre AS sucursal,
 
-WHERE LOWER(i.estado) = 'defectuoso'
+        oc.Tipo_envio,
 
-ORDER BY perdida_estimada DESC;
+        rd.Tipo_resolucion,
+
+        i.Cantidad_actual,
+
+        CASE
+            WHEN rd.Tipo_resolucion = 'Baja'
+                THEN i.Cantidad_actual * p.Precio_venta
+
+            WHEN rd.Tipo_resolucion = 'Liquidacion'
+                THEN (i.Cantidad_actual * p.Precio_venta) * 0.30
+
+            ELSE 0
+        END AS perdida_estimada,
+
+        i.Ultima_actualizacion
+
+    FROM inventario i
+
+    JOIN productos p
+        ON i.Id_producto = p.Id_producto
+
+    LEFT JOIN resolucion_defecto rd
+        ON rd.Id_inventario = i.Id_inventario
+
+    LEFT JOIN (
+        SELECT
+            dc.Id_producto,
+            MAX(dc.Id_orden_compra) AS ultima_orden
+        FROM detalle_compra dc
+        GROUP BY dc.Id_producto
+    ) ult_compra
+        ON ult_compra.Id_producto = i.Id_producto
+
+    LEFT JOIN orden_compra oc
+        ON oc.Id_orden_compra = ult_compra.ultima_orden
+
+    LEFT JOIN proveedores pr
+        ON pr.Id_proveedor = oc.Id_proveedor
+
+    LEFT JOIN almacen a
+        ON a.Id_almacen = i.Id_almacen
+
+    LEFT JOIN sucursal s
+        ON s.Id_sucursal = a.Id_sucursal
+
+    WHERE LOWER(i.Estado) = 'defectuoso'
+
+    ORDER BY perdida_estimada DESC;
     """
 
     cursor.execute(query)
@@ -815,6 +816,7 @@ ORDER BY perdida_estimada DESC;
     data = cursor.fetchall()
 
     return jsonify(data)
+
 
 @app.route('/defect-analysis')
 def defect_analysis():
@@ -1783,16 +1785,16 @@ def low_stock():
         WHERE dc.Id_producto = p.Id_producto
     ) AS ultima_compra
 
-FROM inventario i
+    FROM inventario i
 
-JOIN productos p
-    ON p.Id_producto = i.Id_producto
+    JOIN productos p
+        ON p.Id_producto = i.Id_producto
 
-WHERE 
-    LOWER(i.estado) = 'normal'
-    AND i.Cantidad_actual <= i.Cantidad_minima
+    WHERE 
+        LOWER(i.estado) = 'normal'
+        AND i.Cantidad_actual <= i.Cantidad_minima
 
-ORDER BY i.Cantidad_actual ASC;
+    ORDER BY i.Cantidad_actual ASC;
     """
 
     cursor.execute(query)

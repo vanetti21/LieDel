@@ -31,7 +31,8 @@ const DeadStockPage = () => {
 		setSearchTerm(term);
 		const filtered = data.filter((p) =>
 			p.Nombre?.toLowerCase().includes(term) ||
-			p.categoria?.toLowerCase().includes(term)
+			p.categoria?.toLowerCase().includes(term) ||
+			p.recomendacion?.toLowerCase().includes(term)
 		);
 		setFilteredData(filtered);
 	};
@@ -43,6 +44,11 @@ const DeadStockPage = () => {
 			month: "short",
 			year: "numeric"
 		});
+	};
+
+	const recomendacionColor = {
+		"Liquidación": "bg-yellow-100 text-yellow-700",
+		"Baja":        "bg-red-100 text-red-700",
 	};
 
 	return (
@@ -79,10 +85,7 @@ const DeadStockPage = () => {
 							value={searchTerm}
 							onChange={handleSearch}
 						/>
-						<Search
-							className="absolute left-3 top-2.5 text-gray-500"
-							size={18}
-						/>
+						<Search className="absolute left-3 top-2.5 text-gray-500" size={18} />
 					</div>
 				</div>
 
@@ -96,6 +99,8 @@ const DeadStockPage = () => {
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Días sin venta</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última venta</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Dinero estancado</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Recomendación</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Motivo</th>
 							</tr>
 						</thead>
 
@@ -115,7 +120,7 @@ const DeadStockPage = () => {
 										{p.categoria}
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap text-sm">
-										{p.Cantidad_actual}
+										{p.stock_total}
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap text-red-600 text-sm font-semibold">
 										{p.dias_sin_venta || "Nunca vendido"}
@@ -125,6 +130,14 @@ const DeadStockPage = () => {
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap text-purple-700 text-sm font-semibold">
 										${Number(p.dinero_estancado).toLocaleString()}
+									</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm">
+										<span className={`px-2 py-1 rounded-full text-xs font-semibold ${recomendacionColor[p.recomendacion] || "bg-gray-100 text-gray-700"}`}>
+											{p.recomendacion}
+										</span>
+									</td>
+									<td className="px-6 py-4 whitespace-nowrap text-sm">
+										{p.motivo_recomendacion}
 									</td>
 								</motion.tr>
 							))}
@@ -152,7 +165,6 @@ const DeadStockPage = () => {
 					>
 						Categorías con más stock muerto
 					</motion.h3>
-
 					<div className="space-y-3">
 						{insights.categories.map((c, index) => (
 							<div key={index} className="bg-white rounded-lg p-3">
@@ -182,7 +194,6 @@ const DeadStockPage = () => {
 					>
 						Productos nunca vendidos
 					</motion.h3>
-
 					<div className="space-y-3">
 						{insights.never_sold.map((p, index) => (
 							<div key={index} className="bg-white rounded-lg p-3">
@@ -212,7 +223,6 @@ const DeadStockPage = () => {
 					>
 						Recomendaciones IA
 					</motion.h3>
-
 					<div className="space-y-4 text-sm text-gray-700">
 						<div className="bg-white rounded-lg p-3">
 							📉 Aplicar descuentos a productos sin ventas mayores a 90 días.
