@@ -46,7 +46,6 @@ const ProductTable = () => {
       transition={{ delay: 0.2 }}
     >
       <div className="flex justify-between items-center mb-5">
-
         {/* Título dentro de un formulario */}
         <motion.h2
           className="text-xl p-1 font-semibold text-black-100"

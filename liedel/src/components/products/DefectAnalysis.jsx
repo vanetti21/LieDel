@@ -55,7 +55,6 @@ const DefectAnalysis = () => {
 
 	return (
 		<div className="space-y-8">
-
 			{/* Fila de gráficas */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
@@ -92,9 +91,23 @@ const DefectAnalysis = () => {
 											fill={COLORS[index % COLORS.length]}
 										/>
 									))}
-								</Pie>
+								</Pie >
 								<Tooltip />
-								<Legend />
+								<Legend 
+									iconType="circle"
+									iconSize={12}
+									formatter={(value) => ( <span style={{ marginRight: "15px" }}> {value} </span> )}
+									wrapperStyle={{
+										marginLeft: "15px",
+										paddingTop: "20px",
+										display: "flex",
+										flexWrap: "wrap",
+										justifyContent: "center",
+										gap: "6px",
+										fontSize: "15px",
+										color: "#4B5563"
+									}}
+								/>
 							</PieChart>
 						</ResponsiveContainer>
 					</div>
@@ -112,7 +125,7 @@ const DefectAnalysis = () => {
 						className="text-xl font-semibold text-black-100 mb-6"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
-						transition={{ delay: 0.3 }}
+						transition={{ delay: 0.2 }}
 					>
 						Almacenes con Más Defectos
 					</motion.h2>

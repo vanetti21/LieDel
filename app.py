@@ -1478,6 +1478,7 @@ def actividad_empleados():
         print("Error:", e)
         return jsonify({"error": "Error obteniendo actividad"}), 500
 
+
 #Clientes
 @app.route('/clientes_por_ubicacion')
 def clientes_por_ubicacion():
@@ -1497,6 +1498,8 @@ def clientes_por_ubicacion():
     data = cursor.fetchall()
 
     return jsonify(data)
+
+
 @app.route('/top_clientes')
 def top_clientes():
     conn = conectar_bd()

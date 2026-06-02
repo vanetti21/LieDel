@@ -12,34 +12,42 @@ const TopSuppliers = () => {
 
 	return (
 		<motion.div
-			className='rounded-xl p-6 border border-gray-200 m-7'
+			className="rounded-xl p-6 border border-gray-200"
 			style={{ backgroundColor: "rgb(240, 243, 249)" }}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
-			transition={{ delay: 0.3 }}
+			transition={{ delay: 0.2 }}
 		>
-			<h2 className='text-xl font-semibold mb-4'>
+			<motion.h2
+				className="text-xl font-semibold mb-4"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ delay: 0.2 }}
+			>
 				Suppliers List
-			</h2>
+			</motion.h2>
 
-			<div className='overflow-x-auto max-h-[400px] overflow-y-auto'>
+			<div className="space-y-2 max-h-[420px] overflow-y-auto">
 				{suppliers.map((supplier, index) => (
-					<div
+					<motion.div
 						key={index}
-						className='bg-gray-100 p-4 rounded-lg'
+						className="bg-white px-4 py-4 rounded-lg border border-gray-100"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ duration: 0.3 }}
 					>
-						<h3 className='font-semibold'>
+						<p className="font-semibold text-gray-800">
 							{supplier.Nombre}
-						</h3>
+						</p>
 
-						<p className='text-sm text-gray-500'>
+						<p className="text-sm text-gray-500">
 							{supplier.Pais}
 						</p>
 
-						<p className='text-sm text-gray-400'>
+						<p className="text-sm text-gray-400">
 							{supplier.Ubicacion}
 						</p>
-					</div>
+					</motion.div>
 				))}
 			</div>
 		</motion.div>

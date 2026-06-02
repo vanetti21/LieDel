@@ -14,10 +14,18 @@ const TopSuppliers = () => {
 		<motion.div
 			className='rounded-xl p-6 border border-gray-200'
 			style={{ backgroundColor: "rgb(240, 243, 249)" }}
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ delay: 0.2 }}
 		>
-			<h2 className='text-xl font-semibold mb-6'>
+			<motion.h2
+				className='text-xl font-semibold mb-6'
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ delay: 0.2 }}
+			>
 				Top Suppliers
-			</h2>
+			</motion.h2>
 
 			<div className='overflow-y-auto max-h-[521px] pr-2 flex flex-col gap-4'>
 				{suppliers.map((supplier, index) => (

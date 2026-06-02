@@ -14,28 +14,39 @@ const TopClients = () => {
 		<motion.div
 			className='rounded-xl p-6 border border-gray-200'
 			style={{ backgroundColor: "rgb(240, 243, 249)" }}
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ delay: 0.2 }}
 		>
-			<h2 className='text-xl font-semibold mb-4'>
+			<motion.h2
+				className='text-xl font-semibold mb-4'
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ delay: 0.2 }}
+			>
 				Top Clients
-			</h2>
+			</motion.h2>
 
-			<div className='space-y-2'>
+			<div className='space-y-2 max-h-[340px] overflow-y-auto'>
 				{clients.map((client, index) => (
-					<div
+					<motion.div
 						key={index}
-						className='flex justify-between items-center bg-gray-100 p-4 rounded-lg'
+						className='flex justify-between items-center bg-white px-4 py-4 rounded-lg'
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ duration: 0.3 }}
 					>
 						<div>
-							<h3 className='font-semibold'>{client.cliente}</h3>
+							<p className='text-md font-medium'>{client.cliente}</p>
 							<p className='text-sm text-gray-500'>
 								{client.compras} purchases
 							</p>
 						</div>
 
-						<div className='font-bold text-green-600'>
-							${parseFloat(client.total_gastado).toFixed(2)}
+						<div className='text-sm font-bold text-green-600'>
+							${Number(client.total_gastado).toLocaleString("es-DO", { minimumFractionDigits: 2 })}
 						</div>
-					</div>
+					</motion.div>
 				))}
 			</div>
 		</motion.div>

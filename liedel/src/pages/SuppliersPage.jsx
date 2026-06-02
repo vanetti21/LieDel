@@ -25,14 +25,13 @@ useEffect(() => {
 }, []);
 	return (
 		<div className='flex-1 overflow-auto relative z-10'>
-
-			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
+			<main className='max-w-7xl mx-auto py-8 px-4 lg:px-8'>
 
 				<motion.div
-					className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8'
+					className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8'
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 1 }}
+					transition={{ duration: 0.2 }}
 				>
 					<StatCard
                         name='Total Suppliers'
@@ -40,14 +39,12 @@ useEffect(() => {
                         value={stats.totalSuppliers}
                         color='#6366F1'
                     />
-
                     <StatCard
                         name='Products Supplied'
                         icon={Package}
                         value={stats.productsSupplied}
                         color='#10B981'
                     />
-
                     <StatCard
                         name='Supplier Revenue'
                         icon={DollarSign}
@@ -55,15 +52,14 @@ useEffect(() => {
                         color='#F59E0B'
                     />
 				</motion.div>
+                
                 <div className='grid grid-cols-1 lg:grid-cols-3 gap-8 mb-2'>
-
                     <div className='lg:col-span-2'>
                         <SuppliersWorldMap/>
                     </div>
                     <div className='lg:col-span-1'>
                         <SupplierEfficiency/>
                     </div>    
-
                 </div>
 
                 <SuppliersOverviewChart />

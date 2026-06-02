@@ -58,21 +58,18 @@ const ProductPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.2 }}
 				>
-
 					<StatCard
 						name='Total Products'
 						icon={Package}
 						value={stats.total_productos}
 						color='#6366F1'
 					/>
-
 					<StatCard
 						name='Top Selling'
 						icon={TrendingUp}
 						value={stats.top_selling}
 						color='#10B981'
 					/>
-
 					<StatCard
 						name='Low Stock'
 						icon={AlertTriangle}
@@ -82,7 +79,6 @@ const ProductPage = () => {
 							navigate("/products/low-stock")
 						}
 					/>
-
 					<StatCard
 						name='Defective'
 						icon={XCircle}
@@ -92,7 +88,6 @@ const ProductPage = () => {
 							navigate("/defective-products")
 						}
 					/>
-
 					<StatCard
 						name='Total Revenue'
 						icon={DollarSign}
