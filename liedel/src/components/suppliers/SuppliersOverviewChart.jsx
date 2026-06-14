@@ -49,8 +49,28 @@ const SuppliersOverviewChart = () => {
 							))}
 						</Pie>
 
-						<Tooltip />
-						<Legend />
+						<Tooltip 
+							contentStyle={{
+								backgroundColor: "rgba(31, 41, 55, 0.8)",
+								borderColor: "#4B5563",
+							}}
+							itemStyle={{ color: "#E5E7EB" }} 
+						/>
+						<Legend 
+							iconType="circle"
+							iconSize={12}
+							formatter={(value) => ( <span style={{ marginRight: "12px" }}> {value} </span> )}
+							wrapperStyle={{
+								marginLeft: "12px",
+								paddingTop: "20px",
+								display: "flex",
+								flexWrap: "wrap",
+								justifyContent: "center",
+								gap: "6px",
+								fontSize: "15px",
+								color: "#4B5563"
+							}}
+						/>
 					</PieChart>
 				</ResponsiveContainer>
 			</div>

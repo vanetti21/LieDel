@@ -57,7 +57,7 @@ const TopSuppliers = () => {
 							</div>
 						</div>
 
-						<div className='mt-3 text-sm text-gray-600'>
+						<div className='mt-3 text-sm text-yellow-600'>
 							Orders: {supplier.total_ordenes}
 						</div>
 					</div>

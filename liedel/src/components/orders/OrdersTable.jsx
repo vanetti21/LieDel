@@ -79,7 +79,7 @@ const OrdersTable = () => {
 
 			<div className='overflow-x-auto max-h-[400px] overflow-y-auto'>
 				<table className='min-w-full divide-y divide-gray-700'>
-					<thead>
+					<thead className='sticky top-0 bg-gray-100 z-10'>
 						<tr>
 							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Supplier</th>
 							<th className='px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider'>Order Date</th>

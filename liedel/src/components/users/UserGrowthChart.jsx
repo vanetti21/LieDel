@@ -45,9 +45,9 @@ const UserGrowthChart = () => {
               left: -8, 
               bottom: 3, }}
             >
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="month" stroke="#9CA3AF" />
-            <YAxis stroke="#9CA3AF" allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#505a69" />
+            <XAxis dataKey="month" stroke="#60676f" />
+            <YAxis stroke="#60676f" allowDecimals={false} />
             <Tooltip
               contentStyle={{
                 backgroundColor: "rgba(31, 41, 55, 0.8)",

@@ -43,9 +43,9 @@ const UserActivityHeatmap = () => {
 							left: -8, 
 							bottom: 3, }}
 					>
-						<CartesianGrid strokeDasharray='3 3' stroke='#374151' />
-						<XAxis dataKey='name' stroke='#9CA3AF' />
-						<YAxis stroke='#9CA3AF' />
+						<CartesianGrid strokeDasharray='3 3' stroke='#505a69' />
+						<XAxis dataKey='name' stroke='#60676f' />
+						<YAxis stroke='#60676f' />
 						<Tooltip
 							contentStyle={{
 								backgroundColor: "rgba(31, 41, 55, 0.8)",

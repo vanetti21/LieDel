@@ -40,11 +40,11 @@ const TopSuppliers = () => {
 							{supplier.Nombre}
 						</p>
 
-						<p className="text-sm text-gray-500">
+						<p className="text-sm text-gray-600">
 							{supplier.Pais}
 						</p>
 
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-gray-500">
 							{supplier.Ubicacion}
 						</p>
 					</motion.div>
