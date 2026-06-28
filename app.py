@@ -2494,80 +2494,308 @@ def logout():
 def exportar_excel():
     inicio = request.args.get('inicio')
     fin    = request.args.get('fin')
-
+    # Hojas solicitadas; si no se manda nada, se generan todas
+    hojas  = request.args.get('hojas', 'detalle,canal,clientes,suc_mes,stock,defectuoso,dead_stock,compras_detalle,proveedores,empleados').split(',')
+ 
     conn = conectar_bd()
     if not conn:
         return jsonify({"error": "No se pudo conectar a la BD"}), 500
-
+ 
     cursor = conn.cursor(dictionary=True)
-
-    query = """
-        SELECT
-            v.Id_venta,
-            DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d')   AS fecha,
-            cl.Nombre                                  AS cliente,
-            v.Total                                    AS importe,
-            v.Canal,
-            v.Estado,
-            s.Nombre                                   AS sucursal,
-            e.Nombre                                   AS empleado,
-            cat.Nombre                                 AS categoria,
-            p.Nombre                                   AS producto,
-            dv.Cantidad,
-            dv.Precio_unitario,
-            dv.Descuento,
-            dv.Subtotal
-        FROM venta v
-        JOIN clientes   cl  ON v.Id_cliente  = cl.Id_cliente
-        JOIN empleados  e   ON v.Id_empleado = e.Id_empleado
-        JOIN sucursal   s   ON v.Id_sucursal = s.Id_sucursal
-        JOIN detalle_venta dv ON v.Id_venta  = dv.Id_venta
-        JOIN productos  p   ON dv.Id_producto = p.Id_producto
-        JOIN categoria  cat ON p.Id_categoria = cat.Id_categoria
-    """
-
-    if inicio and fin:
-        query += " WHERE v.Fecha_venta BETWEEN %s AND %s"
-        cursor.execute(query, (inicio, fin))
-    else:
-        cursor.execute(query)
-
-    df = pd.DataFrame(cursor.fetchall())
-    cursor.close()
-    conn.close()
-
-    if df.empty:
-        return jsonify({"mensaje": "Sin datos"}), 204
-
+ 
+    # Parámetros de fecha reutilizables 
+    usa_fechas = bool(inicio and fin)
+    filtro_venta      = "WHERE v.Fecha_venta BETWEEN %s AND %s"         if usa_fechas else ""
+    filtro_venta_and  = "AND v.Fecha_venta BETWEEN %s AND %s"           if usa_fechas else ""
+    filtro_orden      = "WHERE oc.Fecha_orden BETWEEN %s AND %s"        if usa_fechas else ""
+    params            = (inicio, fin) if usa_fechas else ()
+ 
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-
-        # Hoja 1 — detalle completo
-        df.to_excel(writer, index=False, sheet_name='Ventas')
-
-        # Hoja 2 — resumen por categoría
-        df.groupby('categoria').agg(
-            total_vendido=('Subtotal', 'sum'),
-            cantidad=('Cantidad', 'sum')
-        ).reset_index().to_excel(writer, index=False, sheet_name='Por_Categoria')
-
-        # Hoja 3 — resumen por empleado
-        df.groupby('empleado').agg(
-            total_ventas=('importe', 'sum')
-        ).reset_index().to_excel(writer, index=False, sheet_name='Por_Empleado')
-
-        # Hoja 4 — resumen por sucursal  (bonus, tenías la info disponible)
-        df.groupby('sucursal').agg(
-            total_ventas=('importe', 'sum'),
-            num_ventas=('Id_venta', 'nunique')
-        ).reset_index().to_excel(writer, index=False, sheet_name='Por_Sucursal')
-
+ 
+        # 1. DETALLE COMPLETO DE VENTAS 
+        if 'detalle' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    v.Id_venta,
+                    DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d') AS fecha,
+                    cl.Nombre       AS cliente,
+                    v.Total         AS importe,
+                    v.Canal,
+                    v.Estado,
+                    s.Nombre        AS sucursal,
+                    e.Nombre        AS empleado,
+                    cat.Nombre      AS categoria,
+                    p.Nombre        AS producto,
+                    dv.Cantidad,
+                    dv.Precio_unitario,
+                    dv.Descuento,
+                    dv.Subtotal
+                FROM venta v
+                JOIN clientes      cl  ON v.Id_cliente   = cl.Id_cliente
+                JOIN empleados     e   ON v.Id_empleado  = e.Id_empleado
+                JOIN sucursal      s   ON v.Id_sucursal  = s.Id_sucursal
+                JOIN detalle_venta dv  ON v.Id_venta     = dv.Id_venta
+                JOIN productos     p   ON dv.Id_producto = p.Id_producto
+                JOIN categoria     cat ON p.Id_categoria = cat.Id_categoria
+                {filtro_venta}
+                ORDER BY v.Fecha_venta DESC
+            """, params)
+            df_detalle = pd.DataFrame(cursor.fetchall())
+            if not df_detalle.empty:
+                df_detalle.to_excel(writer, index=False, sheet_name='Detalle_Ventas')
+ 
+        # 2. POR CANAL (Presencial vs Online) ──────────────────────────────
+        if 'canal' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    v.Canal,
+                    COUNT(DISTINCT v.Id_venta)  AS num_ventas,
+                    SUM(v.Total)                AS total_vendido,
+                    ROUND(AVG(v.Total), 2)      AS ticket_promedio
+                FROM venta v
+                {filtro_venta}
+                GROUP BY v.Canal
+                ORDER BY total_vendido DESC
+            """, params)
+            df_canal = pd.DataFrame(cursor.fetchall())
+            if not df_canal.empty:
+                df_canal.to_excel(writer, index=False, sheet_name='Por_Canal')
+ 
+        # ── 3. TOP CLIENTES ──────────────────────────────────────────────────
+        if 'clientes' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    cl.Nombre                           AS cliente,
+                    cl.Ubicacion                        AS ubicacion,
+                    cl.Contacto_email                   AS email,
+                    COUNT(DISTINCT v.Id_venta)          AS num_compras,
+                    SUM(v.Total)                        AS total_gastado,
+                    ROUND(AVG(v.Total), 2)              AS ticket_promedio,
+                    MAX(v.Fecha_venta)                  AS ultima_compra
+                FROM clientes cl
+                JOIN venta v ON cl.Id_cliente = v.Id_cliente
+                {filtro_venta_and.replace('AND', 'WHERE v.Fecha_venta BETWEEN %s AND %s') if usa_fechas else ''}
+                GROUP BY cl.Id_cliente, cl.Nombre, cl.Ubicacion, cl.Contacto_email
+                ORDER BY total_gastado DESC
+            """, params)
+            df_clientes = pd.DataFrame(cursor.fetchall())
+            if not df_clientes.empty:
+                df_clientes.to_excel(writer, index=False, sheet_name='Top_Clientes')
+ 
+        # ── 4. VENTAS POR SUCURSAL Y MES ─────────────────────────────────────
+        if 'suc_mes' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    s.Nombre                            AS sucursal,
+                    DATE_FORMAT(v.Fecha_venta, '%Y-%m') AS mes,
+                    COUNT(DISTINCT v.Id_venta)          AS num_ventas,
+                    SUM(v.Total)                        AS total_vendido
+                FROM venta v
+                JOIN sucursal s ON v.Id_sucursal = s.Id_sucursal
+                {filtro_venta}
+                GROUP BY s.Id_sucursal, s.Nombre, mes
+                ORDER BY sucursal, mes
+            """, params)
+            df_suc_mes = pd.DataFrame(cursor.fetchall())
+            if not df_suc_mes.empty:
+                df_suc_mes.to_excel(writer, index=False, sheet_name='Ventas_Sucursal_Mes')
+ 
+        # 5. STOCK ACTUAL POR SUCURSAL ──────────────────────────────────────
+        # Esta hoja no usa filtro de fechas (es el estado actual del inventario)
+        if 'stock' in hojas:
+            cursor.execute("""
+                SELECT
+                    p.Nombre                AS producto,
+                    cat.Nombre              AS categoria,
+                    p.SKU,
+                    p.Precio_venta,
+                    a.Nombre                AS almacen,
+                    s.Nombre                AS sucursal,
+                    i.Cantidad_actual       AS stock_actual,
+                    i.Cantidad_minima       AS stock_minimo,
+                    i.Cantidad_maxima       AS stock_maximo,
+                    CASE
+                        WHEN i.Cantidad_actual <= i.Cantidad_minima THEN 'Bajo'
+                        WHEN i.Cantidad_actual >= i.Cantidad_maxima THEN 'Alto'
+                        ELSE 'Normal'
+                    END                     AS nivel_stock,
+                    i.Ultima_actualizacion
+                FROM inventario i
+                JOIN productos  p   ON i.Id_producto = p.Id_producto
+                JOIN almacen    a   ON i.Id_almacen  = a.Id_almacen
+                JOIN sucursal   s   ON a.Id_sucursal = s.Id_sucursal
+                JOIN categoria  cat ON p.Id_categoria = cat.Id_categoria
+                WHERE LOWER(i.estado) = 'normal'
+                ORDER BY s.Nombre, p.Nombre
+            """)
+            df_stock = pd.DataFrame(cursor.fetchall())
+            if not df_stock.empty:
+                df_stock.to_excel(writer, index=False, sheet_name='Stock_Actual')
+ 
+        # 6. PRODUCTOS DEFECTUOSOS ──────────────────────────────────────────
+        if 'defectuoso' in hojas:
+            cursor.execute("""
+                SELECT
+                    p.Nombre                AS producto,
+                    p.SKU,
+                    cat.Nombre              AS categoria,
+                    i.motivo_defecto,
+                    rd.Tipo_resolucion      AS resolucion,
+                    rd.Fecha_resolucion,
+                    rd.Observacion,
+                    a.Nombre                AS almacen,
+                    s.Nombre                AS sucursal,
+                    i.Cantidad_actual       AS cantidad,
+                    p.Precio_venta,
+                    CASE
+                        WHEN rd.Tipo_resolucion = 'Baja'
+                            THEN i.Cantidad_actual * p.Precio_venta
+                        WHEN rd.Tipo_resolucion = 'Liquidacion'
+                            THEN (i.Cantidad_actual * p.Precio_venta) * 0.30
+                        ELSE 0
+                    END                     AS perdida_estimada,
+                    i.Ultima_actualizacion
+                FROM inventario i
+                JOIN productos  p   ON i.Id_producto  = p.Id_producto
+                JOIN categoria  cat ON p.Id_categoria = cat.Id_categoria
+                JOIN almacen    a   ON i.Id_almacen   = a.Id_almacen
+                JOIN sucursal   s   ON a.Id_sucursal  = s.Id_sucursal
+                LEFT JOIN resolucion_defecto rd ON rd.Id_inventario = i.Id_inventario
+                WHERE LOWER(i.estado) = 'defectuoso'
+                ORDER BY perdida_estimada DESC
+            """)
+            df_defectuoso = pd.DataFrame(cursor.fetchall())
+            if not df_defectuoso.empty:
+                df_defectuoso.to_excel(writer, index=False, sheet_name='Defectuosos')
+ 
+        # 7. DEAD STOCK 
+        if 'dead_stock' in hojas:
+            cursor.execute("""
+                SELECT
+                    p.Nombre                                        AS producto,
+                    p.SKU,
+                    cat.Nombre                                      AS categoria,
+                    SUM(i.Cantidad_actual)                          AS stock_total,
+                    p.Precio_venta,
+                    SUM(i.Cantidad_actual) * p.Precio_venta        AS dinero_estancado,
+                    MAX(v.Fecha_venta)                              AS ultima_venta,
+                    DATEDIFF(CURDATE(), MAX(v.Fecha_venta))        AS dias_sin_venta,
+                    CASE
+                        WHEN MAX(v.Fecha_venta) IS NULL            THEN 'Liquidación'
+                        WHEN DATEDIFF(CURDATE(), MAX(v.Fecha_venta)) > 180 THEN 'Baja'
+                        ELSE 'Liquidación'
+                    END                                             AS recomendacion
+                FROM productos p
+                JOIN inventario     i   ON p.Id_producto  = i.Id_producto
+                JOIN categoria      cat ON p.Id_categoria = cat.Id_categoria
+                LEFT JOIN detalle_venta dv ON p.Id_producto  = dv.Id_producto
+                LEFT JOIN venta         v  ON dv.Id_venta    = v.Id_venta
+                WHERE LOWER(i.estado) = 'normal'
+                  AND i.Cantidad_actual > 0
+                GROUP BY p.Id_producto, p.Nombre, p.SKU, cat.Nombre, p.Precio_venta
+                HAVING MAX(v.Fecha_venta) IS NULL
+                    OR MAX(v.Fecha_venta) < DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+                ORDER BY dias_sin_venta DESC
+            """)
+            df_dead = pd.DataFrame(cursor.fetchall())
+            if not df_dead.empty:
+                df_dead.to_excel(writer, index=False, sheet_name='Dead_Stock')
+ 
+        # 8. DETALLE DE COMPRAS 
+        if 'compras_detalle' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    oc.Id_orden_compra,
+                    DATE_FORMAT(oc.Fecha_orden, '%Y-%m-%d')           AS fecha_orden,
+                    DATE_FORMAT(oc.Fecha_entrega_estimada, '%Y-%m-%d') AS entrega_estimada,
+                    DATE_FORMAT(oc.Fecha_entrega_real, '%Y-%m-%d')    AS entrega_real,
+                    pr.Nombre                                          AS proveedor,
+                    pr.Pais                                            AS pais_proveedor,
+                    s.Nombre                                           AS sucursal_destino,
+                    p.Nombre                                           AS producto,
+                    cat.Nombre                                         AS categoria,
+                    dc.Cantidad,
+                    dc.Precio_unitario,
+                    dc.Costo_flete,
+                    (dc.Cantidad * dc.Precio_unitario) + dc.Costo_flete AS costo_total_linea,
+                    oc.Tipo_envio,
+                    oc.Estado
+                FROM orden_compra  oc
+                JOIN proveedores   pr  ON oc.Id_proveedor   = pr.Id_proveedor
+                JOIN sucursal      s   ON oc.Id_sucursal    = s.Id_sucursal
+                JOIN detalle_compra dc ON oc.Id_orden_compra = dc.Id_orden_compra
+                JOIN productos     p   ON dc.Id_producto    = p.Id_producto
+                JOIN categoria     cat ON p.Id_categoria    = cat.Id_categoria
+                {filtro_orden}
+                ORDER BY oc.Fecha_orden DESC
+            """, params)
+            df_compras = pd.DataFrame(cursor.fetchall())
+            if not df_compras.empty:
+                df_compras.to_excel(writer, index=False, sheet_name='Detalle_Compras')
+ 
+        # 9. RESUMEN POR PROVEEDOR 
+        if 'proveedores' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    pr.Nombre                                           AS proveedor,
+                    pr.Pais,
+                    COUNT(DISTINCT oc.Id_orden_compra)                 AS total_ordenes,
+                    SUM(oc.Costo_total)                                AS total_comprado,
+                    ROUND(AVG(
+                        DATEDIFF(oc.Fecha_entrega_real, oc.Fecha_entrega_estimada)
+                    ), 1)                                               AS promedio_retraso_dias,
+                    SUM(CASE
+                        WHEN oc.Fecha_entrega_real > oc.Fecha_entrega_estimada THEN 1
+                        ELSE 0
+                    END)                                                AS ordenes_con_retraso
+                FROM orden_compra oc
+                JOIN proveedores pr ON oc.Id_proveedor = pr.Id_proveedor
+                {filtro_orden}
+                GROUP BY pr.Id_proveedor, pr.Nombre, pr.Pais
+                ORDER BY total_comprado DESC
+            """, params)
+            df_prov = pd.DataFrame(cursor.fetchall())
+            if not df_prov.empty:
+                df_prov.to_excel(writer, index=False, sheet_name='Resumen_Proveedores')
+ 
+        # 10. RANKING DE EMPLEADOS 
+        if 'empleados' in hojas:
+            cursor.execute(f"""
+                SELECT
+                    e.Nombre                            AS empleado,
+                    e.Cargo,
+                    s.Nombre                            AS sucursal,
+                    COUNT(DISTINCT v.Id_venta)          AS num_ventas,
+                    SUM(v.Total)                        AS total_vendido,
+                    ROUND(AVG(v.Total), 2)              AS ticket_promedio,
+                    MAX(v.Fecha_venta)                  AS ultima_venta
+                FROM empleados e
+                JOIN venta    v ON e.Id_empleado = v.Id_empleado
+                JOIN sucursal s ON e.Id_sucursal = s.Id_sucursal
+                {filtro_venta_and.replace('AND', 'WHERE v.Fecha_venta BETWEEN %s AND %s') if usa_fechas else ''}
+                GROUP BY e.Id_empleado, e.Nombre, e.Cargo, s.Nombre
+                ORDER BY total_vendido DESC
+            """, params)
+            df_emp = pd.DataFrame(cursor.fetchall())
+            if not df_emp.empty:
+                df_emp.to_excel(writer, index=False, sheet_name='Ranking_Empleados')
+ 
+    cursor.close()
+    conn.close()
+ 
     buf.seek(0)
+ 
+    # Si el buffer está vacío (todas las hojas sin datos), avisar
+    if buf.getbuffer().nbytes == 0:
+        return jsonify({"mensaje": "Sin datos para las hojas seleccionadas"}), 204
+ 
     return app.response_class(
         buf.getvalue(),
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={"Content-Disposition": "attachment; filename=ventas.xlsx"}
+        headers={"Content-Disposition": "attachment; filename=reporte_muebleria.xlsx"}
     )
+ 
 
 if __name__ == '__main__':
     app.run(debug=True)

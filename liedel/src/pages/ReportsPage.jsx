@@ -1,19 +1,29 @@
-import Header from "../components/common/Header";
+import { useState } from "react";
 import Ventas_Fecha from "../components/reports/Ventas_Fecha";
-
+import ExcelExporter from "../components/reports/Excel_Exporter";
 
 const ReportsPage = () => {
-	return (
-		<div className='flex-1 relative z-10 overflow-auto'>
+  const [formato,     setFormato]     = useState(null);
+  const [excelStart,  setExcelStart]  = useState("");
+  const [excelEnd,    setExcelEnd]    = useState("");
 
-			<main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
-            <Ventas_Fecha />
-
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8'>
-				
-				</div>
-			</main>
-		</div>
-	);
+  return (
+    <div className='flex-1 relative z-10 overflow-auto'>
+      <main className='max-w-7xl mx-auto py-6 px-4 lg:px-8'>
+        <Ventas_Fecha
+          formato={formato}
+          setFormato={setFormato}
+          onExcelDates={(s, e) => { setExcelStart(s); setExcelEnd(e); }}
+        />
+        {formato === "excel" && (
+            <ExcelExporter
+              startDate={excelStart}
+              endDate={excelEnd}
+            />
+        )}
+      </main>
+    </div>
+  );
 };
+
 export default ReportsPage;

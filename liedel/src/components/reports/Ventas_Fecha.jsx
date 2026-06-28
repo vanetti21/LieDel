@@ -4,35 +4,22 @@ import html2canvas from "html2canvas";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, Download, CheckCircle, Sheet, FileText } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  PieChart,   // Asegúrate de importar PieChart
-  Pie,
-  Cell,       // Asegúrate de importar Cell
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
 
-const ReportsPage = () => {
-  const [formato, setFormato]       = useState(null); // 'excel' | 'pdf'
-  const [startDate, setStartDate]   = useState("");
-  const [endDate, setEndDate]       = useState("");
-  const [loadingReport, setLoadingReport] = useState(false);
+const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
+  const [startDate,  setStartDate]  = useState("");
+  const [endDate,    setEndDate]    = useState("");
   const [loadingPDF, setLoadingPDF] = useState(false);
-  const [loadingExcel, setLoadingExcel] = useState(false);
-  const [success, setSuccess]       = useState(false);
-  const [data, setData]             = useState(null);
+  const [success,    setSuccess]    = useState(false);
+  const [data,       setData]       = useState(null);
 
   useEffect(() => {
     if (formato !== "pdf" || !startDate || !endDate) return;
     const fetchData = async () => {
-      setLoadingReport(true);
-      setSuccess(false);
       try {
         const response = await fetch(
           `http://localhost:5000/api/reporte-fechas?inicio=${startDate}&fin=${endDate}`
@@ -41,13 +28,10 @@ const ReportsPage = () => {
         setData(result);
       } catch (error) {
         console.error("Error al obtener el reporte:", error);
-      } finally {
-        setLoadingReport(false);
       }
     };
     fetchData();
   }, [startDate, endDate, formato]);
-
 
   const handleFormato = (f) => {
     setFormato(f);
@@ -55,33 +39,17 @@ const ReportsPage = () => {
     setStartDate("");
     setEndDate("");
     setSuccess(false);
+    if (onExcelDates) onExcelDates("", "");
   };
 
-
-  const exportarExcel = async () => {
-    setLoadingExcel(true);
-    setSuccess(false);
-    try {
-      let url = "http://localhost:5000/api/exportar-excel";
-      if (startDate && endDate) url += `?inicio=${startDate}&fin=${endDate}`;
-      const res  = await fetch(url);
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href     = URL.createObjectURL(blob);
-      link.download = "ventas.xlsx";
-      link.click();
-      URL.revokeObjectURL(link.href);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      console.error("Error al exportar:", err);
-      alert("No se pudo exportar. Verifica que el servidor esté corriendo.");
-    } finally {
-      setLoadingExcel(false);
-    }
+  const handleExcelDate = (field, value) => {
+    const newStart = field === "start" ? value : startDate;
+    const newEnd   = field === "end"   ? value : endDate;
+    if (field === "start") setStartDate(value);
+    if (field === "end")   setEndDate(value);
+    if (onExcelDates) onExcelDates(newStart, newEnd);
   };
- 
-  // Generar PDF — lógica original intacta
+
   const generatePDF = () => {
     setLoadingPDF(true);
     setSuccess(false);
@@ -109,10 +77,11 @@ const ReportsPage = () => {
       setTimeout(() => setSuccess(false), 3000);
     });
   };
-  
 
   return (
     <div className="p-5 text-white">
+
+      {/* ── Botones Excel / PDF ── */}
       <div className="flex gap-4 mb-6">
         <motion.button
           onClick={() => handleFormato("excel")}
@@ -131,7 +100,6 @@ const ReportsPage = () => {
           Excel
         </motion.button>
 
-
         <motion.button
           onClick={() => handleFormato("pdf")}
           whileHover={{ scale: 1.01 }}
@@ -148,11 +116,10 @@ const ReportsPage = () => {
           <FileText className="w-4 h-4" />
           PDF
         </motion.button>
-
       </div>
 
-       <AnimatePresence mode="wait">
- 
+      <AnimatePresence mode="wait">
+
         {/* Sin selección */}
         {!formato && (
           <motion.p
@@ -166,22 +133,21 @@ const ReportsPage = () => {
             Selecciona un formato para continuar.
           </motion.p>
         )}
- 
-        {/* ── EXCEL ── */}
+
+        {/* ── EXCEL — fechas aquí, al mismo nivel que PDF ── */}
         {formato === "excel" && (
           <motion.div
-            key="excel"
+            key="excel-dates"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25 }}
           >
-            {/* Fechas */}
             <div className="flex gap-4 mb-6">
               <motion.input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => handleExcelDate("start", e.target.value)}
                 className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -190,67 +156,16 @@ const ReportsPage = () => {
               <motion.input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => handleExcelDate("end", e.target.value)}
                 className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               />
             </div>
- 
-            {/* Card Excel */}
-            <motion.div
-              className="p-5 rounded-xl shadow space-y-6"
-              style={{ backgroundColor: "rgb(240, 243, 249)" }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h2 className="text-3xl font-medium text-black text-center">
-                Exportar datos a Excel
-                {startDate && endDate && (
-                  <> desde <span className="text-black">{startDate}</span> hasta{" "}
-                  <span className="text-black">{endDate}</span></>
-                )}
-              </h2>
- 
-              <div className="bg-green-500 bg-opacity-40 border-gray-200 p-4 rounded-xl flex items-center gap-4">
-                <Sheet className="text-green-500 w-8 h-8 shrink-0" />
-                <div>
-                  <p className="text-base text-black font-medium">
-                    El archivo Excel incluye 3 hojas:
-                  </p>
-                  <ul className="text-base text-black mt-1 space-y-0.5">
-                    <li>• <span className="font-mono font-medium">Ventas</span> — detalle completo de ventas</li>
-                    <li>• <span className="font-mono font-medium">Por Categoría</span> — resumen por categoría</li>
-                    <li>• <span className="font-mono font-medium">Por Empleado</span> — total vendido por empleado</li>
-                  </ul>
-                </div>
-              </div>
- 
-              {(!startDate || !endDate) && (
-                <p className="text-gray-500 text-sm text-center">
-                  Selecciona un rango de fechas para filtrar, o exporta todos los datos sin filtro.
-                </p>
-              )}
- 
-              <button
-                onClick={exportarExcel}
-                disabled={loadingExcel}
-                className="mt-4 bg-green-700 hover:bg-green-600 disabled:bg-gray-500 text-white py-2 px-6 rounded-lg flex items-center gap-2 transition-colors"
-              >
-                {loadingExcel ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Exportando...</>
-                ) : success ? (
-                  <><CheckCircle className="w-4 h-4" />¡Descargado!</>
-                ) : (
-                  <><Download className="w-4 h-4" />Descargar Excel</>
-                )}
-              </button>
-            </motion.div>
           </motion.div>
         )}
- 
+
         {/* ── PDF ── */}
         {formato === "pdf" && (
           <motion.div
@@ -260,7 +175,6 @@ const ReportsPage = () => {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25 }}
           >
-            {/* Fechas */}
             <div className="flex gap-4 mb-6">
               <motion.input
                 type="date"
@@ -281,8 +195,7 @@ const ReportsPage = () => {
                 transition={{ duration: 0.5 }}
               />
             </div>
- 
-            {/* Reporte PDF */}
+
             {data ? (
               <div
                 className="p-6 rounded-xl shadow space-y-8"
@@ -294,8 +207,7 @@ const ReportsPage = () => {
                   <span className="text-black">{startDate}</span> hasta{" "}
                   <span className="text-black">{endDate}</span>
                 </h2>
- 
-                {/* Total vendido destacado */}
+
                 <div className="bg-green-500 bg-opacity-40 border-gray-200 p-4 rounded-xl flex items-center gap-4">
                   <DollarSign className="text-green-600 w-8 h-8" />
                   <div>
@@ -305,8 +217,7 @@ const ReportsPage = () => {
                     </p>
                   </div>
                 </div>
- 
-                {/* Categorías más vendidas */}
+
                 <div>
                   <h3 className="py-3 text-xl font-semibold mb-2 text-black">Categorías más vendidas</h3>
                   <ResponsiveContainer width="100%" height={300}>
@@ -319,8 +230,7 @@ const ReportsPage = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
- 
-                {/* Tabla de productos más vendidos */}
+
                 <div>
                   <h3 className="text-xl font-semibold mb-2 text-black">Productos más vendidos</h3>
                   <div className="overflow-x-auto border-gray-200 rounded-xl p-4">
@@ -342,8 +252,7 @@ const ReportsPage = () => {
                     </table>
                   </div>
                 </div>
- 
-                {/* Empleados con más ventas */}
+
                 <div>
                   <h3 className="py-2 text-xl font-semibold mb-2 text-black">Empleados con más ventas</h3>
                   {data.empleados.length > 0 ? (
@@ -372,8 +281,7 @@ const ReportsPage = () => {
                     <p className="text-black">No hay ventas de empleados en este rango.</p>
                   )}
                 </div>
- 
-                {/* Botón PDF */}
+
                 <button
                   onClick={generatePDF}
                   disabled={loadingPDF}
@@ -393,10 +301,10 @@ const ReportsPage = () => {
             )}
           </motion.div>
         )}
- 
+
       </AnimatePresence>
     </div>
   );
 };
- 
-export default ReportsPage;
+
+export default Ventas_Fecha;
