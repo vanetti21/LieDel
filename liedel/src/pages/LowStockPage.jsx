@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 
 const LowStockPage = () => {
@@ -88,6 +88,7 @@ const LowStockPage = () => {
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Producto</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Stock</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Mínimo</th>
+								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider text-red-600">Pérdida por Quiebre</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última Venta</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última Compra</th>
 								<th className="px-6 py-3 text-left text-xs font-semibold text-black-600 uppercase tracking-wider">Última Actualización</th>
@@ -97,13 +98,13 @@ const LowStockPage = () => {
 						<tbody className="divide-y divide-gray-400">
 							{loading ? (
 								<tr>
-									<td colSpan="6" className="px-6 py-10 text-center text-gray-400">
+									<td colSpan="7" className="px-6 py-10 text-center text-gray-400">
 										Cargando...
 									</td>
 								</tr>
 							) : Array.isArray(filteredData) && filteredData.length > 0 ? (
 								filteredData.map((p, index) => {
-									const isCritical = p.Cantidad_actual < p.Cantidad_minima;
+									const isCritical = p.Cantidad_actual <= p.StockMinimo;
 									return (
 										<motion.tr
 											key={index}
@@ -112,26 +113,32 @@ const LowStockPage = () => {
 											animate={{ opacity: 1 }}
 											transition={{ duration: 0.3 }}
 										>
-											<td className="px-6 py-4 whitespace-nowrap font-medium">
+											<td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
 												{p.Nombre}
 											</td>
 
 											<td className="px-6 py-4 whitespace-nowrap text-sm">
 												<span className={`inline-flex items-center gap-1 font-semibold ${isCritical ? "text-red-600" : "text-gray-700"}`}>
 													{isCritical && <span className="text-xs">⚠️</span>}
-													{p.Cantidad_actual}
+													{p.Cantidad_actual} u.
 												</span>
 											</td>
 
-											<td className="px-6 py-4 whitespace-nowrap text-sm">
-												{p.Cantidad_minima}
-											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm">
-												{formatDate(p.Ultima_venta)}
+											<td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+												{p.StockMinimo} u.
 											</td>
 
-											<td className="px-6 py-4 whitespace-nowrap text-sm">
-												{formatDate(p.Ultima_compra)}
+											{/* NUEVO CAMPO: COSTO DE OPORTUNIDAD POR QUIEBRE */}
+											<td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-red-600">
+												${p.costo_opportunity?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || p.costo_oportunidad?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+											</td>
+
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+												{formatDate(p.ultima_venta)}
+											</td>
+
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+												{formatDate(p.ultima_compra)}
 											</td>
 
 											<td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
@@ -142,7 +149,7 @@ const LowStockPage = () => {
 								})
 							) : (
 								<tr>
-									<td colSpan="6" className="px-6 py-10 text-center text-gray-400">
+									<td colSpan="7" className="px-6 py-10 text-center text-gray-400">
 										Sin productos bajo el mínimo 🎉
 									</td>
 								</tr>

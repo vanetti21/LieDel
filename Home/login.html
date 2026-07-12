@@ -7,13 +7,63 @@
     <link rel="stylesheet" href="./estilo/style.css">
     <title>LieDel - Login Interactivo</title>
 
-    <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+        .about-container{
+
+    width:900px;
+
+    margin:60px auto;
+
+    background:white;
+
+    padding:50px;
+
+    border-radius:20px;
+
+    box-shadow:0 15px 40px rgba(0,0,0,.15);
+
+}
+
+.about-container h1{
+
+    margin-bottom:25px;
+
+    color:#3b82f6;
+
+}
+
+.about-container h2{
+
+    margin-top:25px;
+
+    color:#2563eb;
+
+}
+
+.about-container p{
+
+    line-height:1.8;
+
+    margin:15px 0;
+
+}
+
+.about-container ul{
+
+    margin-left:25px;
+
+    line-height:2;
+
+}
+
+    </style>
 </head>
 
 <body>
 
-    <div class="login-container">
+    <div class="login-container" id="loginSection">
         <div class="login-form-panel">
 
             <h2>Login</h2>
@@ -26,7 +76,6 @@
                         placeholder="Usuario o Correo"
                         required
                     >
-
                 </div>
 
                 <div class="input-group">
@@ -40,7 +89,6 @@
                     <span
                         class="material-symbols-outlined toggle-password"
                         onclick="togglePasswordVisibility()">
-
                         visibility
                     </span>
                 </div>
@@ -50,13 +98,24 @@
                     class="submit-btn">
                     Ingresar al Sistema
                 </button>
-
             </form>
 
             <p id="error" class="error-message"></p>
+            <div class="about-us-box">
+                <a
+                    href="javascript:void(0)"
+                    class="about-us-link"
+                    onclick="showAbout()">
 
+                    <span class="material-symbols-outlined">
+                        info
+                    </span>
+
+                    Acerca de nosotros
+
+                </a>
+            </div>
         </div>
-
 
         <div class="logo-cover-panel">
             <img
@@ -65,76 +124,113 @@
                 class="logo-img"
             >
 
-            <div class="about-us-box">
-
-                <a
-                    href="#about"
-                    class="about-us-link"
-                    onclick="showAbout()">
-
-                    <span
-                        class="material-symbols-outlined"
-                        style="font-size:18px;">
-
-                        info
-                    </span>
-
-                    Acerca de nosotros
-
-                </a>
-
-            </div>
+            
         </div>
     </div>
+    <div id="aboutSection" style="display:none;">
 
+    <div class="about-container">
+
+        <h1>Acerca de Nosotros</h1>
+
+        <p>
+
+            Bienvenido a <strong>LieDel</strong>, una plataforma desarrollada
+            para apoyar a las empresas mediante el análisis inteligente de
+            datos comerciales.
+
+        </p>
+
+        <p>
+
+            Nuestro sistema permite visualizar información relacionada con:
+
+        </p>
+
+        <ul>
+
+            <li>📊 Dashboard de indicadores (KPIs)</li>
+
+            <li>📈 Tendencias de ventas</li>
+
+            <li>📦 Control de inventario</li>
+
+            <li>💰 Análisis financiero</li>
+
+            <li>📋 Reportes en PDF y Excel</li>
+
+            <li>⚠️ Productos con stock crítico</li>
+
+            <li>🏪 Análisis por sucursales y almacenes</li>
+
+        </ul>
+
+        <h2>Misión</h2>
+
+        <p>
+
+            Brindar herramientas que faciliten la toma de decisiones mediante
+            el análisis de datos.
+
+        </p>
+
+        <h2>Visión</h2>
+
+        <p>
+
+            Convertirnos en una plataforma referente para el análisis
+            empresarial.
+
+        </p>
+
+        <button
+            class="submit-btn"
+            onclick="backToLogin()">
+
+            ← Volver al Login
+
+        </button>
+
+    </div>
+
+</div>
     <script>
-
         function togglePasswordVisibility(){
-
-            const passwordField =
-            document.getElementById('password');
-
-            const toggleIcon =
-            document.querySelector('.toggle-password');
+            const passwordField = document.getElementById('password');
+            const toggleIcon = document.querySelector('.toggle-password');
 
             if(passwordField.type === 'password'){
-
                 passwordField.type = 'text';
-
-                toggleIcon.textContent =
-                'visibility_off';
-
-            }else{
-
+                toggleIcon.textContent = 'visibility_off';
+            } else {
                 passwordField.type = 'password';
-
-                toggleIcon.textContent =
-                'visibility';
+                toggleIcon.textContent = 'visibility';
             }
         }
 
         function showAbout(){
 
-            alert(
-                'LieDel - Smart Data Solutions\n\n' +
-                'Sistema Avanzado de Análisis y Optimización de Datos.'
-            );
+            document.getElementById("loginSection").style.display = "none";
+
+            document.getElementById("aboutSection").style.display = "block";
+
         }
 
-        document
-            .getElementById("loginForm")
-            .addEventListener("submit", async function(event) {
+        function backToLogin(){
 
+            document.getElementById("aboutSection").style.display = "none";
+
+            document.getElementById("loginSection").style.display = "flex";
+
+        }
+
+        document.getElementById("loginForm").addEventListener("submit", async function(event) {
             event.preventDefault();
 
-            const username =
-                document.getElementById("username").value;
-
-            const password =
-                document.getElementById("password").value;
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
 
             try {
-
                 const response = await fetch(
                     "http://127.0.0.1:5000/login",
                     {
@@ -152,38 +248,26 @@
                 const result = await response.json();
 
                 if(result.success){
-
+                    // Agregamos correctamente 'permisos' y corregimos el campo de email
                     const params = new URLSearchParams({
-
                         usuario: result.usuario,
                         nombre: result.nombre,
-                        apellido: result.apellido,
-                        email: result.email,
-                        puesto: result.puesto
-
+                        email: result.Contacto_email, // Corregido para que use la clave exacta de Python
+                        puesto: result.puesto,
+                        permisos: result.permisos     // <--- Aquí inyectamos los permisos en la URL
                     });
 
-                    window.location.href =
-                    `http://localhost:5173?${params.toString()}`;
+                    window.location.href = `http://localhost:5173?${params.toString()}`;
 
-                }else{
-
-                    document.getElementById("error")
-                        .innerText =
-                        "Credenciales incorrectas";
+                } else {
+                    document.getElementById("error").innerText = result.message || "Credenciales incorrectas";
                 }
 
-            }catch(error){
-
-                document.getElementById("error")
-                    .innerText =
-                    "Error conectando con el servidor";
-
+            } catch(error) {
+                document.getElementById("error").innerText = "Error conectando con el servidor";
                 console.error(error);
             }
-
         });
-
     </script>
 
 </body>

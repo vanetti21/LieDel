@@ -11,10 +11,17 @@ const Account = () => {
         } catch (err) {
             console.error("Error en logout:", err);
         } finally {
-            localStorage.removeItem("Usuario");
-            localStorage.removeItem("Nombre");
-            localStorage.removeItem("Contacto_email");
-            localStorage.removeItem("Cargo");
+            // 🌟 Limpiamos los datos usando los nombres exactos con los que se guardan en App.jsx
+            localStorage.removeItem("usuario");
+            localStorage.removeItem("nombre");
+            localStorage.removeItem("email");
+            localStorage.removeItem("puesto");
+            localStorage.removeItem("permisos"); // <-- ¡Crucial para quitar los accesos del rol anterior!
+
+            // Alternativa radical si quieres limpiar todo lo demás:
+            // localStorage.clear();
+
+            // Redirección directa al backend para recargar el flujo de login
             window.location.href = "http://127.0.0.1:5000/";
         }
     };

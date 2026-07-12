@@ -84,13 +84,13 @@ const ProductDetailPage = () => {
 
 				<div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
 					<p className="text-sm text-gray-500 mb-1">Mínimo</p>
-					<h2 className="text-2xl font-bold text-gray-800">{product.Cantidad_minima}</h2>
+					<h2 className="text-2xl font-bold text-gray-800">{product.StockMinimo}</h2>
 				</div>
 
 				<div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
 					<p className="text-sm text-gray-500 mb-1">Estado</p>
 					<h2 className="text-2xl font-bold text-gray-800">
-						{product.Cantidad_actual <= product.Cantidad_minima
+						{product.Cantidad_actual <= product.StockMinimo
 							? "🔴 Crítico"
 							: "🟢 OK"}
 					</h2>

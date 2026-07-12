@@ -7,19 +7,28 @@ import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { hasPermission } from "../../components/common/hasPermission"; // Importamos tu validador
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
 
 const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
-  const [startDate,  setStartDate]  = useState("");
-  const [endDate,    setEndDate]    = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [loadingReport, setLoadingReport] = useState(false);
   const [loadingPDF, setLoadingPDF] = useState(false);
-  const [success,    setSuccess]    = useState(false);
-  const [data,       setData]       = useState(null);
+  const [loadingExcel, setLoadingExcel] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [data, setData] = useState(null);
 
+  // Evaluamos el permiso de Excel directamente
+  const puedeVerExcel = hasPermission("Ver y Descargar Excel");
+
+  // Efecto para buscar los datos del PDF automáticamente al cambiar fechas
   useEffect(() => {
     if (formato !== "pdf" || !startDate || !endDate) return;
     const fetchData = async () => {
+      setLoadingReport(true);
+      setSuccess(false);
       try {
         const response = await fetch(
           `http://localhost:5000/api/reporte-fechas?inicio=${startDate}&fin=${endDate}`
@@ -28,11 +37,14 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
         setData(result);
       } catch (error) {
         console.error("Error al obtener el reporte:", error);
+      } finally {
+        setLoadingReport(false);
       }
     };
     fetchData();
   }, [startDate, endDate, formato]);
 
+  // Manejo del cambio de formato (Excel / PDF)
   const handleFormato = (f) => {
     setFormato(f);
     setData(null);
@@ -42,35 +54,68 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
     if (onExcelDates) onExcelDates("", "");
   };
 
+  // Manejo de fechas exclusivo para Excel
   const handleExcelDate = (field, value) => {
     const newStart = field === "start" ? value : startDate;
-    const newEnd   = field === "end"   ? value : endDate;
+    const newEnd = field === "end" ? value : endDate;
+    
     if (field === "start") setStartDate(value);
-    if (field === "end")   setEndDate(value);
+    if (field === "end") setEndDate(value);
+    
     if (onExcelDates) onExcelDates(newStart, newEnd);
   };
 
+  // Exportar a Excel usando la API del Backend
+  const exportarExcel = async () => {
+    setLoadingExcel(true);
+    setSuccess(false);
+    try {
+      let url = "http://localhost:5000/api/exportar-excel";
+      if (startDate && endDate) url += `?inicio=${startDate}&fin=${endDate}`;
+      
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "ventas.xlsx";
+      link.click();
+      URL.revokeObjectURL(link.href);
+      
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error al exportar:", err);
+      alert("No se pudo exportar. Verifica que el servidor esté corriendo.");
+    } finally {
+      setLoadingExcel(false);
+    }
+  };
+
+  // Generar PDF capturando el contenedor HTML
   const generatePDF = () => {
     setLoadingPDF(true);
     setSuccess(false);
     const input = document.getElementById("reportContent");
     html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData   = canvas.toDataURL("image/png");
-      const pdf       = new jsPDF("p", "mm", "a4");
-      const pdfWidth  = pdf.internal.pageSize.getWidth();
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth  = pdfWidth;
+      const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft  = imgHeight;
-      let position    = 0;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
+      
       while (heightLeft > 0) {
         position -= pdfHeight;
         pdf.addPage();
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
+      
       pdf.save("reporte_ventas.pdf");
       setLoadingPDF(false);
       setSuccess(true);
@@ -80,25 +125,29 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
 
   return (
     <div className="p-5 text-white">
-
+      
       {/* ── Botones Excel / PDF ── */}
       <div className="flex gap-4 mb-6">
-        <motion.button
-          onClick={() => handleFormato("excel")}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className={`flex items-center gap-2 px-9 py-2.5 rounded-lg font-semibold ${
-            formato === "excel"
-              ? "bg-green-600 text-white shadow-lg"
-              : "bg-white text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          <Sheet className="w-4 h-4" />
-          Excel
-        </motion.button>
+        
+        {/* Renderizado condicional del botón de Excel */}
+        {puedeVerExcel && (
+          <motion.button
+            onClick={() => handleFormato("excel")}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`flex items-center gap-2 px-9 py-2.5 rounded-lg font-semibold ${
+              formato === "excel"
+                ? "bg-green-600 text-white shadow-lg"
+                : "bg-white text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <Sheet className="w-4 h-4" />
+            Excel
+          </motion.button>
+        )}
 
         <motion.button
           onClick={() => handleFormato("pdf")}
@@ -119,7 +168,6 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
       </div>
 
       <AnimatePresence mode="wait">
-
         {/* Sin selección */}
         {!formato && (
           <motion.p
@@ -134,15 +182,16 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
           </motion.p>
         )}
 
-        {/* ── EXCEL — fechas aquí, al mismo nivel que PDF ── */}
-        {formato === "excel" && (
+        {/* ── EXCEL ── */}
+        {formato === "excel" && puedeVerExcel && (
           <motion.div
-            key="excel-dates"
+            key="excel"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25 }}
           >
+            {/* Fechas Excel */}
             <div className="flex gap-4 mb-6">
               <motion.input
                 type="date"
@@ -163,6 +212,21 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
                 transition={{ duration: 0.5 }}
               />
             </div>
+
+            {/* Botón definitivo para procesar y descargar el archivo Excel */}
+            {/* <button
+              onClick={exportarExcel}
+              disabled={loadingExcel}
+              className="mt-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-500 text-white py-2 px-6 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              {loadingExcel ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Generando Excel...</>
+              ) : success ? (
+                <><CheckCircle className="w-4 h-4" />¡Descargado!</>
+              ) : (
+                <><Download className="w-4 h-4" />Descargar Excel1</>
+              )}
+            </button> */}
           </motion.div>
         )}
 
@@ -175,28 +239,10 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25 }}
           >
-            <div className="flex gap-4 mb-6">
-              <motion.input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              />
-              <motion.input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-white hover:bg-gray-200 text-black font-semibold p-2 rounded outline-none"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-
-            {data ? (
+            {/* Renderizado de Datos PDF */}
+            {loadingReport ? (
+              <p className="text-gray-900">Cargando datos del reporte...</p>
+            ) : data ? (
               <div
                 className="p-6 rounded-xl shadow space-y-8"
                 id="reportContent"
@@ -255,7 +301,7 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
 
                 <div>
                   <h3 className="py-2 text-xl font-semibold mb-2 text-black">Empleados con más ventas</h3>
-                  {data.empleados.length > 0 ? (
+                  {data.empleados && data.empleados.length > 0 ? (
                     <ResponsiveContainer width="100%" height={550}>
                       <PieChart>
                         <Pie
@@ -301,7 +347,6 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
             )}
           </motion.div>
         )}
-
       </AnimatePresence>
     </div>
   );

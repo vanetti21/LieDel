@@ -1,16 +1,19 @@
 import { useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { hasPermission } from "./hasPermission"; // Importamos el utilitario
 
+// 1. Agregamos la propiedad 'permission' vinculada a cada elemento de navegación
 const NAV_ITEMS = [
-	{ name: "Overview",    href: "/"            },
-	{ name: "Products",    href: "/products"    },
-	{ name: "Employees",   href: "/users"       },
-	{ name: "Sales",       href: "/sales"       },
-	{ name: "Orders",      href: "/orders"      },
-	{ name: "Clients",     href: "/clients"     },
-	{ name: "Suppliers",   href: "/suppliers"   },
-	{ name: "Reports",     href: "/reports"     },
-	{ name: "Predictions", href: "/predictions" },
+	{ name: "Overview",    href: "/"                  , permission: null }, // Libre acceso al panel base
+	{ name: "Products",    href: "/products"          , permission: "Ver ProductsPage" },
+	{ name: "Employees",   href: "/users"             , permission: "Ver UsersPage" },
+	{ name: "Sales",       href: "/sales"             , permission: "Ver SalesPage" },
+	{ name: "Orders",      href: "/orders"            , permission: "Ver OrdersPage" },
+	{ name: "Clients",     href: "/clients"           , permission: "Ver ClientsPage" },
+	{ name: "Suppliers",   href: "/suppliers"         , permission: "Ver SuppliersPage" },
+	{ name: "Reports",     href: "/reports"           , permission: "Reporte General" },
+	{ name: "Predictions", href: "/predictions"       , permission: "Ver Predictions" },
+	{ name: "Users",       href: "/users-management"  , permission: "Ver UserPage" }, 
 ];
 
 const getTitle = (pathname) => {
@@ -26,6 +29,7 @@ const getTitle = (pathname) => {
 	if (pathname === "/suppliers")          return "Suppliers";
 	if (pathname === "/settings")           return "Settings";
 	if (pathname === "/predictions")        return "Predictions";
+	if (pathname === "/users-management")   return "System Users Access"; 
 	return "Sales Dashboard";
 };
 
@@ -33,11 +37,13 @@ const Header = () => {
 	const location  = useLocation();
 	const title     = getTitle(location.pathname);
 
-	// Datos del usuario desde localStorage
 	const nombre  = localStorage.getItem("nombre");
 	const inicial = nombre ? nombre.charAt(0).toUpperCase() : "?";
 
 	const isSettings = location.pathname === "/settings";
+
+	// Forzamos la lectura de los permisos actuales en cada renderizado de ruta
+	const permisosActuales = localStorage.getItem("permisos") || "";
 
 	return (
 		<header
@@ -60,13 +66,42 @@ const Header = () => {
 				{/* Nav derecha */}
 				<nav className="mr-8 flex items-center gap-3 overflow-x-auto scrollbar-hide">
 
-					{/* Pills normales */}
 					{NAV_ITEMS.map((item) => {
+						// Si el ítem no requiere permisos (como Overview), pasa directo
+						if (!item.permission) {
+							const isActive = location.pathname === item.href;
+							return (
+								<Link key={item.href} to={item.href}>
+									<motion.div
+										className="px-3 py-2 rounded-full text-xs font-semibold font-tracking-tight whitespace-nowrap cursor-pointer"
+										style={{
+											backgroundColor: isActive ? "#fff" : "transparent",
+											color: isActive ? "#5a5cf9" : "#6b7280",
+											boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+											border: isActive ? "1px solid #e5e7eb" : "1px solid transparent",
+										}}
+										whileHover={{
+											backgroundColor: isActive ? "#fff" : "rgba(255,255,255,0.55)",
+										}}
+										transition={{ duration: 0.12 }}
+									>
+										{item.name}
+									</motion.div>
+								</Link>
+							);
+						}
+
+						// Si requiere permisos, evaluamos directamente usando la variable fresca de los permisos
+						const listaFlujo = permisosActuales.split(",").map(p => p.trim());
+						if (!listaFlujo.includes(item.permission.trim())) {
+							return null;
+						}
+
 						const isActive = location.pathname === item.href;
 						return (
 							<Link key={item.href} to={item.href}>
 								<motion.div
-									className="px-3 py-2 rounded-full text-xs font-medium font-semibold font-tracking-tight whitespace-nowrap cursor-pointer"
+									className="px-3 py-2 rounded-full text-xs font-semibold font-tracking-tight whitespace-nowrap cursor-pointer"
 									style={{
 										backgroundColor: isActive ? "#fff" : "transparent",
 										color: isActive ? "#5a5cf9" : "#6b7280",
@@ -89,12 +124,8 @@ const Header = () => {
 						<motion.div
 							className="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 text-xs font-bold cursor-pointer flex-shrink-0"
 							style={{
-								border: isSettings
-									? "2px solid #6f71f0"
-									: "1px solid transparent",
-								boxShadow: isSettings
-									? "0 1px 4px rgba(0,0,0,0.15)"
-									: "none",
+								border: isSettings ? "2px solid #6f71f0" : "1px solid transparent",
+								boxShadow: isSettings ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
 							}}
 							transition={{ duration: 0.12 }}
 						>
