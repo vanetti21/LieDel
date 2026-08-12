@@ -27,7 +27,7 @@ const SalesChannelChart = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <h2 className="text-xl font-medium mb-6 text-black-100">Best-Selling Products</h2>
+      <h2 className="text-xl font-medium mb-6 text-black-100">Productos mas vendidos</h2>
 
       <div className="h-80">
         <ResponsiveContainer>

@@ -18,18 +18,32 @@ const NAV_ITEMS = [
 
 const getTitle = (pathname) => {
 	if (pathname === "/")                   return "Sales Dashboard";
-	if (pathname === "/products")           return "Products";
-	if (pathname === "/products/low-stock") return "Low Stock Products";
-	if (pathname.startsWith("/products/"))  return "Product Detail";
-	if (pathname === "/users")              return "Employees";
-	if (pathname === "/sales")              return "Sales";
-	if (pathname === "/orders")             return "Orders";
+	if (pathname === "/products")           return "Productos";
+	if (pathname === "/products/low-stock") return "Productos Bajo Stock";
+	if (pathname === "/products/dead-stock") return "Productos Estancado";
+	if (pathname === "/defective-products") return "Productos Defectuosos";
+	if (pathname.startsWith("/products/all"))  return "Producto Lista";
+	if (pathname.startsWith("/products/"))  return "Producto Detalle";
+	if (pathname === "/users")              return "Empleados";
+	if (pathname.startsWith("/Employees"))  return "Empleados Lista";
+	if (pathname === "/sales")              return "Ventas";
+	if (pathname === "/orders")             return "Ordenes";
+	if (pathname === "/orders/pending")             return "Ordenes Pendientes";
+	if (pathname === "/orders/completed")             return "Ordenes Completas";
+	if (pathname === "/orders/cancelled")             return "Ordenes Canceladas";
 	if (pathname === "/reports")            return "Reports";
-	if (pathname === "/clients")            return "Clients";
-	if (pathname === "/suppliers")          return "Suppliers";
+	if (pathname === "/clients")            return "Clientes";
+	if (pathname === "/clients/list")            return "Clientes Lista";
+	if (pathname.startsWith("/clients/"))            return "Clientes Detalle";
+	if (pathname === "/suppliers")          return "Proveedores";
+	if (pathname === "/suppliers/list")          return "Proveedores Lista";
+	if (pathname.startsWith("/suppliers"))  return "Proveedores Detalle";
 	if (pathname === "/settings")           return "Settings";
-	if (pathname === "/predictions")        return "Predictions";
-	if (pathname === "/users-management")   return "System Users Access"; 
+	if (pathname === "/predictions")        return "Predicdiones";
+	if (pathname === "/users-management")   return "Amanejo de Usuarios"; 
+	if (pathname === "/clients/vip")   return "Clientes VIP"; 
+	if (pathname === "/sales/list")   return "Ventas Lista"; 
+	if (pathname.startsWith("/sales/"))  return "Venta Detalle";
 	return "Sales Dashboard";
 };
 

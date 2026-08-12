@@ -38,19 +38,19 @@ const OverviewPage = () => {
 					transition={{ delay: 0.2 }}
 				>
 					<StatCard
-						name='Total Sales'
+						name='Total Vendido'
 						icon={Zap}
 						value={`$${parseFloat(data.total_sales).toLocaleString("es-DO")}`}
 						color='#7032ff'
 					/>
 					<StatCard
-						name='Total Employees'
+						name='Cantidad de Empleados'
 						icon={Users}
 						value={data.employees}
 						color='rgb(198, 56, 254)'
 					/>
 					<StatCard
-						name='Total Products'
+						name='Cantidad de Productos'
 						icon={ShoppingBag}
 						value={data.total_products}
 						color='#f7429c'

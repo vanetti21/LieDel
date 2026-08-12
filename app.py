@@ -222,7 +222,7 @@ def categorias_mas_vendidas():
     return jsonify(resultados)
 
 
-#Reportes
+#fechas ventas-eso no lo usaremos
 @app.route('/api/reporte-fechas', methods=['GET'])
 def reporte_por_fechas():
     inicio = request.args.get('inicio')
@@ -287,53 +287,94 @@ def sales_stats():
         conn = conectar_bd()
         cursor = conn.cursor(dictionary=True)
 
-        # Total Revenue
-        cursor.execute("""
-            SELECT COALESCE(SUM(Total),0) AS total_revenue
-            FROM venta
-        """)
-        total_revenue = cursor.fetchone()['total_revenue']
+        # 1. Total Revenue (CORREGIDO)
+        cursor.execute("SELECT SUM(Total) AS total_revenue FROM venta")
+        res_revenue = cursor.fetchone()
+        total_revenue = res_revenue['total_revenue'] if res_revenue else 0
 
-        # Average Order Value
-        cursor.execute("""
-            SELECT COALESCE(AVG(Total),0) AS average_order
-            FROM venta
-        """)
+        # 2. Cantidad Total de Ventas/Órdenes
+        cursor.execute("SELECT COUNT(Id_venta) AS total_orders FROM venta WHERE LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')")
+        total_orders = cursor.fetchone()['total_orders']
+
+        # 3. Average Order Value
+        cursor.execute("SELECT COALESCE(AVG(Total),0) AS average_order FROM venta WHERE LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')")
         average_order = cursor.fetchone()['average_order']
 
-        # Ventas mes actual
+        # 4. Ventas mes actual
         cursor.execute("""
             SELECT COALESCE(SUM(Total),0) AS current_month
             FROM venta
             WHERE MONTH(Fecha_venta) = MONTH(CURDATE())
             AND YEAR(Fecha_venta) = YEAR(CURDATE())
+            AND LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')
         """)
         current_month = float(cursor.fetchone()['current_month'])
 
-        # Ventas mes anterior
+        # 5. Ventas mes anterior
         cursor.execute("""
             SELECT COALESCE(SUM(Total),0) AS last_month
             FROM venta
             WHERE MONTH(Fecha_venta) = MONTH(CURDATE() - INTERVAL 1 MONTH)
             AND YEAR(Fecha_venta) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+            AND LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')
         """)
         last_month = float(cursor.fetchone()['last_month'])
 
-        # Growth %
+        # 6. Growth %
         sales_growth = 0
-
         if last_month > 0:
             sales_growth = ((current_month - last_month) / last_month) * 100
 
+        cursor.close()
+        conn.close()
+
         return jsonify({
-            "totalRevenue": round(float(total_revenue), 2),
-            "averageOrderValue": round(float(average_order), 2),
+            "totalRevenue": round(float(total_revenue or 0), 2),
+            "totalOrders": int(total_orders or 0),
+            "averageOrderValue": round(float(average_order or 0), 2),
             "salesGrowth": round(sales_growth, 2)
-        })
+        }), 200
 
     except Exception as e:
-        print(e)
-        return jsonify({"error": "Error obteniendo estadísticas"}), 500    
+        print("Error en sales_stats:", e)
+        return jsonify({"error": "Error obteniendo estadísticas"}), 500
+
+
+#  Lista detallada de todas las ventas para la tabla
+# 🎯 Endpoint actualizado: Lista de ventas con Cliente incluido
+@app.route('/api/ventas/lista', methods=['GET'])
+def obtener_lista_ventas():
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT 
+                v.Id_venta,
+                v.Fecha_venta,
+                v.Total,
+                COALESCE(e.Nombre, 'Sin Asignar') AS empleado,
+                COALESCE(c.Nombre, 'Cliente General') AS cliente
+            FROM venta v
+            LEFT JOIN empleados e ON v.Id_empleado = e.Id_empleado
+            LEFT JOIN clientes c ON v.Id_cliente = c.Id_cliente
+            ORDER BY v.Fecha_venta DESC
+        """)
+        ventas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        for v in ventas:
+            v["Total"] = float(v["Total"] or 0)
+            if v["Fecha_venta"]:
+                v["Fecha_venta"] = str(v["Fecha_venta"])
+
+        return jsonify(ventas)
+
+    except Exception as e:
+        print("Error al obtener lista de ventas:", e)
+        return jsonify({"error": "Error al obtener lista de ventas"}), 500
 
 @app.route('/top_empleados_ventas', methods=['GET'])
 def top_empleados_ventas():
@@ -361,6 +402,79 @@ def top_empleados_ventas():
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": "Error obteniendo empleados"}), 500    
+
+
+
+# 🎯 Endpoint: Detalle completo de una venta por su ID
+@app.route('/api/ventas/<int:id_venta>', methods=['GET'])
+def obtener_detalle_venta(id_venta):
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Información principal de la venta
+        cursor.execute("""
+            SELECT 
+                v.Id_venta,
+                v.Fecha_venta,
+                v.Total,
+                COALESCE(e.Nombre, 'Sin Asignar') AS empleado,
+                COALESCE(c.Nombre, 'Cliente General') AS cliente,
+                COALESCE(c.Contacto_email, 'N/A') AS cliente_email,
+                COALESCE(s.Nombre, 'Sucursal General') AS sucursal
+            FROM venta v
+            LEFT JOIN empleados e ON v.Id_empleado = e.Id_empleado
+            LEFT JOIN clientes c ON v.Id_cliente = c.Id_cliente
+            LEFT JOIN sucursal s ON v.Id_sucursal = s.Id_sucursal
+            WHERE v.Id_venta = %s
+        """, (id_venta,))
+        
+        venta = cursor.fetchone()
+
+        if not venta:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Venta no encontrada"}), 404
+
+        # 2. Productos incluidos en el detalle de la venta
+        cursor.execute("""
+            SELECT 
+                d.Id_producto,
+                p.Nombre AS producto,
+                c.Nombre AS categoria,
+                d.Cantidad,
+                d.Precio_unitario,
+                (d.Cantidad * d.Precio_unitario) AS subtotal
+            FROM detalle_venta d
+            JOIN productos p ON d.Id_producto = p.Id_producto
+            LEFT JOIN categoria c ON p.Id_categoria = c.Id_Categoria
+            WHERE d.Id_venta = %s
+        """, (id_venta,))
+        
+        items = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        # Formatear números para JSON
+        venta["Total"] = float(venta["Total"] or 0)
+        if venta["Fecha_venta"]:
+            venta["Fecha_venta"] = str(venta["Fecha_venta"])
+
+        for item in items:
+            item["Cantidad"] = int(item["Cantidad"] or 0)
+            item["Precio_unitario"] = float(item["Precio_unitario"] or 0)
+            item["subtotal"] = float(item["subtotal"] or 0)
+
+        return jsonify({
+            "venta": venta,
+            "items": items
+        })
+
+    except Exception as e:
+        print("Error al obtener detalle de venta:", e)
+        return jsonify({"error": "Error al obtener detalle de la venta"}), 500
+
     
 
     
@@ -411,6 +525,98 @@ def productos_reporte():
         return jsonify({"error": "No se pudieron obtener los productos"}), 500
 
 
+@app.route("/api/productos-almacenes", methods=["GET"])
+def productos_almacenes():
+    try:
+        inicio = request.args.get("inicio")
+        fin = request.args.get("fin")
+
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        # Si vienen fechas, filtramos por la columna Ultima_actualizacion directa en el WHERE
+        if inicio and fin:
+            query_resumen = """
+                SELECT 
+                    COALESCE(a.Nombre, 'Almacén Principal') as nombre,
+                    COUNT(DISTINCT i.Id_producto) as total_productos,
+                    COALESCE(SUM(i.Cantidad_actual), 0) as unidades_totales,
+                    COALESCE(SUM(i.Cantidad_actual * p.Precio_venta), 0) as valor_total
+                FROM inventario i
+                JOIN productos p ON i.Id_producto = p.Id_producto
+                LEFT JOIN almacen a ON i.Id_almacen = a.Id_almacen
+                WHERE LOWER(i.estado) = 'normal'
+                  AND i.Ultima_actualizacion BETWEEN %s AND %s
+                GROUP BY i.Id_almacen
+            """
+
+            query_productos = """
+                SELECT 
+                    p.Nombre,
+                    i.Cantidad_actual as stock,
+                    p.Precio_venta,
+                    COALESCE(a.Nombre, 'Almacén Principal') as almacen
+                FROM inventario i
+                JOIN productos p ON i.Id_producto = p.Id_producto
+                LEFT JOIN almacen a ON i.Id_almacen = a.Id_almacen
+                WHERE LOWER(i.estado) = 'normal'
+                  AND i.Ultima_actualizacion BETWEEN %s AND %s
+                ORDER BY almacen ASC, p.Nombre ASC
+            """
+            
+            params = [inicio, fin]
+
+            cursor.execute(query_resumen, params)
+            resumen = cursor.fetchall()
+
+            cursor.execute(query_productos, params)
+            productos = cursor.fetchall()
+
+        # Si no hay fechas, traemos todo el stock sin filtro de tiempo
+        else:
+            query_resumen = """
+                SELECT 
+                    COALESCE(a.Nombre, 'Almacén Principal') as nombre,
+                    COUNT(DISTINCT i.Id_producto) as total_productos,
+                    COALESCE(SUM(i.Cantidad_actual), 0) as unidades_totales,
+                    COALESCE(SUM(i.Cantidad_actual * p.Precio_venta), 0) as valor_total
+                FROM inventario i
+                JOIN productos p ON i.Id_producto = p.Id_producto
+                LEFT JOIN almacen a ON i.Id_almacen = a.Id_almacen
+                WHERE LOWER(i.estado) = 'normal'
+                GROUP BY i.Id_almacen
+            """
+
+            query_productos = """
+                SELECT 
+                    p.Nombre,
+                    i.Cantidad_actual as stock,
+                    p.Precio_venta,
+                    COALESCE(a.Nombre, 'Almacén Principal') as almacen
+                FROM inventario i
+                JOIN productos p ON i.Id_producto = p.Id_producto
+                LEFT JOIN almacen a ON i.Id_almacen = a.Id_almacen
+                WHERE LOWER(i.estado) = 'normal'
+                ORDER BY almacen ASC, p.Nombre ASC
+            """
+
+            cursor.execute(query_resumen)
+            resumen = cursor.fetchall()
+
+            cursor.execute(query_productos)
+            productos = cursor.fetchall()
+
+        cursor.close()
+        return jsonify({
+            "resumen_almacenes": resumen,
+            "productos_por_almacen": productos
+        })
+
+    except Exception as e:
+        print("Error al obtener datos de almacenes:", e)
+        return jsonify({"resumen_almacenes": [], "productos_por_almacen": []}), 500
+    
+    
 
 @app.route("/api/productos-stats")
 def productos_stats():
@@ -434,55 +640,78 @@ def productos_stats():
 
     # Low stock
     cursor.execute("""
-        SELECT COUNT(*) AS low_stock
-    FROM
+       SELECT COUNT(*) AS low_stock
+FROM
+(
+    SELECT
+        p.Id_producto,
+        p.Nombre,
+        p.Precio_base,
+        i.Id_almacen,
+        i.Cantidad_actual,
+        CEILING(IFNULL(v.ConsumoPromedioDiario, 0)) AS ConsumoPromedioDiario,
+        CEILING(IFNULL(c.TiempoEntrega, 0)) AS TiempoEntrega,
+        CEILING(IFNULL(v.ConsumoPromedioDiario, 0) * 5) AS StockSeguridad,
+        CEILING(
+            (IFNULL(v.ConsumoPromedioDiario, 0) * IFNULL(c.TiempoEntrega, 0))
+            +
+            (IFNULL(v.ConsumoPromedioDiario, 0) * 5)
+        ) AS StockMinimo,
+        i.estado,
+        i.Ultima_actualizacion,
+        (
+            SELECT MAX(v2.Fecha_venta)
+            FROM detalle_venta dv2
+            JOIN venta v2
+                ON dv2.Id_venta = v2.Id_venta
+            WHERE dv2.Id_producto = p.Id_producto
+        ) AS ultima_venta,
+        (
+            SELECT MAX(oc2.Fecha_orden)
+            FROM detalle_compra dc2
+            JOIN orden_compra oc2
+                ON dc2.Id_orden_compra = oc2.Id_orden_compra
+            WHERE dc2.Id_producto = p.Id_producto
+        ) AS ultima_compra,
+        ROUND(GREATEST(
+            CEILING(
+                (IFNULL(v.ConsumoPromedioDiario, 0) * IFNULL(c.TiempoEntrega, 0))
+                +
+                (IFNULL(v.ConsumoPromedioDiario, 0) * 5)
+            ) - i.Cantidad_actual,
+            0
+        ) * p.Precio_base, 2) AS costo_oportunidad
+    FROM productos p
+    JOIN inventario i
+        ON p.Id_producto = i.Id_producto
+    LEFT JOIN
     (
         SELECT
-            p.Id_producto,
-            i.Cantidad_actual,
-
-            CEILING(
-                (IFNULL(v.ConsumoPromedioDiario,0) * IFNULL(c.TiempoEntrega,0))
-                +
-                (IFNULL(v.ConsumoPromedioDiario,0) * 5)
-            ) AS StockMinimo
-
-        FROM productos p
-
-        LEFT JOIN inventario i
-            ON p.Id_producto = i.Id_producto
-
-        LEFT JOIN
-        (
-            SELECT
-                dv.Id_producto,
-                SUM(dv.Cantidad) /
-                GREATEST(DATEDIFF(MAX(v.Fecha_venta), MIN(v.Fecha_venta)) + 1, 1)
-                AS ConsumoPromedioDiario
-            FROM detalle_venta dv
-            INNER JOIN venta v
-                ON dv.Id_venta = v.Id_venta
-            GROUP BY dv.Id_producto
-        ) v
-            ON p.Id_producto = v.Id_producto
-
-        LEFT JOIN
-        (
-            SELECT
-                dc.Id_producto,
-                AVG(DATEDIFF(oc.Fecha_entrega_real, oc.Fecha_orden)) AS TiempoEntrega
-            FROM detalle_compra dc
-            INNER JOIN orden_compra oc
-                ON dc.Id_orden_compra = oc.Id_orden_compra
-            WHERE oc.Fecha_entrega_real IS NOT NULL
-            GROUP BY dc.Id_producto
-        ) c
-            ON p.Id_producto = c.Id_producto
-
-        WHERE LOWER(i.estado) = 'normal'
-    ) t
-
-    WHERE t.Cantidad_actual < t.StockMinimo;
+            dv.Id_producto,
+            SUM(dv.Cantidad) /
+            GREATEST(DATEDIFF(MAX(v.Fecha_venta), MIN(v.Fecha_venta)) + 1, 1)
+            AS ConsumoPromedioDiario
+        FROM detalle_venta dv
+        JOIN venta v
+            ON dv.Id_venta = v.Id_venta
+        GROUP BY dv.Id_producto
+    ) v
+        ON p.Id_producto = v.Id_producto
+    LEFT JOIN
+    (
+        SELECT
+            dc.Id_producto,
+            AVG(DATEDIFF(oc.Fecha_entrega_real, oc.Fecha_orden)) AS TiempoEntrega
+        FROM detalle_compra dc
+        JOIN orden_compra oc
+            ON dc.Id_orden_compra = oc.Id_orden_compra
+        WHERE oc.Fecha_entrega_real IS NOT NULL
+        GROUP BY dc.Id_producto
+    ) c
+        ON p.Id_producto = c.Id_producto
+    WHERE LOWER(i.estado) = 'normal'
+) t
+WHERE t.Cantidad_actual <= t.StockMinimo;
     """)
     low_stock = cursor.fetchone()["low_stock"]
 
@@ -1395,6 +1624,52 @@ def obtener_empleados():
         "churn_rate": churn_rate
     })
 
+
+# -------------------------------------------------------------
+# Endpoint para listar todos los empleados en la tabla
+# -------------------------------------------------------------
+@app.route('/api/empleados/lista', methods=['GET'])
+def listar_empleados_tabla():
+    try:
+        conn = conectar_bd()
+        if not conn:
+            return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
+
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+            SELECT 
+                Id_empleado, 
+                Nombre, 
+                Contacto_telefono, 
+                Contacto_email, 
+                Cargo,
+                Estado, 
+                Fecha_ingreso 
+            FROM empleados
+            ORDER BY Id_empleado ASC;
+        """
+        cursor.execute(query)
+        empleados = cursor.fetchall()
+        print(empleados)
+        
+        cursor.close()
+        conn.close()
+
+        # Formateamos las fechas a string para evitar inconvenientes al deserializar JSON
+        for emp in empleados:
+            if emp.get('Fecha_ingreso'):
+                emp['Fecha_ingreso'] = emp['Fecha_ingreso'].strftime('%Y-%m-%d')
+
+        return jsonify(empleados), 200
+
+    except Exception as e:
+        print("Error en /api/empleados/lista:", e)
+        return jsonify({"error": "Error interno al obtener la lista de empleados"}), 500
+
+
+
+
 # Ruta para obtener los empleados
 @app.route('/listar_empleados', methods=['GET'])
 def get_employees():
@@ -1562,14 +1837,18 @@ def client_stats():
 
     # VIP = clientes que más gastan
     cursor.execute("""
-        SELECT COUNT(*) AS vip_clients
+       SELECT COUNT(*) AS vip_clients
         FROM (
-            SELECT v.Id_cliente,
-                   SUM(v.Total) AS gasto_total
+            SELECT v.Id_cliente
             FROM venta v
+            WHERE LOWER(COALESCE(v.Estado, '')) NOT IN ('cancelada', 'anulada')
             GROUP BY v.Id_cliente
-            HAVING gasto_total >= 50000
-        ) vip
+            HAVING AVG(v.Total) > (
+                SELECT COALESCE(AVG(Total), 0) 
+                FROM venta 
+                WHERE LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')
+            )
+        ) sub
     """)
     vip_clients = cursor.fetchone()["vip_clients"]
 
@@ -1620,7 +1899,7 @@ def clients_table():
 
     query = """
     SELECT
-
+        c.Id_cliente,
         c.Nombre AS cliente,
 
         c.Ubicacion AS ubicacion,
@@ -1651,7 +1930,325 @@ def clients_table():
     return jsonify(data)
 
 
+
+
+@app.route('/api/clientes-vip', methods=['GET'])
+def get_clientes_vip():
+    conn = conectar_bd()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # 1. Obtener el ticket promedio general de la empresa
+        cursor.execute("""
+            SELECT COALESCE(AVG(Total), 0) AS ticket_promedio_general
+            FROM venta
+            WHERE LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')
+        """)
+        res_promedio = cursor.fetchone()
+        ticket_promedio_general = float(res_promedio['ticket_promedio_general']) if res_promedio else 0.0
+
+        # 2. Obtener los clientes VIP (cuyo promedio individual > promedio general)
+        query_vip = """
+            SELECT 
+                c.Id_cliente,
+                c.Nombre AS cliente,
+                c.Contacto_telefono,
+                c.Contacto_email,
+                COUNT(v.Id_venta) AS total_compras,
+                ROUND(SUM(v.Total), 2) AS total_gastado,
+                ROUND(AVG(v.Total), 2) AS ticket_promedio_cliente,
+                MAX(v.Fecha_venta) AS ultima_compra
+            FROM clientes c
+            JOIN venta v ON c.Id_cliente = v.Id_cliente
+            WHERE LOWER(COALESCE(v.Estado, '')) NOT IN ('cancelada', 'anulada')
+            GROUP BY c.Id_cliente, c.Nombre, c.Contacto_telefono, c.Contacto_email
+            HAVING AVG(v.Total) > %s
+            ORDER BY total_gastado DESC
+        """
+        cursor.execute(query_vip, (ticket_promedio_general,))
+        clientes_vip = cursor.fetchall()
+
+        # 3. Formatear datos y obtener el producto favorito de cada VIP
+        for cliente in clientes_vip:
+            cliente['total_gastado'] = float(cliente['total_gastado'] or 0)
+            cliente['ticket_promedio_cliente'] = float(cliente['ticket_promedio_cliente'] or 0)
+            cliente['ultima_compra'] = cliente['ultima_compra'].strftime('%Y-%m-%d') if cliente['ultima_compra'] else None
+
+            # Consulta rápida para ver el producto que más compra este cliente VIP
+            query_top_producto = """
+                SELECT p.Nombre AS producto
+                FROM venta v
+                JOIN detalle_venta dv ON v.Id_venta = dv.Id_venta
+                JOIN productos p ON dv.Id_producto = p.Id_producto
+                WHERE v.Id_cliente = %s AND LOWER(COALESCE(v.Estado, '')) NOT IN ('cancelada', 'anulada')
+                GROUP BY p.Id_producto, p.Nombre
+                ORDER BY SUM(dv.Cantidad) DESC
+                LIMIT 1
+            """
+            cursor.execute(query_top_producto, (cliente['Id_cliente'],))
+            top_p = cursor.fetchone()
+            cliente['producto_favorito'] = top_p['producto'] if top_p else "Sin registros"
+
+        return jsonify({
+            "ticket_promedio_general": ticket_promedio_general,
+            "total_vip": len(clientes_vip),
+            "clientes": clientes_vip
+        }), 200
+
+    except Exception as e:
+        print(f"Error al obtener clientes VIP: {e}")
+        return jsonify({"error": "Error interno al procesar los clientes VIP"}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+
+
+# 📌 Endpoint para ver el detalle profundo de un Cliente por ID
+@app.route('/api/client-detail/<int:client_id>')
+def client_detail(client_id):
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Datos básicos del cliente
+        query_cliente = """
+            SELECT 
+                c.Id_cliente,
+                c.Nombre,
+                COALESCE(c.Contacto_email, 'N/A') AS Contacto_email,
+                COALESCE(c.Contacto_telefono, 'N/A') AS Contacto_telefono,
+                COALESCE(c.Ubicacion, 'No especificada') AS Ubicacion
+            FROM clientes c
+            WHERE c.Id_cliente = %s
+        """
+        cursor.execute(query_cliente, (client_id,))
+        cliente = cursor.fetchone()
+
+        if not cliente:
+            return jsonify({"error": "Cliente no encontrado"}), 404
+
+        # 2. Historial de Compras y Estado
+        query_compras = """
+            SELECT 
+                v.Id_venta,
+                DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d') AS fecha,
+                COALESCE(v.total, 0) AS monto,
+                COALESCE(v.Canal, 'Físico') AS canal,
+                COALESCE(v.Estado, 'Completada') AS estado
+            FROM venta v
+            WHERE v.Id_cliente = %s
+            ORDER BY v.Fecha_venta DESC
+        """
+        cursor.execute(query_compras, (client_id,))
+        compras = cursor.fetchall()
+
+        # Conversiones decimal
+        for c in compras:
+            c['monto'] = float(c['monto'])
+
+        # 3. Métricas calculadas
+        total_compras = len(compras)
+        compras_completadas = [c for c in compras if c['estado'].lower() not in ['cancelada', 'anulada']]
+        compras_canceladas = [c for c in compras if c['estado'].lower() in ['cancelada', 'anulada']]
+        
+        monto_total_gastado = sum(c['monto'] for c in compras_completadas)
+
+        # Criterio Cliente Leal: Por ejemplo, más de 5 compras completadas o más de $10,000 gastados
+        es_cliente_leal = total_compras >= 5 or monto_total_gastado >= 10000
+
+        # 4. Agrupación por Canales de Compra (ej. Tienda, Web, Whatsapp)
+        canales_dict = {}
+        for c in compras_completadas:
+            canal = c['canal']
+            canales_dict[canal] = canales_dict.get(canal, 0) + c['monto']
+        
+        canales_data = [{"canal": k, "monto": v} for k, v in canales_dict.items()]
+
+        # 5. Evolución temporal para gráfico (Aumentado / Bajado compras)
+        query_tendencia = """
+            SELECT 
+                DATE_FORMAT(v.Fecha_venta, '%Y-%m') AS mes,
+                COALESCE(SUM(v.total), 0) AS total_mes
+            FROM venta v
+            WHERE v.Id_cliente = %s AND LOWER(COALESCE(v.Estado, '')) NOT IN ('cancelada', 'anulada')
+            GROUP BY DATE_FORMAT(v.Fecha_venta, '%Y-%m')
+            ORDER BY mes ASC
+        """
+        cursor.execute(query_tendencia, (client_id,))
+        tendencia = cursor.fetchall()
+        
+        for t in tendencia:
+            t['total_mes'] = float(t['total_mes'])
+        print(tendencia)
+
+        # 6. Sucursales en las que compra y total gastado por sucursal
+        query_sucursales = """
+            SELECT 
+                COALESCE(s.Nombre, 'Sucursal General') AS sucursal,
+                COUNT(v.Id_venta) AS compras,
+                COALESCE(SUM(v.total), 0) AS total_gastado
+            FROM venta v
+            LEFT JOIN sucursal s ON v.Id_sucursal = s.Id_sucursal
+            WHERE v.Id_cliente = %s AND LOWER(COALESCE(v.Estado, '')) NOT IN ('cancelada', 'anulada')
+            GROUP BY s.Id_sucursal, s.Nombre
+            ORDER BY total_gastado DESC
+        """
+        cursor.execute(query_sucursales, (client_id,))
+        sucursales = cursor.fetchall()
+
+        print(sucursales)
+        for s in sucursales:
+            s['total_gastado'] = float(s['total_gastado'])
+
+        # 7. Productos más comprados por el cliente
+        query_productos = """
+            SELECT 
+                p.Nombre AS producto,
+                COALESCE(cat.Nombre, 'Sin categoría') AS categoria,
+                SUM(dv.Cantidad) AS cantidad_comprada,
+                SUM(dv.Subtotal) AS total_invertido
+            FROM venta v
+            JOIN detalle_venta dv ON v.Id_venta = dv.Id_venta
+            JOIN productos p ON dv.Id_producto = p.Id_producto
+            LEFT JOIN categoria cat ON p.Id_categoria = cat.Id_categoria
+            WHERE v.Id_cliente = %s AND LOWER(COALESCE(v.Estado, '')) NOT IN ('cancelada', 'anulada')
+            GROUP BY p.Id_producto, p.Nombre, cat.Nombre
+            ORDER BY cantidad_comprada DESC
+        """
+        cursor.execute(query_productos, (client_id,))
+        productos = cursor.fetchall()
+
+        for p in productos:
+            p['cantidad_comprada'] = int(p['cantidad_comprada'] or 0)
+            p['total_invertido'] = float(p['total_invertido'])
+        
+        
+        
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            "cliente": cliente,
+            "resumen": {
+                "total_compras": total_compras,
+                "monto_total_gastado": monto_total_gastado,
+                "canceladas_cant": len(compras_canceladas),
+                "es_leal": es_cliente_leal
+            },
+            "historial_compras": compras,
+            "comparativa_canales": canales_data,
+            "tendencia_compras": tendencia,
+            "sucursales": sucursales,
+            "productos_comprados": productos
+        })
+
+    except Exception as e:
+        print("Error en client_detail:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+
+
 #Proveedores
+
+@app.route('/api/suppliers/list', methods=['GET'])
+def get_suppliers_list():
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        # Ajusta los nombres de las columnas a como los tengas en tu tabla 'proveedores'
+        cursor.execute("""
+            SELECT 
+                Id_proveedor AS id,
+                Nombre AS nombre,
+                Contacto_email AS contacto,
+                Contacto_telefono AS telefono,
+                Ubicacion AS direccion
+            FROM proveedores
+            ORDER BY Nombre ASC
+        """)
+        proveedores = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify(proveedores), 200
+
+    except Exception as e:
+        print("Error al obtener lista de proveedores:", e)
+        return jsonify({"error": "Error interno al consultar proveedores"}), 500
+
+
+@app.route('/api/suppliers/<int:supplier_id>', methods=['GET'])
+def get_supplier_detail(supplier_id):
+    try:
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Datos del proveedor
+        cursor.execute("""
+            SELECT 
+                Id_proveedor AS id,
+                Nombre AS nombre,
+                Contacto_telefono AS telefono,
+                Contacto_email AS email,
+                Ubicacion AS direccion
+            FROM proveedores
+            WHERE Id_proveedor = %s
+        """, (supplier_id,))
+        supplier = cursor.fetchone()
+
+        if not supplier:
+            return jsonify({"error": "Proveedor no encontrado"}), 404
+
+        # 2. Productos provistos según las Órdenes de Compra vinculadas
+        cursor.execute("""
+            SELECT DISTINCT
+                p.Id_producto,
+                p.Nombre AS nombre,
+                COALESCE(SUM(i.Cantidad_actual), 0) AS stock,
+                COALESCE(p.Precio_base, 0) AS precio_compra
+            FROM orden_compra oc
+            INNER JOIN detalle_compra doc ON oc.Id_orden_compra = doc.Id_orden_compra
+            INNER JOIN productos p ON doc.Id_producto = p.Id_producto
+            LEFT JOIN inventario i ON p.Id_producto = i.Id_producto
+            WHERE oc.Id_proveedor = %s
+            GROUP BY p.Id_producto, p.Nombre, p.Precio_base
+        """, (supplier_id,))
+        productos = cursor.fetchall()
+
+        # 3. Inversión Total acumulada desde las Órdenes de Compra
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(Costo_total), 0) AS total_invertido,
+                COUNT(DISTINCT Id_orden_compra) AS total_ordenes
+            FROM orden_compra
+            WHERE Id_proveedor = %s
+            AND LOWER(COALESCE(Estado, '')) NOT IN ('cancelada', 'anulada')
+        """, (supplier_id,))
+        stats = cursor.fetchone()
+
+        supplier['productos'] = productos
+        supplier['total_productos'] = len(productos)
+        supplier['total_invertido'] = float(stats['total_invertido']) if stats else 0.0
+        supplier['total_ordenes'] = stats['total_ordenes'] if stats else 0
+
+        cursor.close()
+        conn.close()
+
+        return jsonify(supplier), 200
+
+    except Exception as e:
+        print("Error obteniendo detalle de proveedor:", e)
+        return jsonify({"error": "Error interno al consultar el detalle"}), 500
+
+    
 @app.route('/proveedores_por_pais')
 def proveedores_por_pais():
     conn = conectar_bd()
@@ -1691,24 +2288,49 @@ def top_proveedores():
     return jsonify(data)
 
 
-@app.route('/proveedores_mapa')
+from flask import Flask, jsonify, request
+
+from flask import Flask, jsonify, request
+
+@app.route('/proveedores_mapa', methods=['GET'])
 def proveedores_mapa():
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
+    # Subconsulta para obtener la primera fecha de registro/compra de cada proveedor
+    # Asumiendo que la tabla orden_compra tiene los campos: Id_proveedor y fecha
     query = """
-    SELECT 
-        Pais,
-        COUNT(*) AS total
-    FROM proveedores
-    GROUP BY Pais
+        SELECT 
+            p.Pais,
+            COUNT(DISTINCT p.Id_proveedor) AS Total
+        FROM proveedores p
+        INNER JOIN (
+            SELECT 
+                Id_proveedor, 
+                MIN(Fecha_orden) AS primera_fecha
+            FROM orden_compra
+            GROUP BY Id_proveedor
+        ) oc ON p.Id_proveedor = oc.Id_proveedor
     """
+    params = []
 
-    cursor.execute(query)
+    # Filtrar por el rango según la primera fecha de registro
+    if fecha_inicio and fecha_fin:
+        query += " WHERE oc.primera_fecha BETWEEN %s AND %s"
+        params.extend([fecha_inicio, fecha_fin])
+
+    query += " GROUP BY p.Pais"
+
+    cursor.execute(query, params)
     data = cursor.fetchall()
 
-    return jsonify(data)
+    cursor.close()
+    conn.close()
 
+    return jsonify(data)
 
 @app.route('/top_proveedores_rendimiento')
 def top_proveedores_rendimiento():
@@ -3146,11 +3768,33 @@ def reporte_productos():
         "capital_por_producto": capital_por_producto,
         "stock_bajo": stock_bajo
     })
+
+
+
+
    
+# 📌 1. Endpoint auxiliar para el select de sucursales en React
+@app.route('/api/sucursales')
+def obtener_sucursales():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT Id_sucursal, Nombre FROM sucursal ORDER BY Nombre ASC")
+        sucursales = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(sucursales)
+    except Exception as e:
+        print("Error obteniendo sucursales:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# 💰 2. Endpoint Reporte de Ventas (Tu código base con el filtro opcional de sucursal)
 @app.route('/api/reporte-ventas')
 def reporte_ventas():
     inicio = request.args.get('inicio')
     fin = request.args.get('fin')
+    id_sucursal = request.args.get('sucursal')  # Capturamos sucursal ('todas' u ID)
 
     if not inicio or not fin:
         return jsonify({"error": "Faltan las fechas de inicio o fin"}), 400
@@ -3158,73 +3802,81 @@ def reporte_ventas():
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
 
+    # 🎯 Construcción del condicional de sucursal para tus SQLs
+    sucursal_where = ""
+    params = [inicio, fin]
+
+    if id_sucursal and id_sucursal != "todas":
+        sucursal_where = " AND v.Id_sucursal = %s "
+        params.append(id_sucursal)
+
     # 1. Resumen Financiero General (Ingresos, Transacciones y Ticket Promedio)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT 
-            COALESCE(SUM(Total), 0) AS ingresos_totales,
-            COUNT(Id_venta) AS transacciones_totales,
-            COALESCE(AVG(Total), 0) AS ticket_promedio
-        FROM venta
-        WHERE Fecha_venta BETWEEN %s AND %s
-    """, (inicio, fin))
+            COALESCE(SUM(v.Total), 0) AS ingresos_totales,
+            COUNT(v.Id_venta) AS transacciones_totales,
+            COALESCE(AVG(v.Total), 0) AS ticket_promedio
+        FROM venta v
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+    """, params)
     resumen = cursor.fetchone()
 
     # 2. Empleado Estrella (Mayor facturación)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT e.Nombre, SUM(v.Total) AS total_vendido
         FROM venta v
         JOIN empleados e ON v.Id_empleado = e.Id_empleado
-        WHERE v.Fecha_venta BETWEEN %s AND %s
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
         GROUP BY e.Id_empleado, e.Nombre
         ORDER BY total_vendido DESC LIMIT 1
-    """, (inicio, fin))
+    """, params)
     empleado_top_res = cursor.fetchone()
     empleado_top = empleado_top_res["Nombre"] if empleado_top_res else "N/A"
 
     # 3. Cliente Más Valioso (Fidelidad / Mayor Gasto)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT c.Nombre, SUM(v.Total) AS total_gastado
         FROM venta v
         JOIN clientes c ON v.Id_cliente = c.Id_cliente
-        WHERE v.Fecha_venta BETWEEN %s AND %s
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
         GROUP BY c.Id_cliente, c.Nombre
         ORDER BY total_gastado DESC LIMIT 1
-    """, (inicio, fin))
+    """, params)
     cliente_top_res = cursor.fetchone()
     cliente_top = cliente_top_res["Nombre"] if cliente_top_res else "N/A"
 
     # 4. Tendencia Temporal de Ventas (Evolución de Ingresos del día a día)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT 
-            DATE_FORMAT(Fecha_venta, '%Y-%m-%d') AS fecha,
-            ROUND(SUM(Total), 2) AS ingresos
-        FROM venta
-        WHERE Fecha_venta BETWEEN %s AND %s
-        GROUP BY DATE_FORMAT(Fecha_venta, '%Y-%m-%d')
+            DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d') AS fecha,
+            ROUND(SUM(v.Total), 2) AS ingresos
+        FROM venta v
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+        GROUP BY DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d')
         ORDER BY fecha ASC
-    """, (inicio, fin))
+    """, params)
     tendencia_ventas = cursor.fetchall()
     for t in tendencia_ventas:
         t["ingresos"] = float(t["ingresos"] or 0)
 
     # 5. Desglose de Ventas por Empleado (Métrica del Personal)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT 
             e.Nombre AS empleado,
             COUNT(v.Id_venta) AS operaciones,
             ROUND(SUM(v.Total), 2) AS total_facturado
         FROM venta v
         JOIN empleados e ON v.Id_empleado = e.Id_empleado
-        WHERE v.Fecha_venta BETWEEN %s AND %s
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
         GROUP BY e.Id_empleado, e.Nombre
         ORDER BY total_facturado DESC
-    """, (inicio, fin))
+    """, params)
     ventas_empleados = cursor.fetchall()
     for emp in ventas_empleados:
         emp["total_facturado"] = float(emp["total_facturado"] or 0)
 
     # 6. Historial Detallado de Grandes Transacciones (Auditoría)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT 
             v.Id_venta,
             DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d') AS Fecha_venta,
@@ -3234,28 +3886,99 @@ def reporte_ventas():
         FROM venta v
         JOIN clientes c ON v.Id_cliente = c.Id_cliente
         JOIN empleados e ON v.Id_empleado = e.Id_empleado
-        WHERE v.Fecha_venta BETWEEN %s AND %s
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
         ORDER BY v.Total DESC LIMIT 10
-    """, (inicio, fin))
+    """, params)
     top_transacciones = cursor.fetchall()
     for trans in top_transacciones:
         trans["total"] = float(trans["total"] or 0)
 
     # 7. Volumen Transaccional vs Recaudación Diaria (Gráfica combinada)
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT 
-            DATE_FORMAT(Fecha_venta, '%Y-%m-%d') AS fecha,
-            COUNT(Id_venta) AS transacciones,
-            ROUND(SUM(Total), 2) AS recaudacion
-        FROM venta
-        WHERE Fecha_venta BETWEEN %s AND %s
-        GROUP BY DATE_FORMAT(Fecha_venta, '%Y-%m-%d')
+            DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d') AS fecha,
+            COUNT(v.Id_venta) AS transacciones,
+            ROUND(SUM(v.Total), 2) AS recaudacion
+        FROM venta v
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+        GROUP BY DATE_FORMAT(v.Fecha_venta, '%Y-%m-%d')
         ORDER BY fecha ASC
-    """, (inicio, fin))
+    """, params)
     volumen_vs_recaudacion = cursor.fetchall()
     for registro in volumen_vs_recaudacion:
         registro["recaudacion"] = float(registro["recaudacion"] or 0)    
+        
+    # 8. Ventas por Categoría (Tu consulta original exacta)
+    cursor.execute(f"""
+        SELECT 
+            COALESCE(c.Nombre, 'Sin Categoría') AS categoria,
+            COUNT(d.Id_venta) AS unidades_vendidas,
+            ROUND(SUM(d.Cantidad * d.Precio_unitario), 2) AS total_facturado
+        FROM detalle_venta d
+        JOIN productos p ON d.Id_producto = p.Id_producto
+        LEFT JOIN categoria c ON p.Id_categoria = c.Id_Categoria
+        JOIN venta v ON d.Id_venta = v.Id_venta
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+        GROUP BY c.Id_Categoria, c.Nombre
+        ORDER BY total_facturado DESC
+    """, params)
+    ventas_categorias = cursor.fetchall()
+    for cat in ventas_categorias:
+        cat["total_facturado"] = float(cat["total_facturado"] or 0)
+    
+    # 9. Top 10 Clientes que más compran (Fidelidad y Facturación)
+    cursor.execute(f"""
+        SELECT 
+            c.Id_cliente,
+            c.Nombre AS cliente,
+            COUNT(v.Id_venta) AS total_compras,
+            ROUND(SUM(v.Total), 2) AS total_gastado
+        FROM venta v
+        JOIN clientes c ON v.Id_cliente = c.Id_cliente
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+        GROUP BY c.Id_cliente, c.Nombre
+        ORDER BY total_gastado DESC 
+        LIMIT 10
+    """, params)
+    top_clientes = cursor.fetchall()
+    for cli in top_clientes:
+        cli["total_gastado"] = float(cli["total_gastado"] or 0)
 
+    # 10. Top 10 Productos Más Vendidos
+    cursor.execute(f"""
+        SELECT 
+            p.Nombre AS producto,
+            SUM(d.Cantidad) AS unidades_vendidas,
+            ROUND(SUM(d.Cantidad * d.Precio_unitario), 2) AS total_generado
+        FROM detalle_venta d
+        JOIN productos p ON d.Id_producto = p.Id_producto
+        JOIN venta v ON d.Id_venta = v.Id_venta
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+        GROUP BY p.Id_producto, p.Nombre
+        ORDER BY unidades_vendidas DESC 
+        LIMIT 10
+    """, params)
+    top_productos = cursor.fetchall()
+    for prod in top_productos:
+        prod["total_generado"] = float(prod["total_generado"] or 0)
+        prod["unidades_vendidas"] = int(prod["unidades_vendidas"] or 0)
+    
+    
+    # 11. Desglose por Canal de Venta
+    cursor.execute(f"""
+        SELECT 
+            COALESCE(v.Canal, 'Presencial / Online') AS canal,
+            COUNT(v.Id_venta) AS operaciones,
+            ROUND(SUM(v.Total), 2) AS total_monto
+        FROM venta v
+        WHERE v.Fecha_venta BETWEEN %s AND %s {sucursal_where}
+        GROUP BY v.Canal
+        ORDER BY total_monto DESC
+    """, params)
+    canales_venta = cursor.fetchall()
+    for c in canales_venta:
+        c["total_monto"] = float(c["total_monto"] or 0)
+    
     cursor.close()
     conn.close()
 
@@ -3268,8 +3991,194 @@ def reporte_ventas():
         "tendencia_ventas": tendencia_ventas,
         "ventas_empleados": ventas_empleados,
         "top_transacciones": top_transacciones,
-        "volumen_vs_recaudacion": volumen_vs_recaudacion
+        "volumen_vs_recaudacion": volumen_vs_recaudacion,
+        "ventas_categorias": ventas_categorias,
+        "top_clientes": top_clientes,
+        "top_productos":top_productos,
+        "canales_venta": canales_venta
     })
+
+
+
+
+# 📌 Endpoint para el Reporte Consolidado de Órdenes de Compra (Actualizado)
+@app.route('/api/reporte-ordenes')
+def reporte_ordenes():
+    try:
+        inicio = request.args.get('inicio')
+        fin = request.args.get('fin')
+        sucursal = request.args.get('sucursal')
+
+        conn = conectar_bd()
+        cursor = conn.cursor(dictionary=True)
+
+        params = []
+        where_conditions = []
+
+        if inicio and fin:
+            where_conditions.append("oc.Fecha_orden BETWEEN %s AND %s")
+            params.extend([inicio, fin])
+
+        if sucursal and sucursal != "todas":
+            where_conditions.append("oc.Id_sucursal = %s")
+            params.append(sucursal)
+
+        where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+
+        # 1. Métricas / Totales Generales
+        query_stats = f"""
+            SELECT 
+                COUNT(*) AS total_ordenes,
+                COALESCE(SUM(oc.Costo_total), 0) AS inversion_total,
+                COALESCE(AVG(oc.Costo_total), 0) AS orden_promedio,
+                COUNT(CASE WHEN LOWER(oc.Estado) = 'pendiente' THEN 1 END) AS pendientes,
+                COUNT(CASE WHEN LOWER(oc.Estado) IN ('completada', 'entregada') THEN 1 END) AS completadas,
+                COUNT(CASE WHEN LOWER(oc.Estado) = 'cancelada' THEN 1 END) AS canceladas
+            FROM orden_compra oc
+            {where_clause}
+        """
+        cursor.execute(query_stats, params)
+        stats = cursor.fetchone()
+
+        # 2. Inversión por Proveedor
+        query_proveedores = f"""
+            SELECT 
+                p.Nombre AS proveedor,
+                COUNT(oc.Id_orden_compra) AS total_ordenes,
+                COALESCE(SUM(oc.Costo_total), 0) AS total_invertido
+            FROM orden_compra oc
+            JOIN proveedores p ON oc.Id_proveedor = p.Id_proveedor
+            {where_clause}
+            GROUP BY p.Id_proveedor, p.Nombre
+            ORDER BY total_invertido DESC
+            LIMIT 10
+        """
+        cursor.execute(query_proveedores, params)
+        ventas_proveedores = cursor.fetchall()
+
+        # 3. Distribución por Estado de Orden
+        query_estados = f"""
+            SELECT 
+                oc.Estado AS estado,
+                COUNT(*) AS cantidad,
+                COALESCE(SUM(oc.Costo_total), 0) AS total_monto
+            FROM orden_compra oc
+            {where_clause}
+            GROUP BY oc.Estado
+        """
+        cursor.execute(query_estados, params)
+        distribucion_estados = cursor.fetchall()
+
+        # 4. Tendencia Diaria de Compras
+        query_tendencia = f"""
+            SELECT 
+                DATE_FORMAT(oc.Fecha_orden, '%Y-%m-%d') AS fecha,
+                COUNT(*) AS ordenes,
+                COALESCE(SUM(oc.Costo_total), 0) AS inversion
+            FROM orden_compra oc
+            {where_clause}
+            GROUP BY DATE_FORMAT(oc.Fecha_orden, '%Y-%m-%d')
+            ORDER BY fecha ASC
+        """
+        cursor.execute(query_tendencia, params)
+        tendencia_compras = cursor.fetchall()
+
+        # 5. NUEVO: Gestión de Logística y Tipos de Envío
+        query_envios = f"""
+            SELECT 
+                COALESCE(oc.Tipo_envio, 'No especificado') AS tipo_envio,
+                COUNT(*) AS cantidad,
+                COALESCE(SUM(oc.Costo_total), 0) AS total_invertido
+            FROM orden_compra oc
+            {where_clause}
+            GROUP BY oc.Tipo_envio
+            ORDER BY cantidad DESC
+        """
+        cursor.execute(query_envios, params)
+        tipos_envio = cursor.fetchall()
+
+        # 6. NUEVO: Productos / Ítems más ordenados
+        
+        query_productos = f"""
+            SELECT 
+                p.Nombre AS producto,
+                SUM(dc.Cantidad) AS cantidad_total,
+                COALESCE(SUM(dc.Cantidad * dc.Precio_unitario), 0) AS total_gastado
+            FROM detalle_compra dc
+            JOIN orden_compra oc ON dc.Id_orden_compra = oc.Id_orden_compra
+            LEFT JOIN productos p ON dc.Id_producto = p.Id_producto
+            {where_clause}
+            GROUP BY p.Id_producto, p.Nombre
+            ORDER BY cantidad_total DESC
+            LIMIT 10
+        """
+        try:
+            cursor.execute(query_productos, params)
+            productos_mas_ordenados = cursor.fetchall()
+        except Exception as err_prod:
+            print("Aviso: No se pudo obtener detalle de productos:", err_prod)
+            productos_mas_ordenados = []
+
+        # 7. Listado de Órdenes Relevantes / Detalle
+        query_detalle = f"""
+            SELECT 
+                oc.Id_orden_compra,
+                p.Nombre AS proveedor,
+                s.Nombre AS sucursal,
+                DATE_FORMAT(oc.Fecha_orden, '%Y-%m-%d') AS fecha_orden,
+                DATE_FORMAT(oc.Fecha_entrega_estimada, '%Y-%m-%d') AS fecha_estimada,
+                DATE_FORMAT(oc.Fecha_entrega_real, '%Y-%m-%d') AS fecha_real,
+                oc.Estado,
+                oc.Tipo_envio,
+                oc.Costo_total
+            FROM orden_compra oc
+            LEFT JOIN proveedores p ON oc.Id_proveedor = p.Id_proveedor
+            LEFT JOIN sucursal s ON oc.Id_sucursal = s.Id_sucursal
+            {where_clause}
+            ORDER BY oc.Fecha_orden DESC
+            LIMIT 15
+        """
+        cursor.execute(query_detalle, params)
+        detalle_ordenes = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        # Conversiones para JSON
+        for p in ventas_proveedores:
+            p['total_invertido'] = float(p['total_invertido'])
+        for e in distribucion_estados:
+            e['total_monto'] = float(e['total_monto'])
+        for t in tendencia_compras:
+            t['inversion'] = float(t['inversion'])
+        for env in tipos_envio:
+            env['total_invertido'] = float(env['total_invertido'])
+        for prod in productos_mas_ordenados:
+            prod['cantidad_total'] = int(prod['cantidad_total'] or 0)
+            prod['total_gastado'] = float(prod['total_gastado'] or 0)
+        for d in detalle_ordenes:
+            d['Costo_total'] = float(d['Costo_total'])
+
+        return jsonify({
+            "total_ordenes": int(stats['total_ordenes']),
+            "inversion_total": float(stats['inversion_total']),
+            "orden_promedio": float(stats['orden_promedio']),
+            "pendientes": int(stats['pendientes']),
+            "completadas": int(stats['completadas']),
+            "canceladas": int(stats['canceladas']),
+            "ventas_proveedores": ventas_proveedores,
+            "distribucion_estados": distribucion_estados,
+            "tendencia_compras": tendencia_compras,
+            "tipos_envio": tipos_envio,
+            "productos_mas_ordenados": productos_mas_ordenados,
+            "detalle_ordenes": detalle_ordenes
+        })
+
+    except Exception as e:
+        print("Error en reporte_ordenes:", e)
+        return jsonify({"error": str(e)}), 500
+
+
 
  
 @app.route('/api/reporte-inventario', methods=['GET'])
@@ -3746,14 +4655,47 @@ def reporte_clientes():
     for seg in segmentacion:
         seg["aporte_financiero"] = float(seg["aporte_financiero"] or 0)
 
+    
+    # 1. KPIs Generales + CICLO PROMEDIO ENTRE COMPRAS
+    cursor.execute(f"""
+        SELECT 
+            COUNT(DISTINCT v.Id_cliente) AS clientes_activos,
+            COUNT(v.Id_venta) AS total_transacciones,
+            ROUND(IFNULL(SUM(v.Total), 0), 2) AS facturacion_total,
+            ROUND(IFNULL(SUM(v.Total), 0) / GREATEST(COUNT(v.Id_venta), 1), 2) AS ticket_promedio_general
+        FROM venta v
+        {where_fecha}
+    """, (fecha_inicio, fecha_fin))
+    resumen = cursor.fetchone()
+
+    # 1.1 Consulta para calcular el promedio de días entre compras por cliente recurrente
+    cursor.execute(f"""
+        SELECT ROUND(AVG(dias_diferencia), 0) AS ciclo_dias_promedio
+        FROM (
+            SELECT 
+                v.Id_cliente,
+                DATEDIFF(
+                    v.Fecha_venta, 
+                    LAG(v.Fecha_venta) OVER (PARTITION BY v.Id_cliente ORDER BY v.Fecha_venta)
+                ) AS dias_diferencia
+            FROM venta v
+            {where_fecha}
+        ) sub
+        WHERE dias_diferencia IS NOT NULL AND dias_diferencia > 0
+    """, (fecha_inicio, fecha_fin))
+    ciclo_res = cursor.fetchone()
+    ciclo_dias = int(ciclo_res["ciclo_dias_promedio"]) if ciclo_res and ciclo_res["ciclo_dias_promedio"] else 0
+    
+    
     cursor.close()
     conn.close()
 
     return jsonify({
-        "facturacion_total": float(resumen["facturacion_total"] or 0),
+      "facturacion_total": float(resumen["facturacion_total"] or 0),
         "total_transacciones": int(resumen["total_transacciones"] or 0),
         "clientes_activos": int(resumen["clientes_activos"] or 0),
         "ticket_promedio_general": float(resumen["ticket_promedio_general"] or 0),
+        "ciclo_dias_promedio": ciclo_dias,
         "top_clientes": top_clientes,
         "evolucion_clientes": evolucion_clientes,
         "segmentacion": segmentacion
@@ -3761,24 +4703,44 @@ def reporte_clientes():
  
  
  
+
+# 2. Endpoint del reporte con filtro de fechas + sucursal
 @app.route('/api/reporte-empleados')
 def reporte_empleados():
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
-    # Capturar fechas desde el frontend
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
+    id_sucursal = request.args.get('id_sucursal')
 
-    # Rango por defecto (últimos 12 meses)
     if not fecha_fin:
         fecha_fin = datetime.now().strftime('%Y-%m-%d')
     if not fecha_inicio:
         fecha_inicio = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
 
-    where_fecha = "WHERE v.Fecha_venta BETWEEN %s AND %s"
+    # Construir filtros dinámicos SQL
+    where_venta = "WHERE v.Fecha_venta BETWEEN %s AND %s"
+    params_venta = [fecha_inicio, fecha_fin]
 
-    # 1. KPIs Generales de Productividad Laboral
+    where_empleado = "WHERE e.Fecha_ingreso BETWEEN %s AND %s"
+    params_empleado = [fecha_inicio, fecha_fin]
+
+    # Filtro base sin rango de fechas de ingreso para distribución total de cargos
+    where_cargo = "WHERE 1=1"
+    params_cargo = []
+
+    if id_sucursal and id_sucursal != "todas":
+        where_venta += " AND v.Id_sucursal = %s"
+        params_venta.append(id_sucursal)
+        
+        where_empleado += " AND e.Id_sucursal = %s"
+        params_empleado.append(id_sucursal)
+
+        where_cargo += " AND e.Id_sucursal = %s"
+        params_cargo.append(id_sucursal)
+
+    # 1. KPIs Generales
     cursor.execute(f"""
         SELECT 
             COUNT(DISTINCT v.Id_empleado) AS empleados_activos,
@@ -3786,11 +4748,11 @@ def reporte_empleados():
             ROUND(IFNULL(SUM(v.Total), 0), 2) AS total_recaudado,
             ROUND(IFNULL(SUM(v.Total), 0) / GREATEST(COUNT(DISTINCT v.Id_empleado), 1), 2) AS rendimiento_medio_empleado
         FROM venta v
-        {where_fecha}
-    """, (fecha_inicio, fecha_fin))
+        {where_venta}
+    """, tuple(params_venta))
     resumen = cursor.fetchone()
 
-    # 2. Ranking de Rendimiento por Empleado (Métricas Individuales + Comisión del 2% ejemplo)
+    # 2. Ranking de Rendimiento por Empleado
     cursor.execute(f"""
         SELECT 
             e.Id_empleado,
@@ -3802,30 +4764,75 @@ def reporte_empleados():
             ROUND(SUM(v.Total) * 0.02, 2) AS comision_estimada
         FROM empleados e
         JOIN venta v ON e.Id_empleado = v.Id_empleado
-        {where_fecha}
+        {where_venta}
         GROUP BY e.Id_empleado, e.Nombre, e.Cargo
         ORDER BY total_vendido DESC
-    """, (fecha_inicio, fecha_fin))
+    """, tuple(params_venta))
     tabla_empleados = cursor.fetchall()
     for emp in tabla_empleados:
         emp["total_vendido"] = float(emp["total_vendido"] or 0)
         emp["ticket_promedio"] = float(emp["ticket_promedio"] or 0)
         emp["comision_estimada"] = float(emp["comision_estimada"] or 0)
 
-    # 3. Evolución de Productividad Diaria/Mensual
+    # 3. Evolución de Ventas Operativas
     cursor.execute(f"""
         SELECT 
             DATE_FORMAT(v.Fecha_venta, '%Y-%m') AS periodo,
             COUNT(v.Id_venta) AS tickets_emitidos,
             ROUND(SUM(v.Total), 2) AS monto_procesado
         FROM venta v
-        {where_fecha}
+        {where_venta}
         GROUP BY DATE_FORMAT(v.Fecha_venta, '%Y-%m')
         ORDER BY periodo ASC
-    """, (fecha_inicio, fecha_fin))
+    """, tuple(params_venta))
     evolucion_laboral = cursor.fetchall()
     for evo in evolucion_laboral:
         evo["monto_procesado"] = float(evo["monto_procesado"] or 0)
+
+    # 4. Evolución de Nuevas Contrataciones
+    cursor.execute(f"""
+        SELECT 
+            DATE_FORMAT(e.Fecha_ingreso, '%Y-%m') AS periodo,
+            COUNT(e.Id_empleado) AS contrataciones
+        FROM empleados e
+        {where_empleado}
+        GROUP BY DATE_FORMAT(e.Fecha_ingreso, '%Y-%m')
+        ORDER BY periodo ASC
+    """, tuple(params_empleado))
+    evolucion_contrataciones = cursor.fetchall()
+    for evo in evolucion_contrataciones:
+        evo["contrataciones"] = int(evo["contrataciones"] or 0)
+
+    # 5. Top 5 Empleados
+    cursor.execute(f"""
+        SELECT 
+            e.Nombre AS empleado,
+            e.Cargo AS puesto,
+            ROUND(SUM(v.Total), 2) AS total_generado
+        FROM empleados e
+        JOIN venta v ON e.Id_empleado = v.Id_empleado
+        {where_venta}
+        GROUP BY e.Id_empleado, e.Nombre, e.Cargo
+        ORDER BY total_generado DESC
+        LIMIT 5
+    """, tuple(params_venta))
+    top_generadores = cursor.fetchall()
+    for top in top_generadores:
+        top["total_generado"] = float(top["total_generado"] or 0)
+
+    # 6. DISTRIBUCIÓN POR CARGO (NUEVO: Para el Gráfico de Pastel)
+    cursor.execute(f"""
+        SELECT 
+            IFNULL(e.Cargo, 'Sin Cargo') AS puesto,
+            COUNT(e.Id_empleado) AS cantidad
+        FROM empleados e
+        {where_cargo}
+        GROUP BY e.Cargo
+        ORDER BY cantidad DESC
+    """, tuple(params_cargo))
+    distribucion_cargos = cursor.fetchall()
+
+   
 
     cursor.close()
     conn.close()
@@ -3836,16 +4843,20 @@ def reporte_empleados():
         "empleados_activos": int(resumen["empleados_activos"] or 0),
         "rendimiento_medio_empleado": float(resumen["rendimiento_medio_empleado"] or 0),
         "tabla_empleados": tabla_empleados,
-        "evolucion_laboral": evolucion_laboral
-    }) 
- 
-
+        "evolucion_laboral": evolucion_laboral,
+        "evolucion_contrataciones": evolucion_contrataciones,
+        "top_generadores": top_generadores,
+        "distribucion_cargos": distribucion_cargos,  # 👈 Nuevo
+        
+    })
+    
+    
+    
 @app.route('/api/reporte-producto-especifico', methods=['GET'])
 def reporte_producto_especifico():
     conn = conectar_bd()
     cursor = conn.cursor(dictionary=True)
 
-    # Capturar parámetros
     id_producto = request.args.get('id_producto')
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
@@ -3853,7 +4864,6 @@ def reporte_producto_especifico():
     if not id_producto:
         return jsonify({"error": "Debe especificar un ID de producto"}), 400
 
-    # Rango por defecto (últimos 12 meses)
     if not fecha_fin:
         fecha_fin = datetime.now().strftime('%Y-%m-%d') 
     if not fecha_inicio:
@@ -3861,7 +4871,13 @@ def reporte_producto_especifico():
 
     # 0. Información Base del Producto
     cursor.execute("""
-        SELECT p.Nombre as Nombre_producto, p.SKU, c.Nombre AS categoria 
+        SELECT 
+            p.Nombre as Nombre_producto, 
+            p.SKU, 
+            c.Nombre AS categoria, 
+            COALESCE(p.Precio_base, 0) AS Precio_base, 
+            COALESCE(p.Precio_venta, 0) AS Precio_venta
+            
         FROM productos p
         JOIN categoria c ON p.Id_categoria = c.Id_categoria
         WHERE p.Id_producto = %s
@@ -3873,7 +4889,7 @@ def reporte_producto_especifico():
         conn.close()
         return jsonify({"error": "Producto no encontrado"}), 404
 
-    # Obtener el stock total actual desde la tabla inventario
+    # Stock actual total
     cursor.execute("""
         SELECT COALESCE(SUM(Cantidad_actual), 0) AS stock_total 
         FROM inventario 
@@ -3881,7 +4897,17 @@ def reporte_producto_especifico():
     """, (id_producto,))
     stock_resumen = cursor.fetchone()
 
-    # 1. KPIs Comerciales del Producto (Ventas en el periodo)
+    # Ventas totales históricas globales (sin límite de fecha)
+    cursor.execute("""
+        SELECT COALESCE(SUM(Cantidad), 0) AS total_historico
+        FROM detalle_venta
+        WHERE Id_producto = %s
+    """, (id_producto,))
+    historico_resumen = cursor.fetchone()
+    
+    
+
+    # 1. KPIs del Periodo Filtrado
     cursor.execute("""
         SELECT 
             COALESCE(SUM(dv.Cantidad), 0) AS unidades_vendidas,
@@ -3894,7 +4920,7 @@ def reporte_producto_especifico():
     """, (id_producto, fecha_inicio, fecha_fin))
     ventas_resumen = cursor.fetchone()
 
-    ingresos = float(ventas_resumen["images_totales"] or 0) if "images_totales" in ventas_resumen else float(ventas_resumen["ingresos_totales"] or 0)
+    ingresos = float(ventas_resumen["ingresos_totales"] or 0)
     costos = float(ventas_resumen["costo_total_estimado"] or 0) 
     ganancia_neta = round(ingresos - costos, 2) 
     margen_porcentaje = round((ganancia_neta / max(ingresos, 1)) * 100, 1)
@@ -3920,7 +4946,7 @@ def reporte_producto_especifico():
         vnt["total"] = float(vnt["total"] or 0) 
         vnt["fecha"] = str(vnt["fecha"]) 
 
-    # 3. Historial de Reabastecimiento
+    # 3. Historial de Compras
     cursor.execute("""
         SELECT 
             oc.Id_orden_compra,
@@ -3940,7 +4966,7 @@ def reporte_producto_especifico():
         cmp["costo_unitario"] = float(cmp["costo_unitario"] or 0) 
         cmp["fecha"] = str(cmp["fecha"]) 
 
-    # 4. Tendencia Temporal Combinada
+    # 4. Tendencia de Ventas
     cursor.execute("""
         SELECT 
             LAST_DAY(v.Fecha_venta) AS periodo,
@@ -3956,7 +4982,7 @@ def reporte_producto_especifico():
         if tv["periodo"]:
             tv["periodo"] = str(tv["periodo"])
 
-    # 5. Historial de Transferencias Internas (CORREGIDO: t.Fecha_transferencia)
+    # 5. Transferencias Stock
     cursor.execute("""
         SELECT 
             t.Id_transferencia,
@@ -3971,11 +4997,10 @@ def reporte_producto_especifico():
         ORDER BY t.Fecha DESC
     """, (id_producto, fecha_inicio, fecha_fin))
     historial_transferencias = cursor.fetchall()
-    
     for tf in historial_transferencias:
         tf["fecha"] = str(tf["fecha"])
 
-    # 6. Historial de Cambios de Precio (CORREGIDO: Mapeo de parámetros consistente)
+    # 6. Historial de Precios
     cursor.execute("""
         SELECT 
             Id_precio,
@@ -3988,9 +5013,7 @@ def reporte_producto_especifico():
     """, (id_producto, fecha_inicio, fecha_fin))
     
     registros_planos = cursor.fetchall()
-    print(registros_planos)
     historial_precios = []
-    
     
     for i, hp in enumerate(registros_planos):
         precio_actual = float(hp["precio_nuevo"] or 0)
@@ -4006,26 +5029,99 @@ def reporte_producto_especifico():
         
     historial_precios.reverse()
 
+    # 7. Proveedores Vinculados
+    cursor.execute("""
+        SELECT DISTINCT 
+            pr.Nombre AS nombre,
+            pr.Contacto_email AS rnc_codigo,
+            COALESCE(dc.Precio_unitario, p.Precio_base) AS costo_pactado,
+            3 AS lead_time_dias,
+            'Activo' AS estado
+        FROM detalle_compra dc
+        JOIN orden_compra oc ON dc.Id_orden_compra = oc.Id_orden_compra
+        JOIN proveedores pr ON oc.Id_proveedor = pr.Id_proveedor
+        JOIN productos p ON dc.Id_producto = p.Id_producto
+        WHERE dc.Id_producto = %s
+    """, (id_producto,))
+    proveedores = cursor.fetchall()
+    for prov in proveedores:
+        prov["costo_pactado"] = float(prov["costo_pactado"] or 0)
+        
+        
+    # 3. Cálculo de Stock Mínimo (Consulta Optimizada)
+    cursor.execute("""
+        SELECT 
+            CEILING(
+                (IFNULL(v.ConsumoPromedioDiario, 0) * IFNULL(c.TiempoEntrega, 0)) +
+                (IFNULL(v.ConsumoPromedioDiario, 0) * 5)
+            ) AS StockMinimo
+        FROM productos p
+        LEFT JOIN (
+            SELECT 
+                dv.Id_producto,
+                SUM(dv.Cantidad) / GREATEST(DATEDIFF(MAX(v.Fecha_venta), MIN(v.Fecha_venta)) + 1, 1) AS ConsumoPromedioDiario
+            FROM detalle_venta dv
+            JOIN venta v ON dv.Id_venta = v.Id_venta
+            WHERE dv.Id_producto = %s
+            GROUP BY dv.Id_producto
+        ) v ON p.Id_producto = v.Id_producto
+        LEFT JOIN (
+            SELECT 
+                dc.Id_producto,
+                AVG(DATEDIFF(oc.Fecha_entrega_real, oc.Fecha_orden)) AS TiempoEntrega
+            FROM detalle_compra dc
+            JOIN orden_compra oc ON dc.Id_orden_compra = oc.Id_orden_compra
+            WHERE dc.Id_producto = %s AND oc.Fecha_entrega_real IS NOT NULL
+            GROUP BY dc.Id_producto
+        ) c ON p.Id_producto = c.Id_producto
+        WHERE p.Id_producto = %s
+    """, (id_producto, id_producto, id_producto))
+    
+    resumen_stock = cursor.fetchone()
+    stock_minimo_calculado = int(resumen_stock["StockMinimo"]) if (resumen_stock and resumen_stock["StockMinimo"]) else 0    
+
     cursor.close()
     conn.close()
+
+    precio_v = float(producto_info["Precio_venta"] or 0)
+    costo_u = float(producto_info["Precio_base"] or 0)
+    total_ventas_hist = int(historico_resumen["total_historico"] or 0)
+    fecha_alta = str(producto_info.get("Fecha_creacion") or "2024-01-01")
+
+    
+    
 
     return jsonify({
         "producto": producto_info["Nombre_producto"],
         "codigo": producto_info["SKU"],
         "stock_actual": int(stock_resumen["stock_total"]),
         "categoria": producto_info["categoria"],
+        "Precio_venta": precio_v,
+        "costo_actual": costo_u,
+        "stock_minimo": stock_minimo_calculado,
+        
+        # Objeto de Stats Globales exigidos por el Frontend
+        "stats_globales": {
+            "Precio_base": costo_u,
+            "costo_unitario": costo_u,
+            "precio_venta": precio_v,
+            "stock_minimo": stock_minimo_calculado,
+            "punto_reorden": 10,
+            "total_ventas_historico": total_ventas_hist,
+            "fecha_creacion": fecha_alta
+        },
+
         "unidades_vendidas": int(ventas_resumen["unidades_vendidas"] or 0),
         "ingresos_totales": ingresos,
         "ganancia_neta": ganancia_neta,
         "margen_porcentaje": margen_porcentaje,
+        "proveedores": proveedores,
         "historial_ventas": historial_ventas,
         "historial_compras": historial_compras,
         "tendencia_ventas": tendencia_ventas,
         "historial_transferencias": historial_transferencias,
         "historial_precios": historial_precios
     })
-
-
 
 
 

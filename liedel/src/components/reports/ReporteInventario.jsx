@@ -68,7 +68,7 @@ const ReporteInventario = () => {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-screen text-xs font-mono text-gray-500">
-        ⌛ Sincronizando auditoría y evaluando variables predictivas del periodo...
+         Sincronizando auditoría y evaluando variables predictivas del periodo...
       </div>
     );
   }

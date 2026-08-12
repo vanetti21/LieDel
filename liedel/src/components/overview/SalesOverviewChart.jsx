@@ -36,7 +36,7 @@ const SalesOverviewChart = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <h2 className='text-xl font-semibold mb-6 text-black-100'>Monthly Sales</h2>
+      <h2 className='text-xl font-semibold mb-6 text-black-100'>Ventas mensuales</h2>
 
       <ResponsiveContainer width="100%" height={400}>
         <LineChart 

@@ -73,7 +73,7 @@ const ReporteCompras = () => {
       {/* SECTOR FILTRADO DE FECHAS */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">🛍️ Auditoría Dinámica de Compras y Abastecimiento</h2>
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"> Auditoría Dinámica de Compras y Abastecimiento</h2>
           <p className="text-xs text-gray-500">Monitoreo corporativo y control de egresos financieros por rango de fecha analítico.</p>
         </div>
 
