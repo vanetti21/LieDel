@@ -51,9 +51,9 @@ const ProductPage = () => {
     });
     
     const [endDate, setEndDate] = useState(() => formatDate(new Date()));
-
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [exportando, setExportando] = useState(false);
 
     // 3. ESTADOS PARA FILTROS Y DATOS DE ALMACÉN
     const [almacenesData, setAlmacenesData] = useState([]);
@@ -123,21 +123,51 @@ const ProductPage = () => {
 
     // Función para exportar el reporte dinámico
     const generatePDF = () => {
+    setExportando(true);
+
+    // Pequeña espera para que React re-renderice ocultando el botón antes de capturar
+    setTimeout(() => {
         const input = document.getElementById("reporteProductosSeccion");
-        const downloadBtn = document.querySelector(".download-btn-container");
-        if (downloadBtn) downloadBtn.style.display = "none";
 
         html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-            const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF("p", "mm", "a4");
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
+            const pageHeightInCanvasPx = (pdfHeight * canvas.width) / pdfWidth;
 
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeight);
+            let renderedHeight = 0;
+            let pageIndex = 0;
+
+            while (renderedHeight < canvas.height) {
+                const sliceHeight = Math.min(pageHeightInCanvasPx, canvas.height - renderedHeight);
+
+                const pageCanvas = document.createElement("canvas");
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = sliceHeight;
+
+                const ctx = pageCanvas.getContext("2d");
+                ctx.drawImage(
+                    canvas,
+                    0, renderedHeight, canvas.width, sliceHeight,
+                    0, 0, canvas.width, sliceHeight
+                );
+
+                const pageImgData = pageCanvas.toDataURL("image/jpeg", 0.85);
+                const sliceHeightMm = (sliceHeight * imgWidth) / canvas.width;
+
+                if (pageIndex > 0) pdf.addPage();
+                pdf.addImage(pageImgData, "JPEG", 0, 0, imgWidth, sliceHeightMm);
+
+                renderedHeight += sliceHeight;
+                pageIndex++;
+            }
+
             pdf.save(`Reporte_Productos_${startDate}_A_${endDate}.pdf`);
-            if (downloadBtn) downloadBtn.style.display = "block";
+            setExportando(false);
         });
-    };
+    }, 50);
+};
 
     // Obtener lista única de almacenes disponibles para el select desde almacenesData
     const listaAlmacenes = ["Todos", ...new Set(almacenesData.map((i) => i.almacen))];
@@ -149,6 +179,12 @@ const ProductPage = () => {
         return coincideAlmacen && coincideNombre;
     });
 
+    const maxIngreso = Math.max(
+        ...(reportData?.top_ingresos?.map((p) => p.ingresos) || [0])
+    );
+    const yDomainMaxIngresos = Math.ceil((maxIngreso * 1.05) / 100000) * 100000;
+    
+    
     return (
         <div className='flex-1 overflow-auto relative z-10'>
             <main className='max-w-7xl mx-auto py-8 px-4 lg:px-8'>
@@ -260,7 +296,7 @@ const ProductPage = () => {
 
                         {/* LineChart Ventas */}
                         <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
-                            <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
+                            <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2   ">
                                 📊 Evolución Temporal de Unidades Vendidas
                             </h3>
                             <ResponsiveContainer width="100%" height={320}>
@@ -269,15 +305,31 @@ const ProductPage = () => {
                                     margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                    <XAxis dataKey="fecha" stroke="#718096" tick={{ fontSize: 11 }} />
+                                    <XAxis dataKey="fecha" stroke="#718096" tick={{ fontSize: 11 }}
+                                    minTickGap={20}
+                                    tickFormatter={(value) => {
+                                        const d = new Date(value);
+                                        return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+                                    }}
+                                    padding={{ left: 20, right: 20 }}
+                                    />
                                     <YAxis 
                                         stroke="#718096" 
                                         allowDecimals={false} 
-                                        domain={[0, 'auto']} 
+                                        domain={[0, 22]} 
                                     />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: "#fff", borderColor: "#cbd5e1", color: "#000" }}
-                                        formatter={(value) => [`${value} unidades`, "Vendidas"]}
+                                        labelFormatter={(value) => {
+                                        const d = new Date(value);
+                                        return d.toLocaleDateString("es-ES", { 
+                                            weekday: "short", 
+                                            day: "2-digit", 
+                                            month: "short", 
+                                            year: "numeric" 
+                                        });
+                                    }}
+                                    formatter={(value) => [`${value} unidades`, "Vendidas"]}
                                     />
                                     <Line 
                                         type="monotone" 
@@ -298,7 +350,7 @@ const ProductPage = () => {
                             <ResponsiveContainer width="100%" height={360}>
                                 <BarChart 
                                     data={reportData.top_ingresos}
-                                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                                    margin={{ top: 20, right: 30, left: 15, bottom: 55 }}
                                 >
                                     <XAxis 
                                         dataKey="Nombre" 
@@ -306,11 +358,15 @@ const ProductPage = () => {
                                         tick={{ fontSize: 10, fill: "#4a5568" }} 
                                         angle={-45} 
                                         textAnchor="end" 
-                                        interval={0} 
+                                        interval={0}
+                                        tickFormatter={(value) => 
+                                            value.length > 12 ? `${value.slice(0, 14)}…` : value
+                                        }
                                     />
                                     <YAxis 
                                         stroke="#718096" 
-                                        tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} 
+                                        tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
+                                        domain={[0, yDomainMaxIngresos]}
                                     />
                                     <Tooltip 
                                         contentStyle={{ backgroundColor: '#fff', borderColor: '#cbd5e1' }} 
@@ -329,7 +385,7 @@ const ProductPage = () => {
                             </h3>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                                 {/* Gráfico de Pastel */}
-                                <div className="h-[280px]">
+                                <div className="h-[335px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
@@ -337,16 +393,33 @@ const ProductPage = () => {
                                                 dataKey="total"
                                                 nameKey="nombre"
                                                 cx="50%"
-                                                cy="50%"
-                                                outerRadius={95}
-                                                label={({ nombre, percent }) => `${nombre} (${(percent * 100).toFixed(1)}%)`}
+                                                cy="49%"
+                                                outerRadius={90}
+                                                labelLine={({ percent, ...rest }) => {
+                                                    if (percent < 0.02) return null;
+                                                    return <path {...rest} stroke="#9ca3af" strokeWidth={1} fill="none" />;
+                                                }}
+                                                label={({ x, y, textAnchor, nombre, percent }) => {
+                                                    if (percent < 0.02) return null;
+                                                    return (
+                                                        <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={10}>
+                                                            {`${nombre} (${(percent * 100).toFixed(1)}%)`}
+                                                        </text>
+                                                    );
+                                                }}
                                             >
                                                 {(reportData.categorias || []).map((_, i) => (
                                                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                                                 ))}
                                             </Pie>
                                             <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Ingresos"]} />
-                                            <Legend />
+                                            <Legend
+                                                iconSize={14}
+                                                wrapperStyle={{ fontSize: "14px", paddingTop: "15px" }}
+                                                formatter={(value) => (
+                                                    <span style={{ color: "#374151", marginRight: "10px" }}>{value}</span>
+                                                )}
+                                            />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -473,68 +546,86 @@ const ProductPage = () => {
                                         return (
                                             <>
                                                 {/* Gráfico 1: Unidades/Productos por Almacén */}
-                                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
-                                                        📦 Variedad de Productos por Sucursal
-                                                    </h4>
-                                                    <ResponsiveContainer width="100%" height={260}>
-                                                        <BarChart 
-                                                            data={datosAgrupados} 
-                                                            margin={{ top: 10, right: 10, left: -20, bottom: 45 }}
-                                                        >
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                                            <XAxis 
-                                                                dataKey="almacen" 
-                                                                stroke="#64748b" 
-                                                                tick={{ fontSize: 10, fill: "#475569" }}
-                                                                angle={-35} 
-                                                                textAnchor="end" 
-                                                                interval={0}
-                                                            />
-                                                            <YAxis stroke="#64748b" allowDecimals={false} tick={{ fontSize: 11 }} />
-                                                            <Tooltip 
-                                                                contentStyle={{ backgroundColor: "#fff", borderRadius: "8px", borderColor: "#cbd5e1" }}
-                                                                formatter={(value) => [`${value} productos`, "Variedad"]}
-                                                            />
-                                                            <Bar dataKey="productos" name="Productos" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                                                        </BarChart>
-                                                    </ResponsiveContainer>
-                                                </div>
-
+                                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
+                                                    📦 Variedad de Productos por Sucursal
+                                                </h4>
+                                                <ResponsiveContainer width="100%" height={300}>
+                                                    <BarChart 
+                                                        data={datosAgrupados} 
+                                                        margin={{ top: 20, right: 10, left: -20, bottom: 55 }}
+                                                    >
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                                        <XAxis 
+                                                            dataKey="almacen" 
+                                                            stroke="#64748b" 
+                                                            tick={{ fontSize: 10, fill: "#475569" }}
+                                                            angle={-35} 
+                                                            textAnchor="end" 
+                                                            interval={0}
+                                                            tickFormatter={(value) => 
+                                                                value.length > 12 ? `${value.slice(0, 12)}…` : value
+                                                            }
+                                                        />
+                                                        <YAxis stroke="#64748b" allowDecimals={false} tick={{ fontSize: 11 }} />
+                                                        <Tooltip 
+                                                            contentStyle={{ backgroundColor: "#fff", borderRadius: "8px", borderColor: "#cbd5e1" }}
+                                                            formatter={(value) => [`${value} productos`, "Variedad"]}
+                                                        />
+                                                        <Bar dataKey="productos" name="Productos" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
                                                 {/* Gráfico 2: Valor Monetario por Almacén */}
                                                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
-                                                        💰 Distribución de Valor Monetario ($)
-                                                    </h4>
-                                                    <ResponsiveContainer width="100%" height={260}>
-                                                        <PieChart>
-                                                            <Pie
-                                                                data={datosAgrupados}
-                                                                dataKey="valor"
-                                                                nameKey="almacen"
-                                                                cx="50%"
-                                                                cy="45%"
-                                                                outerRadius={75}
-                                                            >
-                                                                {COLORS.map((_, i) => (
-                                                                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                                                ))}
-                                                            </Pie>
-                                                            <Tooltip 
-                                                                formatter={(val) => [
-                                                                    `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
-                                                                    'Valor Estimado'
-                                                                ]} 
-                                                            />
-                                                            <Legend 
-                                                                layout="horizontal" 
-                                                                verticalAlign="bottom" 
-                                                                align="center"
-                                                                wrapperStyle={{ fontSize: "10px", paddingTop: "10px" }}
-                                                            />
-                                                        </PieChart>
-                                                    </ResponsiveContainer>
-                                                </div>
+                                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
+                                                    💰 Distribución de Valor Monetario ($)
+                                                </h4>
+                                                <ResponsiveContainer width="100%" height={300}>
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={datosAgrupados}
+                                                            dataKey="valor"
+                                                            nameKey="almacen"
+                                                            cx="50%"
+                                                            cy="50%"
+                                                            outerRadius={75}
+                                                            labelLine={({ percent, ...rest }) => {
+                                                                if (percent < 0.03) return null;
+                                                                return <path {...rest} stroke="#9ca3af" strokeWidth={1} fill="none" />;
+                                                            }}
+                                                            label={({ x, y, textAnchor, percent }) => {
+                                                                if (percent < 0.03) return null;
+                                                                return (
+                                                                    <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={11}>
+                                                                        {`${(percent * 100).toFixed(1)}%`}
+                                                                    </text>
+                                                                );
+                                                            }}
+                                                        >
+                                                            {datosAgrupados.map((_, i) => (
+                                                                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip 
+                                                            formatter={(val) => [
+                                                                `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
+                                                                'Valor Estimado'
+                                                            ]} 
+                                                        />
+                                                        <Legend 
+                                                            layout="horizontal" 
+                                                            verticalAlign="bottom" 
+                                                            align="center"
+                                                            iconSize={9}
+                                                            wrapperStyle={{ fontSize: "11px", paddingTop: "12px" }}
+                                                            formatter={(value) => (
+                                                                <span style={{ color: "#374151", marginRight: "5px" }}>{value}</span>
+                                                            )}
+                                                        />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            </div>
                                             </>
                                         );
                                     })()}
@@ -578,7 +669,7 @@ const ProductPage = () => {
                         </div>
 
                         {/* BOTÓN EXPORTAR */}
-                        <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
+                        <div className={`download-btn-container pt-4 flex justify-end border-t border-gray-200 ${exportando ? "invisible" : ""}`}>
                             <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
                                 <Download size={14} /> Exportar Reporte Analítico a PDF
                             </button>

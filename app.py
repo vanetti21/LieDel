@@ -124,8 +124,6 @@ def obtener_productos_mas_vendidos():
     return jsonify(sales_data)
 
 
-
-
 @app.route('/obtener_resumen', methods=['GET'])
 def obtener_resumen():
     
@@ -476,7 +474,6 @@ def obtener_detalle_venta(id_venta):
         return jsonify({"error": "Error al obtener detalle de la venta"}), 500
 
     
-
     
 #Products
 @app.route("/api/productos-reporte", methods=["GET"])
@@ -822,11 +819,8 @@ def dead_stock_products():
     """
 
     cursor.execute(query)
-
     data = cursor.fetchall()
-
     return jsonify(data)
-
 
 
 @app.route('/dead-stock-insights')
@@ -1009,8 +1003,8 @@ def defective_products_stats():
 
     cursor.execute(query)
     data = cursor.fetchone()
-
     return jsonify(data)
+
 
 @app.route('/products/defective')
 def defective_products():
@@ -1475,28 +1469,19 @@ def customer_insights():
 
     query = """
     SELECT
-
         c.Nombre,
-
         COUNT(v.Id_venta) AS compras,
-
         SUM(v.Total) AS total_gastado
-
     FROM clientes c
-
     JOIN venta v
         ON c.Id_cliente = v.Id_cliente
-
     GROUP BY c.Nombre
-
     ORDER BY total_gastado DESC
-
     LIMIT 10
     """
 
     cursor.execute(query)
     data = cursor.fetchall()
-
     return jsonify(data)
 
 
@@ -1522,14 +1507,12 @@ def predict_demand():
 
     cursor.execute(query)
     rows = cursor.fetchall()
-
     df = pd.DataFrame(rows)
 
     if df.empty:
         return jsonify([])
-
+    
     predictions = []
-
     productos = df["producto"].unique()
 
     for producto in productos:
@@ -3077,7 +3060,6 @@ def get_customer_segmentation():
 
 
 
-
 @app.route('/homes', methods=['GET'])
 def home():
     conn = conectar_bd()
@@ -3137,7 +3119,6 @@ def home():
             graph_categoria_html = fig_categoria.to_html(full_html=False)
 
     return render_template('homes.html', graph_ventas_html=graph_ventas_html, graph_productos_html=graph_productos_html, graph_categoria_html=graph_categoria_html)
-
 
 
 

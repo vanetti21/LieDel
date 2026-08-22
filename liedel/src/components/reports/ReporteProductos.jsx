@@ -14,6 +14,7 @@ const ReporteProductos = () => {
   const [endDate, setEndDate] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
     if (!startDate || !endDate) return;
@@ -34,24 +35,53 @@ const ReporteProductos = () => {
     fetchData();
   }, [startDate, endDate]);
 
-  const generatePDF = () => {
-    const input = document.getElementById("reporteProductos");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
+const generatePDF = () => {
+    setExportando(true);
 
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    // Pequeña espera para que React re-renderice ocultando el botón antes de capturar
+    setTimeout(() => {
+        const input = document.getElementById("reporteProductosSeccion");
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Reporte_Analitico_${startDate}_A_${endDate}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
-  };
+        html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
+            const pdf = new jsPDF("p", "mm", "a4");
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
+            const pageHeightInCanvasPx = (pdfHeight * canvas.width) / pdfWidth;
 
+            let renderedHeight = 0;
+            let pageIndex = 0;
+
+            while (renderedHeight < canvas.height) {
+                const sliceHeight = Math.min(pageHeightInCanvasPx, canvas.height - renderedHeight);
+
+                const pageCanvas = document.createElement("canvas");
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = sliceHeight;
+
+                const ctx = pageCanvas.getContext("2d");
+                ctx.drawImage(
+                    canvas,
+                    0, renderedHeight, canvas.width, sliceHeight,
+                    0, 0, canvas.width, sliceHeight
+                );
+
+                const pageImgData = pageCanvas.toDataURL("image/jpeg", 0.85);
+                const sliceHeightMm = (sliceHeight * imgWidth) / canvas.width;
+
+                if (pageIndex > 0) pdf.addPage();
+                pdf.addImage(pageImgData, "JPEG", 0, 0, imgWidth, sliceHeightMm);
+
+                renderedHeight += sliceHeight;
+                pageIndex++;
+            }
+
+            pdf.save(`Reporte_Productos_${startDate}_A_${endDate}.pdf`);
+            setExportando(false);
+        });
+    }, 50);
+};
+  
   return (
     <div className="p-6 bg-white min-h-screen text-gray-800 font-sans">
       
@@ -111,21 +141,31 @@ const ReporteProductos = () => {
                   📊 Evolución Temporal de Unidades Vendidas
                 </h3>
 
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={data.tendencia_ventas || []}>
+                <ResponsiveContainer width="100%" height={320}>
+                  <LineChart data={data.tendencia_ventas || []} margin={{ top: 20, right: 50, left: 30, bottom: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-
                     <XAxis
                       dataKey="fecha"
                       stroke="#718096"
                       tick={{ fontSize: 10 }}
+                      minTickGap={45}
+                      tickFormatter={(value) => {
+                        const d = new Date(value);
+                        return d.toLocaleDateString("es-ES", {
+                          day: "2-digit",
+                          month: "short"
+                        });
+                      }}
+                      padding={{
+                          left: 20,
+                          right: 20
+                        }}
                     />
-
                     <YAxis
                       stroke="#718096"
                       allowDecimals={false}
+                      domain={[0, 'dataMax + 2']}
                     />
-
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#fff",
@@ -134,7 +174,6 @@ const ReporteProductos = () => {
                       }}
                       formatter={(value) => [`${value} unidades`, "Vendidas"]}
                     />
-
                     <Line
                       type="monotone"
                       dataKey="unidades_vendidas"
@@ -159,9 +198,7 @@ const ReporteProductos = () => {
                 </h3>
 
                 <ResponsiveContainer width="100%" height={300}>
-
                   <PieChart>
-
                     <Pie
                       data={data.categorias || []}
                       dataKey="total"
@@ -180,9 +217,7 @@ const ReporteProductos = () => {
                           fill={COLORS[i % COLORS.length]}
                         />
                       ))}
-
                     </Pie>
-
                     <Tooltip
                       formatter={(value) => [
                         `$${Number(value).toLocaleString()}`,
@@ -191,11 +226,8 @@ const ReporteProductos = () => {
                     />
 
                     <Legend />
-
                   </PieChart>
-
                 </ResponsiveContainer>
-
               </div>
 
             {/* TOP 10 PRODUCTOS POR INGRESOS */}
@@ -320,9 +352,9 @@ const ReporteProductos = () => {
           </div>
 
           {/* ACCIÓN EXPORTACIÓN ACCESIBLE */}
-          <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
+          <div className={`download-btn-container pt-4 flex justify-end border-t border-gray-200 ${exportando ? "invisible" : ""}`}>
             <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
-              <Download size={14} /> Exportar Reporte Analítico a PDF (Formato A4)
+                <Download size={14} /> Exportar Reporte Analítico a PDF
             </button>
           </div>
 
