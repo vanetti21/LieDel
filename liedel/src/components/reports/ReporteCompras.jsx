@@ -1,271 +1,266 @@
-import { useState, useEffect } from "react";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { Download, ShoppingBag, Calendar, Layers, DollarSign, RefreshCw, FileText, ClipboardCheck, TrendingUp, Clock, Ban, Truck } from "lucide-react";
-import { motion } from "framer-motion";
+import React from 'react';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 
-const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#3b82f6"];
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    backgroundColor: '#FFFFFF',
+    fontSize: 9,
+    fontFamily: 'Helvetica',
+    color: '#333333',
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 30,
+  },
+  header: {
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingBottom: 10,
+  },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
+  subtitle: { fontSize: 9, color: '#64748B', marginTop: 4 },
+  sectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', marginTop: 12, marginBottom: 6 },
+  kpiContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  kpiBox: { width: '19%', textAlign: 'center' },
+  kpiLabel: { fontSize: 6.5, color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' },
+  kpiValue: { fontSize: 9.5, fontWeight: 'bold', marginTop: 2 },
+  fullWidthChartImage: {
+    width: '100%',
+    height: 190,
+    objectFit: 'contain',
+  },
+  table: { width: '100%', marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 4 },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', padding: 6, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', padding: 5 },
+  legendDot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
+  statusBadge: { fontSize: 7, fontWeight: 'bold', paddingVertical: 2, paddingHorizontal: 5, borderRadius: 8 },
+  footer: { position: 'absolute', bottom: 20, left: 30, right: 30, textAlign: 'center', color: '#94A3B8', fontSize: 8 }
+});
 
-const ReporteCompras = () => {
-  const hoy = new Date().toISOString().split("T")[0];
-  const haceUnAno = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split("T")[0];
+const COLORS_ESTADOS = ["#F59E0B", "#10B981", "#EF4444", "#6366F1", "#8B5CF6", "#f15cf6"];
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [fechaInicio, setFechaInicio] = useState(haceUnAno);
-  const [fechaFin, setFechaFin] = useState(hoy);
+const getStatusColors = (estado) => {
+  const est = estado?.toLowerCase();
+  if (est === 'pendiente') return { bg: '#FEF3C7', color: '#92400E' };
+  if (['completada', 'entregada'].includes(est)) return { bg: '#D1FAE5', color: '#065F46' };
+  return { bg: '#FEE2E2', color: '#991B1B' };
+};
 
-  const fetchCompras = async () => {
-    try {
-      setLoading(true);
-      const url = `http://localhost:5000/api/reporte-compras?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Error obteniendo datos de compras");
-      const result = await res.json();
-      setData(result);
-    } catch (error) {
-      console.error("Error cargando reporte de compras:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCompras();
-  }, []);
-
-  const generatePDF = () => {
-    const input = document.getElementById("reporteCompras");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
-
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("l", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Auditoria_Avanzada_Compras_${fechaInicio}_to_${fechaFin}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
-  };
-
-  const getStatusBadge = (estado) => {
-    const est = estado?.toLowerCase();
-    if (est === "completada" || est === "recibida") return "bg-green-50 text-green-700 border-green-200";
-    if (est === "pendiente" || est === "solicitada") return "bg-amber-50 text-amber-700 border-amber-200";
-    if (est === "en transito") return "bg-indigo-50 text-indigo-700 border-indigo-200";
-    return "bg-red-50 text-red-700 border-red-200";
-  };
-
+const ReporteOrdenesPDF = ({ reportData, startDate, endDate, chartImages }) => {
   return (
-    <div className="p-6 bg-white min-h-screen text-gray-800 font-sans">
-      
-      {/* SECTOR FILTRADO DE FECHAS */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"> Auditoría Dinámica de Compras y Abastecimiento</h2>
-          <p className="text-xs text-gray-500">Monitoreo corporativo y control de egresos financieros por rango de fecha analítico.</p>
-        </div>
+    <Document>
+      <Page size="A4" style={styles.page}>
 
-        <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200 w-full lg:w-auto">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
-            <Calendar size={14} /> Desde:
-            <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none" />
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
-            Hasta:
-            <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none" />
-          </div>
-          <button onClick={fetchCompras} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-all active:scale-95 ml-auto lg:ml-0">
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Consultar Periodo
-          </button>
-        </div>
-      </div>
+        {/* ENCABEZADO */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Auditoría de Órdenes y Logística</Text>
+          <Text style={styles.subtitle}>Período: {startDate} al {endDate}</Text>
+        </View>
 
-      {loading && (
-        <div className="text-center py-20 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-indigo-600 font-medium">Procesando y cruzando cubos analíticos de compras...</p>
-        </div>
-      )}
+        {/* KPIS */}
+        <View style={styles.kpiContainer}>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Inversión Total</Text>
+            <Text style={[styles.kpiValue, { color: '#4F46E5' }]}>
+              ${reportData?.inversion_total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Órdenes Registradas</Text>
+            <Text style={[styles.kpiValue, { color: '#1E293B' }]}>
+              {reportData?.total_ordenes} ops
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Costo Promedio</Text>
+            <Text style={[styles.kpiValue, { color: '#16A34A' }]}>
+              ${reportData?.orden_promedio?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Pendientes</Text>
+            <Text style={[styles.kpiValue, { color: '#D97706' }]}>
+              {reportData?.pendientes}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Completadas</Text>
+            <Text style={[styles.kpiValue, { color: '#059669' }]}>
+              {reportData?.completadas}
+            </Text>
+          </View>
+        </View>
 
-      {data && !loading && (
-        <div id="reporteCompras" className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200">
-          
-          {/* GRIDS DE METRICAS AVANZADAS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="p-4 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-2.5 bg-green-100 text-green-600 rounded-lg"><DollarSign size={18} /></div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Inversión Total</span>
-                <span className="text-sm font-black text-green-600 font-mono">${data.inversion_total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
-              </div>
-            </div>
+        {/* CURVA TEMPORAL DE INVERSIÓN EN COMPRAS (título ya incluido en la imagen) */}
+        {chartImages?.tendenciaCompras && (
+          <View style={{ marginBottom: 10 }} wrap={false}>
+            <Image style={styles.fullWidthChartImage} src={chartImages.tendenciaCompras} />
+          </View>
+        )}
 
-            <div className="p-4 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-lg"><ShoppingBag size={18} /></div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Volumen</span>
-                <span className="text-sm font-black text-indigo-600 font-mono">{data.unidades_compradas.toLocaleString()} u.</span>
-              </div>
-            </div>
+        {/* LOGÍSTICA Y TIPOS DE ENVÍO + PRODUCTOS MÁS ORDENADOS */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+          {/* LOGÍSTICA */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Logística y Tipos de Envío</Text>
+            {chartImages?.tiposEnvio && (
+              <View style={{ marginBottom: 6 }} wrap={false}>
+                <Image style={{ width: '100%', height: 130, objectFit: 'contain' }} src={chartImages.tiposEnvio} />
+              </View>
+            )}
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '40%' }}>Tipo de Envío</Text>
+                <Text style={{ width: '25%', textAlign: 'center' }}>Órdenes</Text>
+                <Text style={{ width: '35%', textAlign: 'right' }}>Total Invertido</Text>
+              </View>
+              {reportData?.tipos_envio?.map((env, idx) => (
+                <View key={idx} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '40%' }}>{env.tipo_envio}</Text>
+                  <Text style={{ width: '25%', textAlign: 'center' }}>{env.cantidad}</Text>
+                  <Text style={{ width: '35%', textAlign: 'right', color: '#4F46E5', fontWeight: 'bold' }}>
+                    ${env.total_invertido?.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-            <div className="p-4 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-2.5 bg-amber-100 text-amber-600 rounded-lg"><ClipboardCheck size={18} /></div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Órdenes Emitidas</span>
-                <span className="text-sm font-black text-amber-600 font-mono">{data.total_ordenes} OC</span>
-              </div>
-            </div>
+          {/* PRODUCTOS MÁS ORDENADOS */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Productos / Insumos Más Ordenados</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '50%' }}>Producto</Text>
+                <Text style={{ width: '20%', textAlign: 'center' }}>Unidades</Text>
+                <Text style={{ width: '30%', textAlign: 'right' }}>Monto Gastado</Text>
+              </View>
+              {reportData?.productos_mas_ordenados?.length > 0 ? (
+                reportData.productos_mas_ordenados.slice(0, 10).map((prod, idx) => (
+                  <View key={idx} style={styles.tableRow} wrap={false}>
+                    <Text style={{ width: '50%' }}>{prod.producto || 'Producto sin nombre'}</Text>
+                    <Text style={{ width: '20%', textAlign: 'center' }}>{prod.cantidad_total?.toLocaleString()} u.</Text>
+                    <Text style={{ width: '30%', textAlign: 'right', color: '#16A34A', fontWeight: 'bold' }}>
+                      ${prod.total_gastado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.tableRow}>
+                  <Text style={{ width: '100%', textAlign: 'center', color: '#94A3B8' }}>
+                    Sin registro de ítems en el periodo seleccionado.
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
 
-            <div className="p-4 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-2.5 bg-purple-100 text-purple-600 rounded-lg"><TrendingUp size={18} /></div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Ticket Promedio</span>
-                <span className="text-sm font-black text-purple-600 font-mono">${data.ticket_promedio.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
-              </div>
-            </div>
+        {/* TOP PROVEEDORES + DISTRIBUCIÓN POR ESTADO */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+          {/* TOP PROVEEDORES */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Inversión por Proveedor (Top 10)</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '50%' }}>Proveedor</Text>
+                <Text style={{ width: '20%', textAlign: 'center' }}>Órdenes</Text>
+                <Text style={{ width: '30%', textAlign: 'right' }}>Total Invertido</Text>
+              </View>
+              {reportData?.ventas_proveedores?.slice(0, 10).map((p, idx) => (
+                <View key={idx} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '50%' }}>{p.proveedor}</Text>
+                  <Text style={{ width: '20%', textAlign: 'center' }}>{p.total_ordenes} ops.</Text>
+                  <Text style={{ width: '30%', textAlign: 'right', color: '#4F46E5', fontWeight: 'bold' }}>
+                    ${p.total_invertido?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-            {/* NUEVO KPI: LEAD TIME DEL PERIODO */}
-            <div className="p-4 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg"><Clock size={18} /></div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Lead Time Medio</span>
-                <span className="text-sm font-black text-blue-600 font-mono">{data.lead_time_promedio || 0} días</span>
-              </div>
-            </div>
+          {/* DISTRIBUCIÓN POR ESTADO */}
+          <View style={{ width: '50%' }}>
+            <Text style={[styles.sectionTitle, { textAlign: 'center', marginBottom: 0 }]}>Distribución por Estado</Text>
+            {chartImages?.distribucionEstados && (
+              <View style={{ alignItems: 'center', marginBottom: 6 }} wrap={false}>
+                <Image style={{ width: '65%', height: 110, objectFit: 'contain' }} src={chartImages.distribucionEstados} />
+              </View>
+            )}
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '40%' }}>Estado</Text>
+                <Text style={{ width: '25%', textAlign: 'center' }}>Cant.</Text>
+                <Text style={{ width: '35%', textAlign: 'right' }}>Monto</Text>
+              </View>
+              {reportData?.distribucion_estados?.map((est, idx) => (
+                <View key={idx} style={styles.tableRow} wrap={false}>
+                  <View style={{ width: '40%', flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={[styles.legendDot, { backgroundColor: COLORS_ESTADOS[idx % COLORS_ESTADOS.length] }]} />
+                    <Text style={{ fontWeight: 'bold' }}>{est.estado}</Text>
+                  </View>
+                  <Text style={{ width: '25%', textAlign: 'center' }}>{est.cantidad}</Text>
+                  <Text style={{ width: '35%', textAlign: 'right', fontWeight: 'bold' }}>
+                    ${est.total_monto?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
 
-            {/* NUEVO KPI: TASA DE CANCELACIÓN */}
-            <div className="p-4 rounded-xl border border-gray-200 flex items-center gap-3 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-2.5 bg-red-100 text-red-600 rounded-lg"><Ban size={18} /></div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">% Cancelaciones</span>
-                <span className="text-sm font-black text-red-600 font-mono">{data.tasa_cancelacion}%</span>
-              </div>
-            </div>
-          </div>
+        {/* REGISTRO DE ÓRDENES RELEVANTES */}
+        {reportData?.detalle_ordenes?.length > 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Registro de Órdenes Relevantes</Text>
+            <View style={styles.table}>
+              <View style={[styles.tableRow, styles.tableHeader]}>
+                <Text style={{ width: '10%' }}># Orden</Text>
+                <Text style={{ width: '20%' }}>Proveedor</Text>
+                <Text style={{ width: '15%' }}>Sucursal</Text>
+                <Text style={{ width: '15%' }}>Fecha</Text>
+                <Text style={{ width: '15%', textAlign: 'center' }}>Estado</Text>
+                <Text style={{ width: '10%' }}>Envío</Text>
+                <Text style={{ width: '15%', textAlign: 'right' }}>Costo Total</Text>
+              </View>
+              {reportData.detalle_ordenes.slice(0, 15).map((ord) => {
+                const badge = getStatusColors(ord.Estado);
+                return (
+                  <View key={ord.Id_orden_compra} style={styles.tableRow} wrap={false}>
+                    <Text style={{ width: '10%', color: '#4F46E5', fontWeight: 'bold' }}>#{ord.Id_orden_compra}</Text>
+                    <Text style={{ width: '20%' }}>{ord.proveedor || 'N/A'}</Text>
+                    <Text style={{ width: '15%' }}>{ord.sucursal || 'N/A'}</Text>
+                    <Text style={{ width: '15%' }}>{ord.fecha_orden}</Text>
+                    <View style={{ width: '15%', alignItems: 'center' }}>
+                      <Text style={[styles.statusBadge, { backgroundColor: badge.bg, color: badge.color }]}>
+                        {ord.Estado}
+                      </Text>
+                    </View>
+                    <Text style={{ width: '10%' }}>{ord.Tipo_envio || 'Estándar'}</Text>
+                    <Text style={{ width: '15%', textAlign: 'right', fontWeight: 'bold' }}>
+                      ${ord.Costo_total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
-          {/* TENDENCIA DEL FLUJO DE COMPRAS */}
-          <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-            <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-600"/> Histórico y Evolución Mensual del Gasto</h3>
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={data.evolucion_gasto}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Gasto Realizado']} />
-                <Line type="monotone" dataKey="monto" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* PARTE INTERMEDIA: GRÁFICOS COMPLEMENTARIOS */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <h3 className="text-sm font-bold mb-3 text-gray-900 flex items-center gap-2"><ClipboardCheck size={16} className="text-indigo-600"/> Distribución por Estado</h3>
-              <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie data={data.estados_ordenes} dataKey="valor_total" nameKey="estado" cx="50%" cy="50%" outerRadius={50} label={({ estado }) => estado}>
-                    {data.estados_ordenes.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Flujo Contable']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <h3 className="text-sm font-bold mb-3 text-gray-900 flex items-center gap-2"><Layers size={16} className="text-indigo-600"/> Presupuesto por Categoría</h3>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data.categorias_top}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis dataKey="categoria" tick={{ fontSize: 9 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Invertido']} />
-                  <Bar dataKey="total_invertido" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* NUEVO GRÁFICO: CONCENTRACIÓN DEL GASTO POR PROVEEDOR */}
-            <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <h3 className="text-sm font-bold mb-3 text-gray-900 flex items-center gap-2"><Truck size={16} className="text-indigo-600"/> Top 5 Proveedores por Inversión</h3>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={data.top_proveedores_gasto} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis type="number" tick={{ fontSize: 9 }} />
-                  <YAxis dataKey="proveedor" type="category" tick={{ fontSize: 9 }} width={70} />
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Comprado']} />
-                  <Bar dataKey="monto_total" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* TABLA: AUDITORÍA GENERAL */}
-          <div className="rounded-xl border border-gray-200 overflow-hidden" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-            <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-              <FileText size={16} className="text-indigo-600" />
-              <h3 className="text-sm font-bold text-gray-900">Auditoría Operativa de Órdenes de Compra ({formatDate(fechaInicio)} - {formatDate(fechaFin)})</h3>
-            </div>
-            <div className="overflow-x-auto bg-white">
-              <table className="w-full text-left text-xs text-gray-700">
-                <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
-                  <tr>
-                    <th className="p-3">Código OC</th>
-                    <th className="p-3">Proveedor Logístico</th>
-                    <th className="p-3 text-center">Fecha Emisión</th>
-                    <th className="p-3 text-center">Estado de Flujo</th>
-                    <th className="p-3 text-right">Monto Neto</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
-                  {data.historial_ordenes.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="p-6 text-center text-gray-400 font-sans">❌ Ninguna orden registrada dentro de este rango de fechas.</td>
-                    </tr>
-                  ) : (
-                    data.historial_ordenes.map((ord, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="p-3 text-gray-400">#OC-0{ord.Id_orden_compra}</td>
-                        <td className="p-3 font-sans text-gray-900 font-semibold">{ord.proveedor}</td>
-                        <td className="p-3 text-center text-gray-500">{formatDate(ord.Fecha_orden)}</td>
-                        <td className="p-3 text-center font-sans">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(ord.Estado)}`}>
-                            {ord.Estado}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right text-gray-900 font-black">${ord.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* BOTÓN EXPORTAR */}
-          <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
-            <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
-              <Download size={14} /> Exportar Reporte de Compras Completo
-            </button>
-          </div>
-
-        </div>
-      )}
-    </div>
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} fixed />
+      </Page>
+    </Document>
   );
 };
 
-export default ReporteCompras;
+export default ReporteOrdenesPDF;

@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { pdf } from "@react-pdf/renderer";
 
 import StatCard from "../components/common/StatCard";
+import ReporteOrdenesPDF from "../components/reports/ReporteCompras";
 
 import { 
   CheckCircle, Clock, DollarSign, ShoppingBag, XCircle,
@@ -50,6 +51,7 @@ const OrdersPage = () => {
 
   const [reportData, setReportData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   // 1. Cargar tarjetas estadísticas superiores
   useEffect(() => {
@@ -89,23 +91,58 @@ const OrdersPage = () => {
     fetchReport();
   }, [startDate, endDate, selectedBranch]);
 
-  // Exportar reporte a PDF
-  const generatePDF = () => {
-    const input = document.getElementById("reporteOrdenes");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
+  // GENERACIÓN DE PDF NATIVO CON @REACT-PDF/RENDERER Y CAPTURA DE GRÁFICOS
+  const generatePDF = async () => {
+    try {
+      setExportando(true);
 
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const chartTendenciaEl = document.querySelector("#chart-tendencia-compras");
+      const chartTiposEnvioEl = document.querySelector("#chart-tipos-envio");
+      const chartDistribucionEl = document.querySelector("#chart-distribucion-estados");
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Reporte_Ordenes_${startDate}_A_${endDate}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
+      let imgTendencia = null;
+      let imgTiposEnvio = null;
+      let imgDistribucion = null;
+
+      if (chartTendenciaEl) {
+        const canvas = await html2canvas(chartTendenciaEl, { scale: 2 });
+        imgTendencia = canvas.toDataURL("image/png");
+      }
+
+      if (chartTiposEnvioEl) {
+        const canvas = await html2canvas(chartTiposEnvioEl, { scale: 2 });
+        imgTiposEnvio = canvas.toDataURL("image/png");
+      }
+
+      if (chartDistribucionEl) {
+        const canvas = await html2canvas(chartDistribucionEl, { scale: 2 });
+        imgDistribucion = canvas.toDataURL("image/png");
+      }
+
+      const blob = await pdf(
+        <ReporteOrdenesPDF
+          reportData={reportData}
+          startDate={startDate}
+          endDate={endDate}
+          chartImages={{
+            tendenciaCompras: imgTendencia,
+            tiposEnvio: imgTiposEnvio,
+            distribucionEstados: imgDistribucion,
+          }}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Reporte_Ordenes_${startDate}_A_${endDate}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al generar el PDF de órdenes:", error);
+    } finally {
+      setExportando(false);
+    }
   };
 
   return (
@@ -246,7 +283,7 @@ const OrdersPage = () => {
               </div>
 
               {/* CURVA TEMPORAL DE COMPRAS */}
-              <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+              <div id="chart-tendencia-compras" className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
                 <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
                   <TrendingUp size={18} className="text-indigo-600"/> Curva Temporal de Inversión en Compras
                 </h3>
@@ -270,7 +307,7 @@ const OrdersPage = () => {
                     <Navigation size={18} className="text-blue-600" /> Logística y Tipos de Envío
                   </h3>
 
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
+                  <div id="chart-tipos-envio" className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={reportData.tipos_envio} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -389,7 +426,7 @@ const OrdersPage = () => {
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-white p-3 rounded-xl border border-gray-200">
-                    <div className="h-[180px] w-full">
+                    <div id="chart-distribucion-estados" className="h-[180px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -498,8 +535,12 @@ const OrdersPage = () => {
 
               {/* BOTÓN EXPORTAR A PDF */}
               <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
-                <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer">
-                  <Download size={14} /> Exportar Reporte de Órdenes a PDF (Formato A4)
+                <button 
+                  onClick={generatePDF} 
+                  disabled={exportando}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Download size={14} /> {exportando ? "Generando PDF de Órdenes..." : "Exportar Reporte de Órdenes a PDF (Formato A4)"}
                 </button>
               </div>
 

@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { pdf } from "@react-pdf/renderer";
 
 import StatCard from "../components/common/StatCard";
+import ReporteVentasPDF from "../components/reports/ReporteVentas";
 
 import { 
   CreditCard, DollarSign, TrendingUp, ShoppingBag, 
@@ -47,6 +48,7 @@ const SalesPage = () => {
 
   const [reportData, setReportData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   // 1. Cargar tarjetas estadísticas superiores
   useEffect(() => {
@@ -86,23 +88,58 @@ const SalesPage = () => {
     fetchReport();
   }, [startDate, endDate, selectedBranch]);
 
-  // Exportar reporte a PDF
-  const generatePDF = () => {
-    const input = document.getElementById("reporteVentas");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
+  // GENERACIÓN DE PDF NATIVO CON @REACT-PDF/RENDERER Y CAPTURA DE GRÁFICOS
+  const generatePDF = async () => {
+    try {
+      setExportando(true);
 
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const chartTendenciaEl = document.querySelector("#chart-tendencia-ventas");
+      const chartCanalesEl = document.querySelector("#chart-canales-venta");
+      const chartVolumenEl = document.querySelector("#chart-volumen-recaudacion");
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Reporte_Ventas_${startDate}_A_${endDate}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
+      let imgTendencia = null;
+      let imgCanales = null;
+      let imgVolumen = null;
+
+      if (chartTendenciaEl) {
+        const canvas = await html2canvas(chartTendenciaEl, { scale: 2 });
+        imgTendencia = canvas.toDataURL("image/png");
+      }
+
+      if (chartCanalesEl) {
+        const canvas = await html2canvas(chartCanalesEl, { scale: 2 });
+        imgCanales = canvas.toDataURL("image/png");
+      }
+
+      if (chartVolumenEl) {
+        const canvas = await html2canvas(chartVolumenEl, { scale: 2 });
+        imgVolumen = canvas.toDataURL("image/png");
+      }
+
+      const blob = await pdf(
+        <ReporteVentasPDF
+          reportData={reportData}
+          startDate={startDate}
+          endDate={endDate}
+          chartImages={{
+            tendenciaVentas: imgTendencia,
+            canalesVenta: imgCanales,
+            volumenVsRecaudacion: imgVolumen,
+          }}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Reporte_Ventas_${startDate}_A_${endDate}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al generar el PDF de ventas:", error);
+    } finally {
+      setExportando(false);
+    }
   };
 
   return (
@@ -154,58 +191,64 @@ const SalesPage = () => {
         {/* 2. REPORTE DE VENTAS */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-gray-800 font-sans mb-8">
           
-          {/* HEADER DE CONTROL: SUCURSAL Y FECHAS */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+         {/* HEADER DE CONTROL: SUCURSAL Y FECHAS (DISEÑO TIPO PASTILLA) */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl bg-[#f0f3f9]">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">💰 Auditoría Comercial y de Ventas</h2>
-              <p className="text-xs text-gray-500">Monitoreo de ingresos corrientes, volumen transaccional y rentabilidad por sucursal.</p>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                Auditoría Comercial y de Ventas
+              </h2>
+              <p className="text-xs text-gray-500">
+                Monitoreo de ingresos corrientes, volumen transaccional y rentabilidad por sucursal.
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-lg border border-gray-300">
+            {/* CONTENEDOR TIPO PASTILLA (EN UNA SOLA LÍNEA) */}
+            <div className="flex items-center gap-2 bg-white p-4 px-3 rounded-2xl shadow-sm border border-gray-200 shrink-0 whitespace-nowrap">
               
-              {/* SELECTOR SUCURSAL */}
-              <div className="flex items-center gap-2 px-2">
-                <Building2 size={16} className="text-indigo-600" />
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-gray-400">Sucursal</span>
-                  <select 
-                    value={selectedBranch} 
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="bg-transparent text-gray-800 text-xs font-semibold outline-none cursor-pointer"
-                  >
-                    <option value="todas">Todas las Sucursales</option>
-                    {branches.map((suc) => (
-                      <option key={suc.Id_sucursal} value={suc.Id_sucursal}>
-                        {suc.Nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* FILTRO SUCURSAL */}
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                <Building2 size={15} className="text-indigo-600 shrink-0" /> 
+                <span>Sucursal:</span>
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="bg-slate-100 hover:bg-slate-200 text-gray-900 px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 outline-none cursor-pointer transition-colors max-w-[160px] truncate"
+                >
+                  <option value="todas">🏢 Todas las Sucursales</option>
+                  {branches.map((suc) => (
+                    <option key={suc.Id_sucursal} value={suc.Id_sucursal}>
+                      📍 {suc.Nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="w-[1px] h-8 bg-gray-300 hidden sm:block" />
+              {/* SEPARADOR VERTICAL */}
+              <div className="w-[1px] h-5 bg-gray-200 mx-1" />
 
-              {/* FECHA DESDE */}
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Desde</span>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)} 
-                  className="bg-transparent text-gray-800 text-xs p-1 outline-none cursor-pointer" 
+              {/* FILTRO DESDE */}
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                <Calendar size={14} className="text-gray-500 shrink-0" /> 
+                <span>Desde:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-slate-100 hover:bg-slate-200 text-gray-900 px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 outline-none cursor-pointer transition-colors"
                 />
               </div>
 
-              <div className="w-[1px] h-8 bg-gray-300 hidden sm:block" />
+              {/* SEPARADOR VERTICAL */}
+              <div className="w-[1px] h-5 bg-gray-200 mx-1" />
 
-              {/* FECHA HASTA */}
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Hasta</span>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)} 
-                  className="bg-transparent text-gray-800 text-xs p-1 outline-none cursor-pointer" 
+              {/* FILTRO HASTA */}
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                <span>Hasta:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-slate-100 hover:bg-slate-200 text-gray-900 px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 outline-none cursor-pointer transition-colors"
                 />
               </div>
 
@@ -229,17 +272,21 @@ const SalesPage = () => {
           {reportData && (
             <div id="reporteVentas" className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200">
               
-              {/* METADATOS / METRICAS CLAVE */}
-              <div className="p-4 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-wrap gap-y-2 justify-between items-center divide-x divide-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-                <div className="px-4">INGRESOS NETOS: <span className="text-green-600 font-bold">${reportData.ingresos_totales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
-                <div className="px-4">TRANSACCIONES: <span className="text-gray-900 font-bold">{reportData.transacciones_totales} ops</span></div>
-                <div className="px-4">TICKET PROMEDIO: <span className="text-indigo-600 font-bold">${reportData.ticket_promedio.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
-                <div className="px-4">CAJERO TOP: <span className="text-amber-600 font-bold">{reportData.empleado_top}</span></div>
-                <div className="px-4">CLIENTE VIP: <span className="text-gray-900 font-bold">{reportData.cliente_top}</span></div>
+              {/* METADATOS / METRICAS CLAVE EN UNA SOLA LÍNEA */}
+              <div className="p-4 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-nowrap items-center justify-between overflow-x-auto whitespace-nowrap" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                <div className="px-3">INGRESOS NETOS: <span className="text-green-600 font-bold">${reportData.ingresos_totales?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
+                <div className="w-[1px] h-4 bg-gray-300" />
+                <div className="px-3">TRANSACCIONES: <span className="text-gray-900 font-bold">{reportData.transacciones_totales} ops</span></div>
+                <div className="w-[1px] h-4 bg-gray-300" />
+                <div className="px-3">TICKET PROMEDIO: <span className="text-indigo-600 font-bold">${reportData.ticket_promedio?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
+                <div className="w-[1px] h-4 bg-gray-300" />
+                <div className="px-3">CAJERO TOP: <span className="text-amber-600 font-bold">{reportData.empleado_top}</span></div>
+                <div className="w-[1px] h-4 bg-gray-300" />
+                <div className="px-3">CLIENTE VIP: <span className="text-gray-900 font-bold">{reportData.cliente_top}</span></div>
               </div>
 
               {/* CURVA TEMPORAL */}
-              <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+              <div id="chart-tendencia-ventas" className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
                 <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2"><TrendingUp size={18} className="text-indigo-600"/> Curva Temporal de Recaudación Diaria</h3>
                 <ResponsiveContainer width="100%" height={260}>
                   <AreaChart data={reportData.tendencia_ventas}>
@@ -290,7 +337,7 @@ const SalesPage = () => {
                                 </div>
                               </td>
                               <td className="p-3 text-right text-emerald-600 font-bold font-mono">
-                                ${emp.total_facturado.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                ${emp.total_facturado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </td>
                             </tr>
                           );
@@ -378,7 +425,7 @@ const SalesPage = () => {
                               <td className="p-3 font-sans text-gray-900 font-semibold">{cli.cliente}</td>
                               <td className="p-3 text-center text-gray-700 font-semibold">{cli.total_compras} ops.</td>
                               <td className="p-3 text-right text-emerald-600 font-bold font-mono">
-                                ${cli.total_gastado.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${cli.total_gastado?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                             </tr>
                           ))
@@ -422,7 +469,7 @@ const SalesPage = () => {
                               <td className="p-3 font-sans text-gray-900 font-semibold">{prod.producto}</td>
                               <td className="p-3 text-center text-indigo-600 font-bold">{prod.unidades_vendidas} u.</td>
                               <td className="p-3 text-right text-emerald-600 font-bold font-mono">
-                                ${prod.total_generado.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${prod.total_generado?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                             </tr>
                           ))
@@ -452,7 +499,7 @@ const SalesPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center bg-white p-4 rounded-xl border border-gray-200">
                   
                   {/* 1. Gráfico de Dona */}
-                  <div className="h-[200px] w-full">
+                  <div id="chart-canales-venta" className="h-[200px] w-full">
                     {reportData.canales_venta && reportData.canales_venta.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -473,7 +520,22 @@ const SalesPage = () => {
                           <Tooltip 
                             formatter={(value) => [`$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Monto Total']} 
                           />
-                          <Legend wrapperStyle={{ fontSize: '11px' }} />
+                          <Legend
+                            verticalAlign="bottom"
+                            align="center"
+                            content={({ payload }) => (
+                              <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-2 mt-1 pt-1 pb-1 px-2">
+                                {payload?.map((entry, index) => (
+                                  <span
+                                    key={`legend-item-${index}`}
+                                    className="whitespace-nowrap text-sm font-medium text-gray-700"
+                                  >
+                                    <span style={{ color: entry.color, fontSize: 18 }}>●</span> {entry.value}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     ) : (
@@ -510,7 +572,7 @@ const SalesPage = () => {
                               </td>
                               <td className="p-2 text-center font-sans text-gray-600">{c.operaciones}</td>
                               <td className="p-2 text-right font-bold text-gray-900">
-                                ${c.total_monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                ${c.total_monto?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 <span className="block text-[10px] text-gray-400 font-normal">{porcentaje}% del total</span>
                               </td>
                             </tr>
@@ -527,7 +589,7 @@ const SalesPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 
                 {/* GRÁFICA COMBINADA */}
-                <div className="lg:col-span-3 p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                <div id="chart-volumen-recaudacion" className="lg:col-span-3 p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
                   <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2">
                     <BarChart2 size={18} className="text-indigo-600" /> Rendimiento Diario: Volumen de Ventas vs Dinero Recaudado
                   </h3>
@@ -580,7 +642,7 @@ const SalesPage = () => {
                             <td className="p-3 font-sans text-gray-500">{trans.Fecha_venta}</td>
                             <td className="p-3 font-sans text-gray-900 font-semibold">{trans.cliente}</td>
                             <td className="p-3 font-sans text-gray-600">{trans.empleado}</td>
-                            <td className="p-3 text-right text-gray-900 font-bold">${trans.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                            <td className="p-3 text-right text-gray-900 font-bold">${trans.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -591,8 +653,12 @@ const SalesPage = () => {
 
               {/* BOTÓN EXPORTAR A PDF */}
               <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
-                <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer">
-                  <Download size={14} /> Exportar Reporte de Ventas a PDF (Formato A4)
+                <button 
+                  onClick={generatePDF} 
+                  disabled={exportando}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Download size={14} /> {exportando ? "Generando PDF de Ventas..." : "Exportar Reporte de Ventas a PDF (Formato A4)"}
                 </button>
               </div>
 

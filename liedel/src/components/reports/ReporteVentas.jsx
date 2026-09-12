@@ -1,259 +1,284 @@
-import { useState, useEffect } from "react";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-import { 
-  ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, ComposedChart, Bar, Line,
-  XAxis, YAxis, Tooltip, Legend, CartesianGrid 
-} from "recharts";
-import { Download, Calendar, DollarSign, Table, TrendingUp, Users, BarChart2 } from "lucide-react";
+import React from 'react';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 
-const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#3b82f6"];
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    backgroundColor: '#FFFFFF',
+    fontSize: 9,
+    fontFamily: 'Helvetica',
+    color: '#333333',
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 30,
+  },
+  header: {
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingBottom: 10,
+  },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
+  subtitle: { fontSize: 9, color: '#64748B', marginTop: 4 },
+  sectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', marginTop: 12, marginBottom: 6 },
+  chartTitle: { fontSize: 9, fontWeight: 'bold', color: '#374151', marginBottom: 4 },
+  kpiContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  kpiBox: { width: '18%', textAlign: 'center' },
+  kpiLabel: { fontSize: 6.5, color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' },
+  kpiValue: { fontSize: 9.5, fontWeight: 'bold', marginTop: 2 },
+  chartImage: {
+    width: '100%',
+    height: 150,
+    objectFit: 'contain',
+  },
+  fullWidthChartImage: {
+    width: '100%',
+    height: 200,
+    objectFit: 'contain',
+  },
+  table: { width: '100%', marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 4 },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', padding: 6, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', padding: 5 },
+  legendDot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
+  footer: { position: 'absolute', bottom: 20, left: 30, right: 30, textAlign: 'center', color: '#94A3B8', fontSize: 8 }
+});
 
-const ReporteVentas = () => {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+const COLORS_PAGO = ["#10B981", "#6366F1", "#8B5CF6", "#F59E0B", "#EC4899"];
 
-  useEffect(() => {
-    if (!startDate || !endDate) return;
+// Helper para numerar el top 3, igual que en la app
+const getMedalOrRank = (idx) => {
+  if (idx === 0) return '#1';
+  if (idx === 1) return '#2';
+  if (idx === 2) return '#3';
+  return `#${idx + 1}`;
+};
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`http://localhost:5000/api/reporte-ventas?inicio=${startDate}&fin=${endDate}`);
-        if (!res.ok) throw new Error("Error en el servidor");
-        const result = await res.json();
-        setData(result);
-      } catch (error) {
-        console.error("Error cargando el reporte de ventas: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [startDate, endDate]);
-
-  const generatePDF = () => {
-    const input = document.getElementById("reporteVentas");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
-
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Reporte_Ventas_${startDate}_A_${endDate}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
-  };
-
+const ReporteVentasPDF = ({ reportData, startDate, endDate, chartImages }) => {
   return (
-    <div className="p-6 bg-white min-h-screen text-gray-800 font-sans">
-      
-      {/* HEADER DE CONTROL */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">💰 Auditoría Comercial y de Ventas</h2>
-          <p className="text-xs text-gray-500">Monitoreo de ingresos corrientes, volumen transaccional y rentabilidad de personal.</p>
-        </div>
-        <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-300">
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Desde</span>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-gray-800 text-sm p-1 outline-none cursor-pointer" />
-          </div>
-          <div className="w-[1px] h-8 bg-gray-300" />
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Hasta</span>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-gray-800 text-sm p-1 outline-none cursor-pointer" />
-          </div>
-        </div>
-      </div>
+    <Document>
+      <Page size="A4" style={styles.page}>
+        
+        {/* ENCABEZADO */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Auditoría Comercial y de Ventas</Text>
+          <Text style={styles.subtitle}>Período: {startDate} al {endDate}</Text>
+        </View>
 
-      {/* ESTADOS INICIALES / CARGA */}
-      {!data && !loading && (
-        <div className="text-center py-16 rounded-xl border border-dashed border-gray-300" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-          <Calendar className="mx-auto text-gray-400 mb-3" size={40} />
-          <p className="text-gray-600 font-medium">Establezca un rango de fechas en el panel superior para procesar las métricas de ingresos.</p>
-        </div>
-      )}
+        {/* METRICAS / KPIS */}
+        <View style={styles.kpiContainer}>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Ingresos Netos</Text>
+            <Text style={[styles.kpiValue, { color: '#16A34A' }]}>
+              ${reportData?.ingresos_totales?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Transacciones</Text>
+            <Text style={[styles.kpiValue, { color: '#1E293B' }]}>
+              {reportData?.transacciones_totales} ops
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Ticket Promedio</Text>
+            <Text style={[styles.kpiValue, { color: '#4F46E5' }]}>
+              ${reportData?.ticket_promedio?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Cajero Top</Text>
+            <Text style={[styles.kpiValue, { color: '#D97706' }]}>
+              {reportData?.empleado_top || 'N/A'}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Cliente VIP</Text>
+            <Text style={[styles.kpiValue, { color: '#0EA5E9' }]}>
+              {reportData?.cliente_top || 'N/A'}
+            </Text>
+          </View>
+        </View>
 
-      {loading && (
-        <div className="text-center py-16 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-indigo-600 font-medium animate-pulse">Cruzando registros de facturación, clientes y cajeros...</p>
-        </div>
-      )}
+        {/* GRÁFICA: CURVA TEMPORAL DE RECAUDACIÓN */}
+        {chartImages?.tendenciaVentas && (
+          <View style={{ marginBottom: 10 }} wrap={false}>
+            <Image style={styles.fullWidthChartImage} src={chartImages.tendenciaVentas} />
+          </View>
+        )}
 
-      {/* CUERPO DEL REPORTE */}
-      {data && (
-        <div id="reporteVentas" className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200">
-          
-          {/* RESUMEN METADATOS METRICAS CLAVE */}
-          <div className="p-4 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-wrap gap-y-2 justify-between items-center divide-x divide-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-            <div className="px-4">INGRESOS NETOS: <span className="text-green-600 font-bold">${data.ingresos_totales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
-            <div className="px-4">TRANSACCIONES: <span className="text-gray-900 font-bold">{data.transacciones_totales} ops</span></div>
-            <div className="px-4">TICKET PROMEDIO: <span className="text-indigo-600 font-bold">${data.ticket_promedio.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
-            <div className="px-4">CAJERO TOP: <span className="text-amber-600 font-bold">{data.empleado_top}</span></div>
-            <div className="px-4">CLIENTE VIP: <span className="text-gray-900 font-bold">{data.cliente_top}</span></div>
-          </div>
+        {/* TABLAS EN DOS COLUMNAS: EMPLEADOS Y CATEGORÍAS */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }} wrap={false}>
+          {/* CUOTA POR EMPLEADO */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Cuota por Empleado</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '50%' }}>Empleado</Text>
+                <Text style={{ width: '50%', textAlign: 'right' }}>Total Facturado</Text>
+              </View>
+              {reportData?.ventas_empleados?.slice(0, 8).map((emp, idx) => (
+                <View key={idx} style={styles.tableRow}>
+                  <Text style={{ width: '50%' }}>{emp.empleado}</Text>
+                  <Text style={{ width: '50%', textAlign: 'right' }}>${emp.total_facturado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-          {/* GRÁFICAS CLAVE */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* TENDENCIA FINANCIERA TEMPORAL */}
-            <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2"><TrendingUp size={18} className="text-indigo-600"/> Curva Temporal de Recaudación Diaria</h3>
-              <ResponsiveContainer width="100%" height={260}>
-                <AreaChart data={data.tendencia_ventas}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="fecha" stroke="#718096" tick={{ fontSize: 10 }} />
-                  <YAxis stroke="#718096" tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Ingresos Base']} />
-                  <Area type="monotone" dataKey="ingresos" name="Ingresos ($)" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.1} strokeWidth={3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+          {/* RENDIMIENTO POR CATEGORÍA */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Ventas por Categoría</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '50%' }}>Categoría</Text>
+                <Text style={{ width: '50%', textAlign: 'right' }}>Total Facturado</Text>
+              </View>
+              {reportData?.ventas_categorias?.slice(0, 8).map((cat, idx) => (
+                <View key={idx} style={styles.tableRow}>
+                  <Text style={{ width: '50%' }}>{cat.categoria}</Text>
+                  <Text style={{ width: '50%', textAlign: 'right' }}>${cat.total_facturado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
 
-            {/* RENDIMIENTO DEL PERSONAL (DESEMPEÑO CAJEROS) */}
-            <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2"><Users size={18} className="text-amber-500" /> Cuota de Facturación por Empleado</h3>
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={data.ventas_empleados} dataKey="total_facturado" nameKey="empleado" cx="50%" cy="50%" outerRadius={85} label={({ empleado, percent }) => `${empleado} (${(percent * 100).toFixed(1)}%)`}>
-                    {data.ventas_empleados.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Volumen Ventas']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        {/* TABLAS EN DOS COLUMNAS: TOP CLIENTES Y TOP PRODUCTOS */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+          {/* TOP 10 CLIENTES CON MAYOR FACTURACIÓN */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Top 10 Clientes con Mayor Facturación</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '12%' }}>#</Text>
+                <Text style={{ width: '48%' }}>Cliente</Text>
+                <Text style={{ width: '15%', textAlign: 'center' }}>Compras</Text>
+                <Text style={{ width: '25%', textAlign: 'right' }}>Total Acumulado</Text>
+              </View>
+              {reportData?.top_clientes?.slice(0, 10).map((cli, idx) => (
+                <View key={cli.Id_cliente || idx} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '12%', color: '#94A3B8', fontWeight: 'bold' }}>{getMedalOrRank(idx)}</Text>
+                  <Text style={{ width: '48%' }}>{cli.cliente}</Text>
+                  <Text style={{ width: '15%', textAlign: 'center' }}>{cli.total_compras} ops.</Text>
+                  <Text style={{ width: '25%', textAlign: 'right', color: '#16A34A', fontWeight: 'bold' }}>
+                    ${cli.total_gastado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-          {/* MÉTDRICAS ADICIONALES REQUERIDAS */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            
-            {/* TICKET PROMEDIO DESTACADO CARD */}
-            <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm h-full" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg">
-                <DollarSign size={24} />
-              </div>
-              <div>
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold block">Ticket Promedio Global</span>
-                <span className="text-2xl font-black text-indigo-600 font-mono">
-                  ${data.ticket_promedio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <p className="text-[10px] text-gray-500 mt-0.5">Monto medio neto facturado por cada orden de compra.</p>
-              </div>
-            </div>
+          {/* TOP 10 PRODUCTOS MÁS VENDIDOS */}
+          <View style={{ width: '50%' }}>
+            <Text style={styles.sectionTitle}>Top 10 Productos Más Vendidos</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '12%' }}>#</Text>
+                <Text style={{ width: '43%' }}>Producto</Text>
+                <Text style={{ width: '20%', textAlign: 'center' }}>Unidades</Text>
+                <Text style={{ width: '25%', textAlign: 'right' }}>Total Generado</Text>
+              </View>
+              {reportData?.top_productos?.slice(0, 10).map((prod, idx) => (
+                <View key={idx} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '12%', color: '#94A3B8', fontWeight: 'bold' }}>{getMedalOrRank(idx)}</Text>
+                  <Text style={{ width: '43%' }}>{prod.producto}</Text>
+                  <Text style={{ width: '20%', textAlign: 'center' }}>{prod.unidades_vendidas} u.</Text>
+                  <Text style={{ width: '25%', textAlign: 'right', color: '#16A34A', fontWeight: 'bold' }}>
+                    ${prod.total_generado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
 
-            {/* GRÁFICA COMBINADA REQUERIDA (Ocupa 2 columnas de ancho en layout grande) */}
-            <div className="lg:col-span-2 p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2">
-                <BarChart2 size={18} className="text-indigo-600" /> Rendimiento Diario: Volumen de Ventas vs Dinero Recaudado
-              </h3>
-              <p className="text-[11px] text-gray-500 mb-4">Comparativa directa entre transacciones cobradas (barras) y capital bruto ingresado (línea).</p>
-              <ResponsiveContainer width="100%" height={220}>
-                <ComposedChart data={data.volumen_vs_recaudacion}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="fecha" stroke="#718096" tick={{ fontSize: 10 }} />
-                  <YAxis yAxisId="left" stroke="#4f46e5" tick={{ fontSize: 10 }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{ fontSize: 10 }} allowDecimals={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: "#fff", borderColor: "#cbd5e1" }}
-                    formatter={(value, name) => {
-                      if (name === "Recaudación ($)") return [`$${value.toLocaleString()}`, name];
-                      return [`${value} ventas`, name];
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar yAxisId="right" dataKey="transacciones" name="Volumen Transaccional" fill="#10b981" alpha={0.85} radius={[3, 3, 0, 0]} barSize={25} />
-                  <Line yAxisId="left" type="monotone" dataKey="recaudacion" name="Recaudación ($)" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        {/* DISTRIBUCIÓN POR CANAL DE VENTA (dona arriba, tabla debajo) */}
+        {chartImages?.canalesVenta && (
+          <View style={{ marginBottom: 10 }} wrap={false}>
+            <Text style={[styles.sectionTitle, { textAlign: 'center', marginBottom: 0 }]}>Distribución por Canal de Venta</Text>
 
-          {/* SECCIÓN TABULAR DE AUDITORÍA */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            
-            {/* TABLA DE METRICAS OPERATIVAS */}
-            <div className="xl:col-span-1 rounded-xl border border-gray-200 overflow-hidden" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-                <Table size={16} className="text-amber-500" />
-                <h3 className="text-sm font-bold text-gray-900">Métricas Operativas de Cajeros</h3>
-              </div>
-              <div className="overflow-x-auto bg-white">
-                <table className="w-full text-left text-xs text-gray-700">
-                  <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
-                    <tr>
-                      <th className="p-3">Empleado</th>
-                      <th className="p-3 text-center">Tickets</th>
-                      <th className="p-3 text-right">Total ($)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
-                    {data.ventas_empleados?.map((emp, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="p-3 font-sans text-gray-900 font-semibold">{emp.empleado}</td>
-                        <td className="p-3 text-center text-gray-900">{emp.operaciones} u.</td>
-                        <td className="p-3 text-right text-green-600 font-bold">${emp.total_facturado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            {/* Gráfico de dona, centrado */}
+            <View style={{ alignItems: 'center', marginBottom: 8 }}>
+              <Image style={{ width: '55%', height: 170, objectFit: 'contain' }} src={chartImages.canalesVenta} />
+            </View>
 
-            {/* TABLA DE GRANDES TRANSACCIONES */}
-            <div className="xl:col-span-2 rounded-xl border border-gray-200 overflow-hidden" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-                <DollarSign size={16} className="text-indigo-600" />
-                <h3 className="text-sm font-bold text-gray-900">Registro de Transacciones de Mayor Volumen (Top 10)</h3>
-              </div>
-              <div className="overflow-x-auto bg-white">
-                <table className="w-full text-left text-xs text-gray-700">
-                  <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
-                    <tr>
-                      <th className="p-3">ID Venta</th>
-                      <th className="p-3">Fecha</th>
-                      <th className="p-3">Cliente</th>
-                      <th className="p-3">Cajero Atendió</th>
-                      <th className="p-3 text-right">Monto Facturado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
-                    {data.top_transacciones?.map((trans, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="p-3 font-bold text-indigo-600">#00{trans.Id_venta}</td>
-                        <td className="p-3 font-sans text-gray-500">{trans.Fecha_venta}</td>
-                        <td className="p-3 font-sans text-gray-900 font-semibold">{trans.cliente}</td>
-                        <td className="p-3 font-sans text-gray-600">{trans.empleado}</td>
-                        <td className="p-3 text-right text-gray-900 font-bold">${trans.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+            {/* Tabla de detalle por canal, debajo */}
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '35%' }}>Canal</Text>
+                <Text style={{ width: '20%', textAlign: 'center' }}>Ops.</Text>
+                <Text style={{ width: '45%', textAlign: 'right' }}>Monto Generado</Text>
+              </View>
+              {reportData?.canales_venta?.map((c, idx) => {
+                const porcentaje = reportData?.ingresos_totales > 0
+                  ? ((c.total_monto / reportData.ingresos_totales) * 100).toFixed(1)
+                  : 0;
+                return (
+                  <View key={idx} style={styles.tableRow}>
+                    <View style={{ width: '35%', flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={[styles.legendDot, { backgroundColor: COLORS_PAGO[idx % COLORS_PAGO.length] }]} />
+                      <Text style={{ fontWeight: 'bold' }}>{c.canal}</Text>
+                    </View>
+                    <Text style={{ width: '20%', textAlign: 'center' }}>{c.operaciones}</Text>
+                    <View style={{ width: '45%' }}>
+                      <Text style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                        ${c.total_monto?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </Text>
+                      <Text style={{ textAlign: 'right', fontSize: 7, color: '#94A3B8' }}>
+                        {porcentaje}% del total
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
-          {/* ACCIÓN EXPORTACIÓN */}
-          <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
-            <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
-              <Download size={14} /> Exportar Reporte de Ventas a PDF (Formato A4)
-            </button>
-          </div>
+        {/* GRÁFICA: VOLUMEN VS RECAUDACIÓN (ahora después de Canal de Venta) */}
+        {chartImages?.volumenVsRecaudacion && (
+          <View style={{ marginBottom: 10 }} wrap={false}>
+            <Image style={styles.fullWidthChartImage} src={chartImages.volumenVsRecaudacion} />
+          </View>
+        )}
 
-        </div>
-      )}
-    </div>
+        {/* TABLA TOP TRANSACCIONES (ahora con las 10 filas y columna de cajero, igual que en la app) */}
+        {reportData?.top_transacciones?.length > 0 && (
+          <View wrap={false}>
+            <Text style={styles.sectionTitle}>Registro de Transacciones de Mayor Volumen (Top 10)</Text>
+            <View style={styles.table}>
+              <View style={[styles.tableRow, styles.tableHeader]}>
+                <Text style={{ width: '15%' }}>ID Venta</Text>
+                <Text style={{ width: '18%' }}>Fecha</Text>
+                <Text style={{ width: '27%' }}>Cliente</Text>
+                <Text style={{ width: '22%' }}>Cajero Atendió</Text>
+                <Text style={{ width: '18%', textAlign: 'right' }}>Monto</Text>
+              </View>
+              {reportData.top_transacciones.slice(0, 10).map((trans, idx) => (
+                <View key={idx} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '15%' }}>#00{trans.Id_venta}</Text>
+                  <Text style={{ width: '18%' }}>{trans.Fecha_venta}</Text>
+                  <Text style={{ width: '27%' }}>{trans.cliente}</Text>
+                  <Text style={{ width: '22%' }}>{trans.empleado}</Text>
+                  <Text style={{ width: '18%', textAlign: 'right' }}>${trans.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} fixed />
+      </Page>
+    </Document>
   );
 };
 
-export default ReporteVentas;
+export default ReporteVentasPDF;

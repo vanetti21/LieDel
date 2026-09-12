@@ -1,207 +1,216 @@
-import { useState, useEffect } from "react";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
-import { Download, Calendar, DollarSign, RefreshCw, FileText, UserCheck, Briefcase, TrendingUp, Percent, ShieldCheck } from "lucide-react";
+import React from 'react';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 
-const ReporteEmpleados = () => {
-  const hoy = new Date().toISOString().split("T")[0];
-  const haceUnAno = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split("T")[0];
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    backgroundColor: '#FFFFFF',
+    fontSize: 9,
+    fontFamily: 'Helvetica',
+    color: '#333333',
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 30,
+  },
+  header: {
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingBottom: 10,
+  },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
+  subtitle: { fontSize: 9, color: '#64748B', marginTop: 4 },
+  sectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', marginTop: 12, marginBottom: 6 },
+  distribucionCargosTitle: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', marginTop: 12, marginBottom: 2, textAlign: 'center', width: '100%' },
+  kpiContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  kpiBox: { width: '23%', text: 'center' },
+  kpiLabel: { fontSize: 7, color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' },
+  kpiValue: { fontSize: 11, fontWeight: 'bold', marginTop: 2 },
+  chartTitle: { fontSize: 9, fontWeight: 'bold', color: '#374151', marginTop: 4, marginBottom: -2 },
+  chartImage: {
+    width: '100%',
+    height: 150,
+    objectFit: 'contain',
+    marginTop: -2,
+  },
+  table: { width: '100%', marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 4 },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', padding: 6, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', padding: 5 },
+  col1: { width: '30%' },
+  col2: { width: '18%', textAlign: 'center' },
+  col3: { width: '16%', textAlign: 'center' },
+  col4: { width: '18%', textAlign: 'right' },
+  col5: { width: '18%', textAlign: 'right' },
+  topCardsRow: { flexDirection: 'row', gap: 8 },
+  topCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 4,
+    padding: 6,
+  },
+  topBadge: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#4F46E5',
+    backgroundColor: '#EEF2FF',
+    alignSelf: 'flex-start',
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  topName: { fontSize: 8, fontWeight: 'bold', color: '#111827' },
+  topPuesto: { fontSize: 7, color: '#9CA3AF', marginBottom: 6 },
+  topGeneradoLabel: { fontSize: 6, color: '#9CA3AF', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: 1 },
+  topGenerado: { fontSize: 9, fontWeight: 'bold', color: '#16A34A' },
+  footer: { position: 'absolute', bottom: 20, left: 30, right: 30, textAlign: 'center', color: '#94A3B8', fontSize: 8 }
+});
 
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [fechaInicio, setFechaInicio] = useState(haceUnAno);
-  const [fechaFin, setFechaFin] = useState(hoy);
-
-  const fetchEmpleados = async () => {
-    try {
-      setLoading(true);
-      const url = `http://localhost:5000/api/reporte-empleados?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Error cargando analítica de rendimiento laboral");
-      const result = await res.json();
-      setData(result);
-    } catch (error) {
-      console.error("Error cargando reporte de empleados:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEmpleados();
-  }, []);
-
-  const generatePDF = () => {
-    const input = document.getElementById("reporteEmpleadosCanvas");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
-
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("l", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Rendimiento_Personal_${fechaInicio}_a_${fechaFin}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
-  };
-
+const ReporteEmpleadosPDF = ({ reporteData, startDate, endDate, chartImages }) => {
   return (
-    <div className="p-6 bg-white min-h-screen text-gray-800 font-sans">
-      
-      {/* CONTROL DE FILTRADO POR RANGO DE FECHAS */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">Auditoría de Rendimiento Laboral y Comisiones</h2>
-          <p className="text-xs text-gray-500">Evaluación de metas comerciales y métricas operativas por rango de fecha calificado.</p>
-        </div>
+    <Document>
+      <Page size="A4" style={styles.page}>
+        
+        {/* ENCABEZADO */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Auditoría de Rendimiento Laboral</Text>
+          <Text style={styles.subtitle}>Período: {startDate} al {endDate}</Text>
+        </View>
 
-        <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200 w-full lg:w-auto">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
-            <Calendar size={14} /> Desde:
-            <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none" />
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
-            Hasta:
-            <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none" />
-          </div>
-          <button onClick={fetchEmpleados} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-all active:scale-95 ml-auto lg:ml-0">
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Filtrar Nómina
-          </button>
-        </div>
-      </div>
+        {/* METRICAS / KPIS */}
+        <View style={styles.kpiContainer}>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Volumen Procesado</Text>
+            <Text style={[styles.kpiValue, { color: '#16A34A' }]}>
+              ${reporteData?.total_recaudado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Tickets Despachados</Text>
+            <Text style={[styles.kpiValue, { color: '#4F46E5' }]}>
+              {reporteData?.total_despachado?.toLocaleString()} u.
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Personal Activo</Text>
+            <Text style={[styles.kpiValue, { color: '#D97706' }]}>
+              {reporteData?.empleados_activos} Colab.
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Media / Colaborador</Text>
+            <Text style={[styles.kpiValue, { color: '#9333EA' }]}>
+              ${reporteData?.rendimiento_medio_empleado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+        </View>
 
-      {loading && (
-        <div className="text-center py-20 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-indigo-600 font-medium">Consolidando historiales de facturación y calculando comisiones de periodos...</p>
-        </div>
-      )}
+        {/* GRÁFICOS EN DOS COLUMNAS */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+          {chartImages?.evolucionVentas && (
+            <View style={{ width: '50%' }} wrap={false}>
+              <Text style={styles.chartTitle}>Evolución Operativa Ventas</Text>
+              <Image style={styles.chartImage} src={chartImages.evolucionVentas} />
+            </View>
+          )}
+          {chartImages?.contrataciones && (
+            <View style={{ width: '50%' }} wrap={false}>
+              <Text style={styles.chartTitle}>Nuevas Contrataciones</Text>
+              <Image style={styles.chartImage} src={chartImages.contrataciones} />
+            </View>
+          )}
+        </View>
 
-      {data && !loading && (
-        <div id="reporteEmpleadosCanvas" className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200">
-          
-          {/* TARJETAS DE KPIS OPERATIVOS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-3 bg-green-100 text-green-600 rounded-lg"><DollarSign size={22} /></div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Volumen Procesado</span>
-                <span className="text-xl font-black text-green-600 font-mono">${data.total_recaudado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                <p className="text-[9px] text-gray-500 mt-0.5">Dinero total facturado en caja.</p>
-              </div>
-            </div>
+        {/* GRÁFICO + TABLA: DISTRIBUCIÓN POR CARGO (tabla debajo del gráfico) */}
+        {(chartImages?.distribucionCargos || reporteData?.distribucion_cargos?.length > 0) && (
+          <View style={{ marginBottom: 10 }} wrap={false}>
+            <Text style={styles.distribucionCargosTitle}>Distribución de Empleados por Cargo</Text>
+            {chartImages?.distribucionCargos && (
+              <View style={{ alignItems: 'center', marginBottom: 8 }}>
+                <Image
+                  style={{ width: '60%', height: 175, objectFit: 'contain' }}
+                  src={chartImages.distribucionCargos}
+                />
+              </View>
+            )}
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={{ width: '50%' }}>Puesto</Text>
+                <Text style={{ width: '25%', textAlign: 'center' }}>Cantidad</Text>
+                <Text style={{ width: '25%', textAlign: 'right' }}>% del Total</Text>
+              </View>
+              {reporteData?.distribucion_cargos?.map((c, idx) => {
+                const totalCargos = reporteData.distribucion_cargos.reduce((s, x) => s + (x.cantidad || 0), 0);
+                const porcentaje = totalCargos > 0 ? ((c.cantidad / totalCargos) * 100).toFixed(1) : '0.0';
+                return (
+                  <View key={idx} style={styles.tableRow} wrap={false}>
+                    <Text style={{ width: '50%' }}>{c.puesto}</Text>
+                    <Text style={{ width: '25%', textAlign: 'center' }}>{c.cantidad}</Text>
+                    <Text style={{ width: '25%', textAlign: 'right' }}>{porcentaje}%</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
-            <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg"><Briefcase size={22} /></div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Tickets Despachados</span>
-                <span className="text-xl font-black text-indigo-600 font-mono">{data.total_despachado.toLocaleString()} u.</span>
-                <p className="text-[9px] text-gray-500 mt-0.5">Operaciones ejecutadas con éxito.</p>
-              </div>
-            </div>
+        {/* EMPLEADOS CON MAYOR RECAUDACIÓN GENERADA */}
+        {reporteData?.top_generadores?.length > 0 && (
+          <View style={{ marginBottom: 18, marginTop: -2 }} wrap={false}>
+            <Text style={styles.sectionTitle}>Empleados con Mayor Recaudación Generada</Text>
+            <View style={styles.topCardsRow}>
+              {reporteData.top_generadores.map((top, idx) => (
+                <View key={idx} style={styles.topCard}>
+                  <Text style={styles.topBadge}>Top #{idx + 1}</Text>
+                  <Text style={styles.topName}>{top.empleado}</Text>
+                  <Text style={styles.topPuesto}>{top.puesto || 'Vendedor'}</Text>
+                  <Text style={styles.topGeneradoLabel}>Generado</Text>
+                  <Text style={styles.topGenerado}>
+                    ${Number(top.total_generado || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
-            <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-3 bg-amber-100 text-amber-600 rounded-lg"><UserCheck size={22} /></div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Personal Activo</span>
-                <span className="text-xl font-black text-amber-600 font-mono">{data.empleados_activos} Colab.</span>
-                <p className="text-[9px] text-gray-500 mt-0.5">Cajeros/Asesores con transacciones.</p>
-              </div>
-            </div>
+        {/* TABLA PRINCIPAL DE RENDIMIENTO */}
+        <View wrap={false}>
+          <Text style={styles.sectionTitle}>Tabla de Rendimiento Individual</Text>
+          <View style={styles.table}>
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              <Text style={styles.col1}>Colaborador</Text>
+              <Text style={styles.col2}>Puesto</Text>
+              <Text style={styles.col3}>Transacciones</Text>
+              <Text style={styles.col4}>Comisión (2%)</Text>
+              <Text style={styles.col5}>Total Facturado</Text>
+            </View>
+            {reporteData?.tabla_empleados?.map((emp, idx) => (
+              <View key={idx} style={styles.tableRow} wrap={false}>
+                <Text style={styles.col1}>{emp.empleado}</Text>
+                <Text style={styles.col2}>{emp.puesto}</Text>
+                <Text style={styles.col3}>{emp.operaciones_realizadas} ops.</Text>
+                <Text style={styles.col4}>${emp.comision_estimada?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+                <Text style={styles.col5}>${emp.total_vendido?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
 
-            <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-              <div className="p-3 bg-purple-100 text-purple-600 rounded-lg"><TrendingUp size={22} /></div>
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Media por Colaborador</span>
-                <span className="text-xl font-black text-purple-600 font-mono">${data.rendimiento_medio_empleado.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                <p className="text-[9px] text-gray-500 mt-0.5">Cuota promedio de recaudación.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* RENDIMIENTO TEMPORAL */}
-          <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-            <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-600"/> Evolución Mensual de Carga Operativa en Ventas</h3>
-            <ResponsiveContainer width="100%" height={150}>
-              <LineChart data={data.evolucion_laboral}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Monto Procesado']} />
-                <Line type="monotone" dataKey="monto_procesado" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* SECCIÓN BAJA: TABLA ESTRUCTURADA DE AUDITORÍA LABORAL */}
-          <div className="rounded-xl border border-gray-200 overflow-hidden" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-            <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-              <FileText size={16} className="text-indigo-600" />
-              <h3 className="text-sm font-bold text-gray-900">Tabla de Rendimiento Individual y Liquidación Colectiva ({formatDate(fechaInicio)} - {formatDate(fechaFin)})</h3>
-            </div>
-            <div className="overflow-x-auto bg-white">
-              <table className="w-full text-left text-xs text-gray-700">
-                <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
-                  <tr>
-                    <th className="p-3 pl-5">Colaborador / Asesor</th>
-                    <th className="p-3 text-center">Puesto Operativo</th>
-                    <th className="p-3 text-center">Transacciones</th>
-                    <th className="p-3 text-right">Ticket Promedio</th>
-                    <th className="p-3 text-right">Comisión (2%)</th>
-                    <th className="p-3 text-right pr-5">Total Facturado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
-                  {data.tabla_empleados.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="p-6 text-center text-gray-400 font-sans">❌ Ningún registro comercial vinculado a empleados en este rango de fechas.</td>
-                    </tr>
-                  ) : (
-                    data.tabla_empleados.map((emp, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="p-3 pl-5 font-sans text-gray-900 font-bold">
-                          {emp.empleado}
-                          <span className="block text-[9px] text-gray-400 font-mono">ID: #EMP-0{emp.Id_empleado}</span>
-                        </td>
-                        <td className="p-3 text-center font-sans">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                            {emp.puesto}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center font-sans font-medium text-gray-700">{emp.operaciones_realizadas} ops.</td>
-                        <td className="p-3 text-right text-indigo-600 font-bold">${emp.ticket_promedio.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                        <td className="p-3 text-right text-amber-600 font-bold flex items-center justify-end gap-1"><Percent size={11}/>${emp.comision_estimada.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                        <td className="p-3 text-right text-green-600 font-black pr-5">${emp.total_vendido.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* BOTÓN EXPORTAR */}
-          <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
-            <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
-              <Download size={14} /> Exportar Reporte de Capital Humano
-            </button>
-          </div>
-
-        </div>
-      )}
-    </div>
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} fixed />
+      </Page>
+    </Document>
   );
 };
 
-export default ReporteEmpleados;
+export default ReporteEmpleadosPDF;

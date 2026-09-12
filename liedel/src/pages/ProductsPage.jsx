@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { jsPDF } from "jspdf";
+import { pdf } from "@react-pdf/renderer";
 import html2canvas from "html2canvas";
 import { 
   ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, 
@@ -9,6 +9,7 @@ import {
 } from "recharts";
 
 import StatCard from "../components/common/StatCard";
+import ReportePDF from "../components/reports/ReporteProductos";
 
 import {
     AlertTriangle,
@@ -19,10 +20,7 @@ import {
     ArchiveX,
     Download,
     Calendar,
-    Table,
-    PieChart as PieIcon,
     Search,
-    Building2
 } from "lucide-react";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1", "#a4de6c", "#d0ed57", "#5798ed", "#ed57e3", "#ed5757"];
@@ -33,7 +31,7 @@ const formatDate = (date) => date.toISOString().split("T")[0];
 const ProductPage = () => {
     const navigate = useNavigate();
 
-    // 1. ESTADO DE LAS STATCARDS
+    // 1. ESTADO DE LAS STATCARDS[cite: 1]
     const [stats, setStats] = useState({
         total_productos: 0,
         top_selling: 0,
@@ -43,7 +41,7 @@ const ProductPage = () => {
         dead_stock: 0,
     });
 
-    // 2. ESTADOS PARA REPORTE DINÁMICO (Inicializados directo con el rango de 2 años)
+    // 2. ESTADOS PARA REPORTE DINÁMICO[cite: 1]
     const [startDate, setStartDate] = useState(() => {
         const haceDosAnios = new Date();
         haceDosAnios.setFullYear(haceDosAnios.getFullYear() - 2);
@@ -53,14 +51,14 @@ const ProductPage = () => {
     const [endDate, setEndDate] = useState(() => formatDate(new Date()));
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [exportando, setExportando] = useState(false);
+    const [generandoPDF, setGenerandoPDF] = useState(false);
 
-    // 3. ESTADOS PARA FILTROS Y DATOS DE ALMACÉN
+    // 3. ESTADOS PARA FILTROS Y DATOS DE ALMACÉN[cite: 1]
     const [almacenesData, setAlmacenesData] = useState([]);
     const [selectedAlmacen, setSelectedAlmacen] = useState("Todos");
     const [searchProducto, setSearchProducto] = useState("");
 
-    // Fetch de StatCards al cargar el componente
+    // Fetch de StatCards al cargar el componente[cite: 1]
     useEffect(() => {
         const fetchStats = async () => {
             try {
@@ -75,7 +73,7 @@ const ProductPage = () => {
         fetchStats();
     }, []);
 
-    // Fetch del ENDPOINT de almacenes
+    // Fetch del ENDPOINT de almacenes[cite: 1]
     useEffect(() => {
         const fetchAlmacenes = async () => {
             try {
@@ -98,7 +96,7 @@ const ProductPage = () => {
         fetchAlmacenes();
     }, [startDate, endDate]);
 
-    // Fetch de datos analíticos dependiente del rango de fechas
+    // Fetch de datos analíticos dependiente del rango de fechas[cite: 1]
     useEffect(() => {
         if (!startDate || !endDate) return;
 
@@ -121,58 +119,87 @@ const ProductPage = () => {
         fetchReporteData();
     }, [startDate, endDate]);
 
-    // Función para exportar el reporte dinámico
-    const generatePDF = () => {
-    setExportando(true);
+    // Función para exportar el reporte a PDF usando @react-pdf/renderer
+    const generatePDF = async () => {
+        try {
+            setGenerandoPDF(true);
 
-    // Pequeña espera para que React re-renderice ocultando el botón antes de capturar
-    setTimeout(() => {
-        const input = document.getElementById("reporteProductosSeccion");
+            // Captura de los gráficos si están renderizados en el DOM
+            const chartVentasEl = document.querySelector("#chart-ventas");
+            const chartTopEl = document.querySelector("#chart-top-ingresos");
+            const chartCategoriasEl = document.querySelector("#chart-categorias");
+            const chartVariedadEl = document.querySelector("#chart-variedad-almacen");
+            const chartDistribucionEl = document.querySelector("#chart-distribucion-almacen");
 
-        html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-            const pdf = new jsPDF("p", "mm", "a4");
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = pdfWidth;
-            const pageHeightInCanvasPx = (pdfHeight * canvas.width) / pdfWidth;
+            let imgVentas = null;
+            let imgTop = null;
+            let imgCategorias = null;
+            let imgVariedad = null;
+            let imgDistribucion = null;
 
-            let renderedHeight = 0;
-            let pageIndex = 0;
-
-            while (renderedHeight < canvas.height) {
-                const sliceHeight = Math.min(pageHeightInCanvasPx, canvas.height - renderedHeight);
-
-                const pageCanvas = document.createElement("canvas");
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = sliceHeight;
-
-                const ctx = pageCanvas.getContext("2d");
-                ctx.drawImage(
-                    canvas,
-                    0, renderedHeight, canvas.width, sliceHeight,
-                    0, 0, canvas.width, sliceHeight
-                );
-
-                const pageImgData = pageCanvas.toDataURL("image/jpeg", 0.85);
-                const sliceHeightMm = (sliceHeight * imgWidth) / canvas.width;
-
-                if (pageIndex > 0) pdf.addPage();
-                pdf.addImage(pageImgData, "JPEG", 0, 0, imgWidth, sliceHeightMm);
-
-                renderedHeight += sliceHeight;
-                pageIndex++;
+            if (chartVentasEl) {
+                const canvasVentas = await html2canvas(chartVentasEl, { scale: 2 });
+                imgVentas = canvasVentas.toDataURL("image/png");
             }
 
-            pdf.save(`Reporte_Productos_${startDate}_A_${endDate}.pdf`);
-            setExportando(false);
-        });
-    }, 50);
-};
+            if (chartTopEl) {
+                const canvasTop = await html2canvas(chartTopEl, { scale: 2 });
+                imgTop = canvasTop.toDataURL("image/png");
+            }
 
-    // Obtener lista única de almacenes disponibles para el select desde almacenesData
+            if (chartCategoriasEl) {
+                const canvasCategorias = await html2canvas(chartCategoriasEl, { scale: 2 });
+                imgCategorias = canvasCategorias.toDataURL("image/png");
+            }
+
+            if (chartVariedadEl) {
+                const canvasVariedad = await html2canvas(chartVariedadEl, { scale: 2 });
+                imgVariedad = canvasVariedad.toDataURL("image/png");
+            }
+
+            if (chartDistribucionEl) {
+                const canvasDistribucion = await html2canvas(chartDistribucionEl, { scale: 2 });
+                imgDistribucion = canvasDistribucion.toDataURL("image/png");
+            }
+
+            // Generar el documento PDF vectorial
+            // OJO: las llaves de este objeto deben coincidir EXACTAMENTE con las que
+            // lee ReportePDF.jsx (chartImages?.variedadAlmacen / distribucionAlmacen),
+            // si no, esas dos secciones nunca se muestran aunque la imagen sí exista.
+            const blob = await pdf(
+                <ReportePDF 
+                    reportData={reportData} 
+                    almacenesData={almacenesData}
+                    startDate={startDate} 
+                    endDate={endDate} 
+                    chartImages={{ 
+                        ventas: imgVentas, 
+                        topIngresos: imgTop, 
+                        categorias: imgCategorias,
+                        variedadAlmacen: imgVariedad,
+                        distribucionAlmacen: imgDistribucion,
+                    }}
+                />
+            ).toBlob();
+
+            // Descargar el archivo
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Reporte_Productos_${startDate}_A_${endDate}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Error al generar el PDF:", error);
+        } finally {
+            setGenerandoPDF(false);
+        }
+    };
+
+    // Obtener lista única de almacenes disponibles para el select desde almacenesData[cite: 1]
     const listaAlmacenes = ["Todos", ...new Set(almacenesData.map((i) => i.almacen))];
-
-    // Filtro dinámico para la tabla de almacenes
+    // Filtro dinámico para la tabla de almacenes[cite: 1]
     const productosFiltradosAlmacen = almacenesData.filter((item) => {
         const coincideAlmacen = selectedAlmacen === "Todos" || item.almacen === selectedAlmacen;
         const coincideNombre = item.Nombre?.toLowerCase().includes(searchProducto.toLowerCase());
@@ -183,7 +210,6 @@ const ProductPage = () => {
         ...(reportData?.top_ingresos?.map((p) => p.ingresos) || [0])
     );
     const yDomainMaxIngresos = Math.ceil((maxIngreso * 1.05) / 100000) * 100000;
-    
     
     return (
         <div className='flex-1 overflow-auto relative z-10'>
@@ -284,19 +310,34 @@ const ProductPage = () => {
 
                 {/* ================= CUERPO DEL REPORTE BASADO EN FECHAS ================= */}
                 {reportData && (
-                    <div id="reporteProductosSeccion" className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-gray-800">
+                    <div className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-gray-800">
                         
                         {/* RESUMEN DE METADATOS */}
-                        <div className="p-4 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-wrap gap-y-2 justify-between items-center divide-x divide-gray-200 bg-gray-50">
-                            <div className="px-4">PRODUCTO LÍDER: <span className="text-gray-900 font-bold">{reportData.producto_top}</span></div>
-                            <div className="px-4">CATEGORÍA LÍDER: <span className="text-gray-900 font-bold">{reportData.categoria_top}</span></div>
-                            <div className="px-4">CAPITAL EN INVENTARIO: <span className="text-green-600 font-bold">${reportData.capital_inmovilizado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
-                            <div className="px-4">INGRESOS TOTALES: <span className="text-indigo-600 font-bold">${reportData.ingresos?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
+                        <div 
+                            className="p-3 rounded-xl border border-gray-200 text-xs text-gray-600 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 bg-gray-50 text-center"
+                            style={{ lineHeight: "1.2", verticalAlign: "middle" }}
+                        >
+                            <div className="px-2 py-1 flex items-center justify-center gap-1">
+                                <span className="uppercase text-[11px]">PRODUCTO LÍDER:</span>
+                                <strong className="text-gray-900 font-bold">{reportData.producto_top}</strong>
+                            </div>
+                            <div className="px-2 py-1 border-t sm:border-t-0 sm:border-l border-gray-200 flex items-center justify-center gap-1">
+                                <span className="uppercase text-[11px]">CATEGORÍA LÍDER:</span>
+                                <strong className="text-gray-900 font-bold">{reportData.categoria_top}</strong>
+                            </div>
+                            <div className="px-2 py-1 border-t lg:border-t-0 lg:border-l border-gray-200 flex items-center justify-center gap-1">
+                                <span className="uppercase text-[11px]">CAPITAL EN INVENTARIO:</span>
+                                <strong className="text-green-600 font-bold">${reportData.capital_inmovilizado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                            </div>
+                            <div className="px-2 py-1 border-t lg:border-t-0 lg:border-l border-gray-200 flex items-center justify-center gap-1">
+                                <span className="uppercase text-[11px]">INGRESOS TOTALES:</span>
+                                <strong className="text-indigo-600 font-bold">${reportData.ingresos?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                            </div>
                         </div>
 
                         {/* LineChart Ventas */}
-                        <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
-                            <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2   ">
+                        <div id="chart-ventas" className="p-5 rounded-xl border border-gray-200 bg-gray-50">
+                            <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
                                 📊 Evolución Temporal de Unidades Vendidas
                             </h3>
                             <ResponsiveContainer width="100%" height={320}>
@@ -343,7 +384,7 @@ const ProductPage = () => {
                         </div>
 
                         {/* BarChart Top 10 */}
-                        <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
+                        <div id="chart-top-ingresos" className="p-5 rounded-xl border border-gray-200 bg-gray-50">
                             <h3 className="text-base font-bold mb-4 text-gray-900">
                                 🏆 Top 10 Productos con Mayor Aporte de Ingresos
                             </h3>
@@ -379,49 +420,67 @@ const ProductPage = () => {
 
                         {/* SECCIÓN UNIFICADA POR CATEGORÍAS */}
                         <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
-                            <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
-                                <PieIcon size={18} className="text-indigo-600" />
-                                Rendimiento y Participación Financiera por Categorías
+                            <h3 className="text-base font-bold mb-4 text-gray-900">
+                                📈 Rendimiento y Participación Financiera por Categorías
                             </h3>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                                
                                 {/* Gráfico de Pastel */}
-                                <div className="h-[335px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={reportData.categorias || []}
-                                                dataKey="total"
-                                                nameKey="nombre"
-                                                cx="50%"
-                                                cy="49%"
-                                                outerRadius={90}
-                                                labelLine={({ percent, ...rest }) => {
-                                                    if (percent < 0.02) return null;
-                                                    return <path {...rest} stroke="#9ca3af" strokeWidth={1} fill="none" />;
-                                                }}
-                                                label={({ x, y, textAnchor, nombre, percent }) => {
-                                                    if (percent < 0.02) return null;
-                                                    return (
-                                                        <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={10}>
-                                                            {`${nombre} (${(percent * 100).toFixed(1)}%)`}
-                                                        </text>
-                                                    );
-                                                }}
-                                            >
-                                                {(reportData.categorias || []).map((_, i) => (
-                                                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Ingresos"]} />
-                                            <Legend
-                                                iconSize={14}
-                                                wrapperStyle={{ fontSize: "14px", paddingTop: "15px" }}
-                                                formatter={(value) => (
-                                                    <span style={{ color: "#374151", marginRight: "10px" }}>{value}</span>
-                                                )}
+                               <div id="chart-categorias" className="w-full h-[320px] pb-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                    <Pie
+                                        data={reportData?.categorias || []}
+                                        dataKey="total"
+                                        nameKey="nombre"
+                                        cx="50%"
+                                        cy="40%"
+                                        outerRadius={85}
+                                        labelLine={({ percent, points }) => {
+                                        if (percent < 0.02 || !points) return null;
+                                        return (
+                                            <path
+                                            d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`}
+                                            stroke="#9ca3af"
+                                            strokeWidth={1}
+                                            fill="none"
                                             />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                        );
+                                        }}
+                                        label={({ x, y, textAnchor, nombre, percent }) => {
+                                        if (percent < 0.02) return null;
+                                        return (
+                                            <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={10}>
+                                            {`${nombre} (${(percent * 100).toFixed(1)}%)`}
+                                            </text>
+                                        );
+                                        }}
+                                    >
+                                        {(reportData?.categorias || []).map((_, i) => (
+                                        <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+
+                                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Ingresos"]} />
+
+                                    <Legend
+                                        verticalAlign="bottom"
+                                        align="center"
+                                        content={({ payload }) => (
+                                        <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-2 mt-0 pt-2 pb-2 px-2">
+                                            {payload?.map((entry, index) => (
+                                            <span
+                                                key={`legend-item-${index}`}
+                                                className="whitespace-nowrap text-[11px] font-medium text-gray-700"
+                                            >
+                                                <span style={{ color: entry.color, fontSize: 20 }}>●</span> {entry.value}
+                                            </span>
+                                            ))}
+                                        </div>
+                                        )}
+                                    />
+                                    </PieChart>
+                                </ResponsiveContainer>
                                 </div>
 
                                 {/* Tabla Detallada por Categorías */}
@@ -454,8 +513,8 @@ const ProductPage = () => {
                         {/* SECCIÓN CAPITAL INMOVILIZADO */}
                         <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
                             <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-                                <Table size={16} className="text-green-600" />
-                                <h3 className="text-sm font-bold text-gray-900">Capital Inmovilizado Activo (Top 15)</h3>
+                                <h3 className="text-sm font-bold text-gray-900">
+                                    🔒 Capital Inmovilizado Activo (Top 15)</h3>
                             </div>
                             <div className="overflow-x-auto bg-white">
                                 <table className="w-full text-left text-xs text-gray-700">
@@ -487,8 +546,7 @@ const ProductPage = () => {
                             {/* ENCABEZADO Y FILTROS */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                                    <Building2 size={18} className="text-indigo-600" />
-                                    Análisis e Inventario por Almacén / Sucursal
+                                    🗂️ Análisis e Inventario por Almacén / Sucursal
                                 </h3>
                                 
                                 {/* Buscador y Selector de Almacén */}
@@ -546,86 +604,101 @@ const ProductPage = () => {
                                         return (
                                             <>
                                                 {/* Gráfico 1: Unidades/Productos por Almacén */}
-                                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
-                                                    📦 Variedad de Productos por Sucursal
-                                                </h4>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <BarChart 
-                                                        data={datosAgrupados} 
-                                                        margin={{ top: 20, right: 10, left: -20, bottom: 55 }}
-                                                    >
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                                        <XAxis 
-                                                            dataKey="almacen" 
-                                                            stroke="#64748b" 
-                                                            tick={{ fontSize: 10, fill: "#475569" }}
-                                                            angle={-35} 
-                                                            textAnchor="end" 
-                                                            interval={0}
-                                                            tickFormatter={(value) => 
-                                                                value.length > 12 ? `${value.slice(0, 12)}…` : value
-                                                            }
-                                                        />
-                                                        <YAxis stroke="#64748b" allowDecimals={false} tick={{ fontSize: 11 }} />
-                                                        <Tooltip 
-                                                            contentStyle={{ backgroundColor: "#fff", borderRadius: "8px", borderColor: "#cbd5e1" }}
-                                                            formatter={(value) => [`${value} productos`, "Variedad"]}
-                                                        />
-                                                        <Bar dataKey="productos" name="Productos" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                                {/* Gráfico 2: Valor Monetario por Almacén */}
-                                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
-                                                    💰 Distribución de Valor Monetario ($)
-                                                </h4>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <PieChart>
-                                                        <Pie
-                                                            data={datosAgrupados}
-                                                            dataKey="valor"
-                                                            nameKey="almacen"
-                                                            cx="50%"
-                                                            cy="50%"
-                                                            outerRadius={75}
-                                                            labelLine={({ percent, ...rest }) => {
-                                                                if (percent < 0.03) return null;
-                                                                return <path {...rest} stroke="#9ca3af" strokeWidth={1} fill="none" />;
-                                                            }}
-                                                            label={({ x, y, textAnchor, percent }) => {
-                                                                if (percent < 0.03) return null;
-                                                                return (
-                                                                    <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={11}>
-                                                                        {`${(percent * 100).toFixed(1)}%`}
-                                                                    </text>
-                                                                );
-                                                            }}
+                                                <div id="chart-variedad-almacen" className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
+                                                        📦 Variedad de Productos por Sucursal
+                                                    </h4>
+                                                    <ResponsiveContainer width="100%" height={300}>
+                                                        <BarChart 
+                                                            data={datosAgrupados} 
+                                                            margin={{ top: 20, right: 10, left: -20, bottom: 55 }}
                                                         >
-                                                            {datosAgrupados.map((_, i) => (
-                                                                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip 
-                                                            formatter={(val) => [
-                                                                `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
-                                                                'Valor Estimado'
-                                                            ]} 
-                                                        />
-                                                        <Legend 
-                                                            layout="horizontal" 
-                                                            verticalAlign="bottom" 
-                                                            align="center"
-                                                            iconSize={9}
-                                                            wrapperStyle={{ fontSize: "11px", paddingTop: "12px" }}
-                                                            formatter={(value) => (
-                                                                <span style={{ color: "#374151", marginRight: "5px" }}>{value}</span>
-                                                            )}
-                                                        />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                            </div>
+                                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                                            <XAxis 
+                                                                dataKey="almacen" 
+                                                                stroke="#64748b" 
+                                                                tick={{ fontSize: 10, fill: "#475569" }}
+                                                                angle={-35} 
+                                                                textAnchor="end" 
+                                                                interval={0}
+                                                                tickFormatter={(value) => 
+                                                                    value.length > 12 ? `${value.slice(0, 12)}…` : value
+                                                                }
+                                                            />
+                                                            <YAxis stroke="#64748b" allowDecimals={false} tick={{ fontSize: 11 }} />
+                                                            <Tooltip 
+                                                                contentStyle={{ backgroundColor: "#fff", borderRadius: "8px", borderColor: "#cbd5e1" }}
+                                                                formatter={(value) => [`${value} productos`, "Variedad"]}
+                                                            />
+                                                            <Bar dataKey="productos" name="Productos" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+
+                                                {/* Gráfico 2: Valor Monetario por Almacén */}
+                                                <div id="chart-distribucion-almacen" className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
+                                                        💰 Distribución de Valor Monetario ($)
+                                                    </h4>
+                                                    <ResponsiveContainer width="100%" height={300}>
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={datosAgrupados}
+                                                                dataKey="valor"
+                                                                nameKey="almacen"
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                outerRadius={75}
+                                                                labelLine={({ percent, points }) => {
+                                                                    if (percent < 0.03 || !points) return null;
+                                                                    return (
+                                                                        <path 
+                                                                            d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`} 
+                                                                            stroke="#9ca3af" 
+                                                                            strokeWidth={1} 
+                                                                            fill="none" 
+                                                                        />
+                                                                    );
+                                                                }}
+                                                                label={({ x, y, textAnchor, percent }) => {
+                                                                    if (percent < 0.03) return null;
+                                                                    return (
+                                                                        <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={11}>
+                                                                            {`${(percent * 100).toFixed(1)}%`}
+                                                                        </text>
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {datosAgrupados.map((_, i) => (
+                                                                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip 
+                                                                formatter={(val) => [
+                                                                    `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
+                                                                    'Valor Estimado'
+                                                                ]} 
+                                                            />
+                                                            <Legend 
+                                                                verticalAlign="bottom" 
+                                                                align="center"
+                                                                content={({ payload }) => (
+                                                                    <div className="w-full flex flex-wrap justify-center gap-x-3 gap-y-1 pt-3 px-2">
+                                                                        {payload?.map((entry, index) => (
+                                                                            <span
+                                                                                key={`legend-item-${index}`}
+                                                                                className="whitespace-nowrap"
+                                                                                style={{ color: "#374151", fontSize: 11 }}
+                                                                            >
+                                                                                <span style={{ color: entry.color, fontSize: 18 }}>●</span> {entry.value}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                </div>
                                             </>
                                         );
                                     })()}
@@ -669,9 +742,14 @@ const ProductPage = () => {
                         </div>
 
                         {/* BOTÓN EXPORTAR */}
-                        <div className={`download-btn-container pt-4 flex justify-end border-t border-gray-200 ${exportando ? "invisible" : ""}`}>
-                            <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
-                                <Download size={14} /> Exportar Reporte Analítico a PDF
+                        <div className="pt-4 flex justify-end border-t border-gray-200">
+                            <button 
+                                onClick={generatePDF} 
+                                disabled={generandoPDF}
+                                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95"
+                            >
+                                <Download size={14} /> 
+                                {generandoPDF ? "Procesando páginas y gráficos..." : "Exportar Reporte Analítico a PDF"}
                             </button>
                         </div>
 
