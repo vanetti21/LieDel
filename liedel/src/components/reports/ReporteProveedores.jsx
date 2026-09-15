@@ -1,255 +1,190 @@
-import { useState, useEffect } from "react";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-import { Download, Truck, Calendar, AlertTriangle, DollarSign, Phone, Award } from "lucide-react";
-import { motion } from "framer-motion";
+import React from 'react';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 
-const ReporteProveedores = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    backgroundColor: '#FFFFFF',
+    fontSize: 9,
+    fontFamily: 'Helvetica',
+    color: '#333333',
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 30,
+  },
+  header: {
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    paddingBottom: 10,
+  },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
+  subtitle: { fontSize: 9, color: '#64748B', marginTop: 4 },
+  sectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', marginTop: 12, marginBottom: 6 },
+  chartTitle: { fontSize: 9, fontWeight: 'bold', color: '#374151', marginBottom: 4 },
+  kpiContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  kpiBox: { width: '32%', textAlign: 'center' },
+  kpiLabel: { fontSize: 6.5, color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' },
+  kpiValue: { fontSize: 11, fontWeight: 'bold', marginTop: 2 },
+  fullWidthChartImage: {
+    width: '100%',
+    height: 180,
+    objectFit: 'contain',
+  },
+  table: { width: '100%', marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 4 },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', padding: 6, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', padding: 5 },
+  badge: { fontSize: 7, fontWeight: 'bold', paddingVertical: 2, paddingHorizontal: 5, borderRadius: 8 },
+  footer: { position: 'absolute', bottom: 20, left: 30, right: 30, textAlign: 'center', color: '#94A3B8', fontSize: 8 }
+});
 
-  // 1. Inicializar fechas (Hace un año hacia atrás hasta hoy)
-  const [fechaInicio, setFechaInicio] = useState(() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() - 1);
-    return d.toISOString().split("T")[0];
-  });
-  const [fechaFin, setFechaFin] = useState(() => new Date().toISOString().split("T")[0]);
+const getConfiabilidadColors = (valor) => {
+  return valor >= 85
+    ? { bg: '#D1FAE5', color: '#065F46' }
+    : { bg: '#FEE2E2', color: '#991B1B' };
+};
 
-  // 2. Modificación del Fetch pasándole las queries dinámicas
-  const fetchProveedores = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/reporte-proveedores?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
-      if (!res.ok) throw new Error("Error obteniendo datos de proveedores");
-      const result = await res.json();
-      setData(result);
-    } catch (error) {
-      console.error("Error cargando el reporte:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Escuchar cuando cambie cualquier control de fecha para recargar los KPI
-  useEffect(() => {
-    fetchProveedores();
-  }, [fechaInicio, fechaFin]);
-
-  const generatePDF = () => {
-    const input = document.getElementById("reporteProveedores");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
-
-    html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`Reporte_Desempeno_Proveedores_${fechaInicio}_a_${fechaFin}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "flex";
-    });
-  };
-
-  if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-xs font-mono text-gray-500">
-        ⌛ Cargando métricas analíticas de proveedores...
-      </div>
-    );
-  }
-
+const ReporteProveedoresPDF = ({ data, fechaInicio, fechaFin, chartImages }) => {
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6" id="reporteProveedores" style={{ backgroundColor: "rgb(247, 249, 253)" }}>
-      
-      {/* ENCABEZADO CON SELECTORES DE FECHA */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-5 gap-4">
-        <div>
-          <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-            <Truck className="text-indigo-600" size={22} /> Dashboard de Analítica de Proveedores
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">Evaluación de tiempos de entrega, confiabilidad y volúmenes de inversión.</p>
-        </div>
+    <Document>
+      <Page size="A4" style={styles.page}>
 
-        {/* SELECTORES DE FECHA INTEGRADOS */}
-        <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200 shadow-sm text-xs">
-          <Calendar size={14} className="text-gray-400 ml-1" />
-          <input 
-            type="date" 
-            value={fechaInicio} 
-            onChange={(e) => setFechaInicio(e.target.value)}
-            className="border-none bg-transparent font-mono focus:ring-0 p-1 text-gray-700"
-          />
-          <span className="text-gray-300 font-bold">al</span>
-          <input 
-            type="date" 
-            value={fechaFin} 
-            onChange={(e) => setFechaFin(e.target.value)}
-            className="border-none bg-transparent font-mono focus:ring-0 p-1 text-gray-700"
-          />
-        </div>
-      </div>
+        {/* ENCABEZADO */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Dashboard de Analítica de Proveedores</Text>
+          <Text style={styles.subtitle}>Período: {fechaInicio} al {fechaFin}</Text>
+        </View>
 
-      {data && (
-        <>
-          {/* CARDS DE METRICAS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm">
-              <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600"><Truck size={20} /></div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Proveedores Activos</p>
-                <h3 className="text-lg font-black text-gray-900">{data.total_proveedores}</h3>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm">
-              <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600"><Calendar size={20} /></div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Órdenes Emitidas</p>
-                <h3 className="text-lg font-black text-gray-900">{data.total_ordenes}</h3>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm">
-              <div className="p-3 rounded-lg bg-amber-50 text-amber-600"><DollarSign size={20} /></div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Inversión en Abastecimiento</p>
-                <h3 className="text-lg font-black text-gray-900">${data.inversion_total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
-              </div>
-            </div>
-          </div>
+        {/* KPIS */}
+        <View style={styles.kpiContainer}>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Proveedores Activos</Text>
+            <Text style={[styles.kpiValue, { color: '#4F46E5' }]}>
+              {data?.total_proveedores}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Órdenes Emitidas</Text>
+            <Text style={[styles.kpiValue, { color: '#059669' }]}>
+              {data?.total_ordenes}
+            </Text>
+          </View>
+          <View style={styles.kpiBox}>
+            <Text style={styles.kpiLabel}>Inversión en Abastecimiento</Text>
+            <Text style={[styles.kpiValue, { color: '#D97706' }]}>
+              ${(data?.inversion_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </Text>
+          </View>
+        </View>
 
-          {/* TABLA DE PROVEEDORES */}
-          <div className="rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-            <div className="p-3.5 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-              <Award size={16} className="text-indigo-600" />
-              <h3 className="text-xs font-bold text-gray-900">Análisis Comparativo y Desempeño de Proveedores</h3>
-            </div>
-            <div className="overflow-x-auto bg-white flex-grow">
-              <table className="w-full text-left text-xs text-gray-700">
-                <thead className="bg-gray-50 uppercase text-gray-400 border-b border-gray-200 text-[10px]">
-                  <tr>
-                    <th className="p-2 pl-4">Proveedor</th>
-                    <th className="p-2 text-center">Órdenes</th>
-                    <th className="p-2 text-right">Total Invertido</th>
-                    <th className="p-2 text-center">Demora Promedio</th>
-                    <th className="p-2 text-center">Confiabilidad</th>
-                    <th className="p-2 pr-4">Contacto </th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 font-sans text-gray-600 text-[11px]">
-                  {data.lista_proveedores.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="p-4 text-center text-gray-400">No se encontraron datos en este rango.</td>
-                    </tr>
-                  ) : (
-                    data.lista_proveedores.map((prov) => (
-                      <tr key={prov.Id_proveedor} className="hover:bg-gray-50">
-                        <td className="p-2 pl-4 font-bold text-gray-900">{prov.proveedor}</td>
-                        <td className="p-2 text-center font-mono">{prov.total_compras}</td>
-                        <td className="p-2 text-right font-mono font-medium text-gray-900">${prov.total_invertido.toFixed(2)}</td>
-                        <td className="p-2 text-center font-mono text-gray-500">{prov.tiempo_entrega_promedio} días</td>
-                        <td className="p-2 text-center font-mono">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${prov.confiabilidad >= 85 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                            {prov.confiabilidad}%
-                          </span>
-                        </td>
-                        <td className="p-2 pr-4 text-gray-400 flex items-center gap-1 font-mono"><Phone size={10}/> {prov.Contacto_telefono}</td>
-                        
-                        <td className="p-2 pr-4 text-gray-400 flex items-center gap-1 font-mono"><letter size={10}/> {prov.Contacto_email}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        {/* TABLA: ANÁLISIS COMPARATIVO Y DESEMPEÑO DE PROVEEDORES */}
+        {data?.lista_proveedores?.length > 0 && (
+          <View wrap={false}>
+            <Text style={styles.sectionTitle}>Análisis Comparativo y Desempeño de Proveedores</Text>
+          </View>
+        )}
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={{ width: '24%' }}>Proveedor</Text>
+            <Text style={{ width: '12%', textAlign: 'center' }}>Órdenes</Text>
+            <Text style={{ width: '18%', textAlign: 'right' }}>Total Invertido</Text>
+            <Text style={{ width: '16%', textAlign: 'center' }}>Demora Prom.</Text>
+            <Text style={{ width: '14%', textAlign: 'center' }}>Confiabilidad</Text>
+            <Text style={{ width: '16%' }}>Contacto</Text>
+          </View>
+          {data?.lista_proveedores?.length > 0 ? (
+            data.lista_proveedores.map((prov) => {
+              const badge = getConfiabilidadColors(prov.confiabilidad);
+              return (
+                <View key={prov.Id_proveedor} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '24%', fontWeight: 'bold' }}>{prov.proveedor}</Text>
+                  <Text style={{ width: '12%', textAlign: 'center' }}>{prov.total_compras}</Text>
+                  <Text style={{ width: '18%', textAlign: 'right', fontWeight: 'bold' }}>
+                    ${prov.total_invertido?.toFixed(2)}
+                  </Text>
+                  <Text style={{ width: '16%', textAlign: 'center', color: '#64748B' }}>
+                    {prov.tiempo_entrega_promedio} días
+                  </Text>
+                  <View style={{ width: '14%', alignItems: 'center' }}>
+                    <Text style={[styles.badge, { backgroundColor: badge.bg, color: badge.color }]}>
+                      {prov.confiabilidad}%
+                    </Text>
+                  </View>
+                  <Text style={{ width: '16%', color: '#94A3B8', fontSize: 7.5 }}>
+                    {prov.Contacto_telefono || 'S/N'}
+                  </Text>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.tableRow}>
+              <Text style={{ width: '100%', textAlign: 'center', color: '#94A3B8' }}>
+                No se encontraron datos en este rango.
+              </Text>
+            </View>
+          )}
+        </View>
 
-          {/* SECCIÓN GRÁFICA Y RETRASOS */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* GRÁFICO */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col shadow-sm">
-              <h4 className="text-xs font-bold text-gray-900 mb-4 uppercase text-gray-400 tracking-wider">Volumen de Compras por Proveedor ($)</h4>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.lista_proveedores}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="proveedor" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(value) => [`$${value}`, 'Inversión']} />
-                    <Bar dataKey="total_invertido" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+        {/* GRÁFICO DE VOLUMEN DE COMPRAS */}
+        {chartImages?.volumenCompras && (
+          <View style={{ marginBottom: 10 }} wrap={false}>
+            <Text style={styles.chartTitle}>Volumen de Compras por Proveedor ($)</Text>
+            <Image style={styles.fullWidthChartImage} src={chartImages.volumenCompras} />
+          </View>
+        )}
 
-            {/* RETRASOS CRÍTICOS */}
-            <div className="rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ backgroundColor: "rgb(254, 242, 242)" }}>
-              <div className="p-3.5 bg-red-50/50 border-b border-red-100 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-600" />
-                <h3 className="text-xs font-bold text-red-900">Órdenes Críticas Retrasadas en el Periodo</h3>
-              </div>
-              <div className="overflow-x-auto bg-white flex-grow">
-                <table className="w-full text-left text-xs text-gray-700">
-                  <thead className="bg-gray-50 uppercase text-gray-400 border-b border-gray-200 text-[10px]">
-                    <tr>
-                      <th className="p-2 pl-4">ID Orden</th>
-                      <th className="p-2">Proveedor</th>
-                      <th className="p-2 text-center">Retraso</th>
-                      <th className="p-2 pr-4 text-center">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 font-mono text-gray-600 text-[11px]">
-                    {data.ordenes_retrasadas.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" className="p-4 text-center text-gray-400 font-sans">
-                          🎉 No se registran órdenes críticas retrasadas asociadas a este periodo.
-                        </td>
-                      </tr>
-                    ) : (
-                      data.ordenes_retrasadas.map((oc) => (
-                        <tr key={oc.Id_orden_compra} className="hover:bg-red-50/30">
-                          <td className="p-2 pl-4 text-gray-400">#{oc.Id_orden_compra}</td>
-                          <td className="p-2 font-sans font-medium text-gray-900">{oc.proveedor}</td>
-                          <td className="p-2 text-center text-red-600 font-bold">{oc.dias_retraso} días</td>
-                          <td className="p-2 pr-4 text-center">
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200 uppercase">
-                              {oc.Estado}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+        {/* ÓRDENES CRÍTICAS RETRASADAS */}
+        {data?.ordenes_retrasadas?.length > 0 && (
+          <View>
+            <Text style={[styles.sectionTitle, { color: '#991B1B' }]}>
+              Órdenes Críticas Retrasadas en el Periodo
+            </Text>
+            <View style={styles.table}>
+              <View style={[styles.tableHeader, { backgroundColor: '#FEF2F2' }]}>
+                <Text style={{ width: '15%' }}>ID Orden</Text>
+                <Text style={{ width: '40%' }}>Proveedor</Text>
+                <Text style={{ width: '20%', textAlign: 'center' }}>Retraso</Text>
+                <Text style={{ width: '25%', textAlign: 'center' }}>Estado</Text>
+              </View>
+              {data.ordenes_retrasadas.map((oc) => (
+                <View key={oc.Id_orden_compra} style={styles.tableRow} wrap={false}>
+                  <Text style={{ width: '15%', color: '#94A3B8' }}>#{oc.Id_orden_compra}</Text>
+                  <Text style={{ width: '40%', fontWeight: 'bold' }}>{oc.proveedor}</Text>
+                  <Text style={{ width: '20%', textAlign: 'center', color: '#DC2626', fontWeight: 'bold' }}>
+                    {oc.dias_retraso} días
+                  </Text>
+                  <View style={{ width: '25%', alignItems: 'center' }}>
+                    <Text style={[styles.badge, { backgroundColor: '#FEF3C7', color: '#92400E' }]}>
+                      {oc.Estado}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
-          {/* BOTÓN EXPORTAR */}
-          <div className="download-btn-container pt-4 flex justify-end">
-            <button onClick={generatePDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95">
-              <Download size={14} /> Exportar Reporte de Proveedores (PDF)
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+        {/* MAPA MUNDIAL DE PROVEEDORES (opcional, solo si se captura) */}
+        {chartImages?.mapaProveedores && (
+          <View style={{ marginBottom: 10 }} wrap={false} break>
+            <Text style={styles.sectionTitle}>Distribución Geográfica de Proveedores</Text>
+            <Image style={{ width: '100%', height: 220, objectFit: 'contain' }} src={chartImages.mapaProveedores} />
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} fixed />
+      </Page>
+    </Document>
   );
 };
 
-export default ReporteProveedores;
+export default ReporteProveedoresPDF;

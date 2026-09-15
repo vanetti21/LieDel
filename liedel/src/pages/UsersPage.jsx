@@ -20,7 +20,7 @@ import StatCard from "../components/common/StatCard";
 const UsersPage = () => {
   const navigate = useNavigate();
 
-  // 1. STATCARDS ORIGINALES (SIN TOCAR)
+  // 1. STATCARDS
   const [data, setData] = useState({
     employees: 0,
     active: 0,
@@ -159,46 +159,34 @@ const UsersPage = () => {
     <div className="flex-1 overflow-auto relative z-10">
       <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8">
         
-        {/* STATS ORIGINALES (SIN TOCAR) */}
+      {/* STATS SUPERIORES (usando el componente StatCard compartido) */}
       <motion.div
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <div
+        <StatCard
+          name="Cantidad de Empleados registrados"
+          icon={UsersIcon}
+          value={data.employees}
+          color="#6366F1"
           onClick={() => navigate("/Employees")}
-          className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm cursor-pointer transition-transform hover:scale-[1.02]"
-          style={{ backgroundColor: "#ffffff" }}
-        >
-          <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg"><UsersIcon size={22} /></div>
-          <div>
-            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Cantidad de Empleados registrados</span>
-            <span className="text-xl font-black text-indigo-600 font-mono">{data.employees}</span>
-          </div>
-        </div>
+        />
 
-        <div
-          className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm"
-          style={{ backgroundColor: "#ffffff" }}
-        >
-          <div className="p-3 bg-amber-100 text-amber-600 rounded-lg"><UserCheck size={22} /></div>
-          <div>
-            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Cantidad de Empleados Activos</span>
-            <span className="text-xl font-black text-amber-600 font-mono">{data.active}</span>
-          </div>
-        </div>
+        <StatCard
+          name="Cantidad de Empleados Activos"
+          icon={UserCheck}
+          value={data.active}
+          color="#F59E0B"
+        />
 
-        <div
-          className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm"
-          style={{ backgroundColor: "#ffffff" }}
-        >
-          <div className="p-3 bg-red-100 text-red-600 rounded-lg"><UserX size={22} /></div>
-          <div>
-            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Tasa de despidos</span>
-            <span className="text-xl font-black text-red-600 font-mono">{data.churn_rate}%</span>
-          </div>
-        </div>
+        <StatCard
+          name="Tasa de despidos"
+          icon={UserX}
+          value={`${data.churn_rate}%`}
+          color="#EF4444"
+        />
       </motion.div>
 
         {/* SECCIÓN DE REPORTE Y ANALÍTICA */}

@@ -151,7 +151,7 @@ const OrdersPage = () => {
 
         {/* 1. STAT CARDS SUPERIORES */}
         <motion.div
-          className='grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-8'
+          className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-8'
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -199,57 +199,50 @@ const OrdersPage = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-gray-800 font-sans mb-8">
           
           {/* HEADER DE CONTROL: SUCURSAL Y FECHAS */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-6 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">📦 Auditoría de Órdenes y Logística</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">Auditoría de Órdenes y Logística</h2>
               <p className="text-xs text-gray-500">Monitoreo de inversión en compras, métodos de envío y productos más demandados.</p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-lg border border-gray-300">
-              
+            <div className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+
               {/* SELECTOR SUCURSAL */}
-              <div className="flex items-center gap-2 px-2">
-                <Building2 size={16} className="text-indigo-600" />
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-gray-400">Sucursal</span>
-                  <select 
-                    value={selectedBranch} 
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="bg-transparent text-gray-800 text-xs font-semibold outline-none cursor-pointer"
-                  >
-                    <option value="todas">Todas las Sucursales</option>
-                    {branches.map((suc) => (
-                      <option key={suc.Id_sucursal} value={suc.Id_sucursal}>
-                        {suc.Nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 px-1.5 border-r border-gray-200 shrink-0">
+                <Building2 size={14} className="text-indigo-600 shrink-0" /> Sucursal:
+                <select 
+                  value={selectedBranch} 
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-bold border border-gray-200 outline-none cursor-pointer max-w-[130px] truncate text-[12px]"
+                >
+                  <option value="todas">Todas las Sucursales</option>
+                  {branches.map((suc) => (
+                    <option key={suc.Id_sucursal} value={suc.Id_sucursal}>
+                      {suc.Nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="w-[1px] h-8 bg-gray-300 hidden sm:block" />
-
               {/* FECHA DESDE */}
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Desde</span>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 px-1.5 shrink-0">
+                <Calendar size={14} className="shrink-0" /> Desde:
                 <input 
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
-                  className="bg-transparent text-gray-800 text-xs p-1 outline-none cursor-pointer" 
+                  className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none text-[12px]" 
                 />
               </div>
 
-              <div className="w-[1px] h-8 bg-gray-300 hidden sm:block" />
-
               {/* FECHA HASTA */}
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Hasta</span>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 px-1.5 shrink-0">
+                Hasta:
                 <input 
                   type="date" 
                   value={endDate} 
                   onChange={(e) => setEndDate(e.target.value)} 
-                  className="bg-transparent text-gray-800 text-xs p-1 outline-none cursor-pointer" 
+                  className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none text-[12px]" 
                 />
               </div>
 
@@ -284,8 +277,8 @@ const OrdersPage = () => {
 
               {/* CURVA TEMPORAL DE COMPRAS */}
               <div id="chart-tendencia-compras" className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-                <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
-                  <TrendingUp size={18} className="text-indigo-600"/> Curva Temporal de Inversión en Compras
+                <h3 className="text-base font-bold mb-4  text-gray-900 flex items-center gap-2">
+                  <h3 size={18} className="text-indigo-600"/>📈 Curva Temporal de Inversión en Compras
                 </h3>
                 <ResponsiveContainer width="100%" height={230}>
                   <AreaChart data={reportData.tendencia_compras}>
@@ -336,14 +329,14 @@ const OrdersPage = () => {
                 </div>
 
                 {/* B. PRODUCTOS MÁS ORDENADOS (TOP 10) */}
-                <div className="rounded-xl border border-gray-200 overflow-hidden" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                <div className="rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
                   <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                       <Package size={18} className="text-emerald-600" /> Productos / Insumos Más Ordenados
                     </h3>
                     <Award size={16} className="text-amber-500" />
                   </div>
-                  <div className="overflow-y-auto max-h-[310px] bg-white">
+                  <div className="overflow-y-auto max-h-[355px] bg-white flex-1">
                     <table className="w-full text-left text-xs text-gray-700">
                       <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200 sticky top-0">
                         <tr>
@@ -395,7 +388,7 @@ const OrdersPage = () => {
                     </h3>
                     <span className="text-xs text-gray-500 font-medium">{reportData.ventas_proveedores?.length || 0} Proveedores</span>
                   </div>
-                  <div className="overflow-y-auto max-h-[250px] bg-white">
+                  <div className="overflow-y-auto max-h-[310px] bg-white">
                     <table className="w-full text-left text-xs text-gray-700">
                       <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200 sticky top-0">
                         <tr>

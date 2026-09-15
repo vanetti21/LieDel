@@ -5,13 +5,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { pdf } from "@react-pdf/renderer";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
-import Header from "../components/common/Header";
 import StatCard from "../components/common/StatCard";
 import SuppliersWorldMap from "../components/suppliers/SuppliersWorldMap";
+import ReporteProveedoresPDF from "../components/reports/ReporteProveedores";
 
 const SuppliersPage = () => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const SuppliersPage = () => {
   // 2. Estados para el Reporte de Analítica
   const [reportData, setReportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [generandoPDF, setGenerandoPDF] = useState(false);
 
   // Inicializar rango de fechas (1 año atrás hasta hoy)
   const [fechaInicio, setFechaInicio] = useState(() => {
@@ -62,34 +63,50 @@ const SuppliersPage = () => {
     fetchReporte();
   }, [fechaInicio, fechaFin]);
 
-  // Generar PDF
-  const generatePDF = () => {
-    const input = document.getElementById("seccionReporteProveedores");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
+  // GENERACIÓN DE PDF NATIVO CON @REACT-PDF/RENDERER Y CAPTURA DE GRÁFICOS
+  const generatePDF = async () => {
+    try {
+      setGenerandoPDF(true);
 
-    html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+      const chartVolumenEl = document.querySelector("#chart-volumen-compras");
+      const mapaEl = document.querySelector("#suppliers-world-map");
 
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      let imgVolumen = null;
+      let imgMapa = null;
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      if (chartVolumenEl) {
+        const canvas = await html2canvas(chartVolumenEl, { scale: 2 });
+        imgVolumen = canvas.toDataURL("image/png");
       }
 
-      pdf.save(`Reporte_Desempeno_Proveedores_${fechaInicio}_a_${fechaFin}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "flex";
-    });
+      if (mapaEl) {
+        const canvas = await html2canvas(mapaEl, { scale: 2, useCORS: true });
+        imgMapa = canvas.toDataURL("image/png");
+      }
+
+      const blob = await pdf(
+        <ReporteProveedoresPDF
+          data={reportData}
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+          chartImages={{
+            volumenCompras: imgVolumen,
+            mapaProveedores: imgMapa,
+          }}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Reporte_Desempeno_Proveedores_${fechaInicio}_a_${fechaFin}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al generar el PDF de proveedores:", error);
+    } finally {
+      setGenerandoPDF(false);
+    }
   };
 
   return (
@@ -242,7 +259,7 @@ const SuppliersPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* GRÁFICO BARRA */}
-                <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col shadow-sm">
+                <div id="chart-volumen-compras" className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col shadow-sm">
                   <h4 className="text-xs font-bold text-gray-900 mb-4 uppercase text-gray-400 tracking-wider">Volumen de Compras por Proveedor ($)</h4>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -300,16 +317,19 @@ const SuppliersPage = () => {
                 </div>
               </div>
 			
-			  <SuppliersWorldMap fechaInicio={fechaInicio} fechaFin={fechaFin} />
+			  <div id="suppliers-world-map">
+			    <SuppliersWorldMap fechaInicio={fechaInicio} fechaFin={fechaFin} />
+			  </div>
 			
 			   
               {/* BOTÓN EXPORTAR PDF */}
               <div className="download-btn-container pt-4 flex justify-end">
                 <button 
                   onClick={generatePDF} 
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95"
+                  disabled={generandoPDF}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-50"
                 >
-                  <Download size={14} /> Exportar Reporte de Proveedores (PDF)
+                  <Download size={14} /> {generandoPDF ? "Generando PDF de Proveedores..." : "Exportar Reporte de Proveedores (PDF)"}
                 </button>
               </div>
             </>

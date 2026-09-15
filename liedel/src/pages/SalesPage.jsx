@@ -287,7 +287,7 @@ const SalesPage = () => {
 
               {/* CURVA TEMPORAL */}
               <div id="chart-tendencia-ventas" className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-                <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2"><TrendingUp size={18} className="text-indigo-600"/> Curva Temporal de Recaudación Diaria</h3>
+                <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">📈 Curva Temporal de Recaudación Diaria</h3>
                 <ResponsiveContainer width="100%" height={260}>
                   <AreaChart data={reportData.tendencia_ventas}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -591,7 +591,7 @@ const SalesPage = () => {
                 {/* GRÁFICA COMBINADA */}
                 <div id="chart-volumen-recaudacion" className="lg:col-span-3 p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
                   <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2">
-                    <BarChart2 size={18} className="text-indigo-600" /> Rendimiento Diario: Volumen de Ventas vs Dinero Recaudado
+                    <h3 size={18} className="text-indigo-600" />📊 Rendimiento Diario: Volumen de Ventas vs Dinero Recaudado
                   </h3>
                   <p className="text-[11px] text-gray-500 mb-4">Comparativa directa entre transacciones cobradas (barras) y capital bruto ingresado (línea).</p>
                   <ResponsiveContainer width="100%" height={220}>

@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   kpiValue: { fontSize: 9.5, fontWeight: 'bold', marginTop: 2 },
   fullWidthChartImage: {
     width: '100%',
-    height: 190,
+    height: 170,
     objectFit: 'contain',
   },
   table: { width: '100%', marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 4 },
@@ -103,7 +103,7 @@ const ReporteOrdenesPDF = ({ reportData, startDate, endDate, chartImages }) => {
 
         {/* CURVA TEMPORAL DE INVERSIÓN EN COMPRAS (título ya incluido en la imagen) */}
         {chartImages?.tendenciaCompras && (
-          <View style={{ marginBottom: 10 }} wrap={false}>
+          <View style={{ marginBottom: 5 }} wrap={false}>
             <Image style={styles.fullWidthChartImage} src={chartImages.tendenciaCompras} />
           </View>
         )}

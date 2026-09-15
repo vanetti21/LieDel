@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { pdf } from "@react-pdf/renderer";
 import { 
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, 
   XAxis, YAxis, CartesianGrid, Tooltip 
 } from "recharts";
 import { 
   Users, Crown, HeartHandshake, UserX, Download, Calendar, 
-  DollarSign, RefreshCw, ShoppingBag, TrendingUp, Award, Phone, Clock, Repeat
+  DollarSign, RefreshCw, ShoppingBag, TrendingUp, Award, Phone, Repeat
 } from "lucide-react";
 
 import StatCard from "../components/common/StatCard";
+import ReporteClientesPDF from "../components/reports/ReporteClientes";
 
 const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ec4899"];
 
@@ -35,6 +36,7 @@ const ClientsPage = () => {
   const [loading, setLoading] = useState(false);
   const [fechaInicio, setFechaInicio] = useState(haceUnAno);
   const [fechaFin, setFechaFin] = useState(hoy);
+  const [generandoPDF, setGenerandoPDF] = useState(false);
 
   // --- FETCH DE STATCARDS ---
   useEffect(() => {
@@ -64,23 +66,50 @@ const ClientsPage = () => {
     fetchClientes();
   }, []);
 
-  // --- GENERACIÓN DE PDF ---
-  const generatePDF = () => {
-    const input = document.getElementById("reporteClientesCanvas");
-    const downloadBtn = document.querySelector(".download-btn-container");
-    if (downloadBtn) downloadBtn.style.display = "none";
+  // --- GENERACIÓN DE PDF NATIVO CON @REACT-PDF/RENDERER Y CAPTURA DE GRÁFICOS ---
+  const generatePDF = async () => {
+    try {
+      setGenerandoPDF(true);
 
-    html2canvas(input, { scale: 1.5, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("l", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const chartEvolucionEl = document.querySelector("#chart-evolucion-clientes");
+      const chartSegmentacionEl = document.querySelector("#chart-segmentacion");
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Auditoria_Clientes_${fechaInicio}_a_${fechaFin}.pdf`);
-      if (downloadBtn) downloadBtn.style.display = "block";
-    });
+      let imgEvolucion = null;
+      let imgSegmentacion = null;
+
+      if (chartEvolucionEl) {
+        const canvas = await html2canvas(chartEvolucionEl, { scale: 2 });
+        imgEvolucion = canvas.toDataURL("image/png");
+      }
+
+      if (chartSegmentacionEl) {
+        const canvas = await html2canvas(chartSegmentacionEl, { scale: 2 });
+        imgSegmentacion = canvas.toDataURL("image/png");
+      }
+
+      const blob = await pdf(
+        <ReporteClientesPDF
+          data={data}
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+          chartImages={{
+            evolucionClientes: imgEvolucion,
+            segmentacion: imgSegmentacion,
+          }}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Auditoria_Clientes_${fechaInicio}_a_${fechaFin}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al generar el PDF de clientes:", error);
+    } finally {
+      setGenerandoPDF(false);
+    }
   };
 
   return (
@@ -228,7 +257,7 @@ const ClientsPage = () => {
             </div>
 
             {/* EVOLUCIÓN HISTÓRICA DEL MES */}
-            <div className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+            <div id="chart-evolucion-clientes" className="p-5 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
               <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2">
                 <TrendingUp size={16} className="text-indigo-600"/> Tendencia de Ingresos y Tráfico de Compradores
               </h3>
@@ -258,7 +287,7 @@ const ClientsPage = () => {
 				</div>
 
 				{/* GRÁFICO REDUCIDO / CENTRADO */}
-				<div className="h-[120px] w-full">
+				<div id="chart-segmentacion" className="h-[120px] w-full">
 				<ResponsiveContainer width="100%" height="100%">
 					<PieChart>
 					<Pie 
@@ -372,9 +401,10 @@ const ClientsPage = () => {
             <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
               <button 
                 onClick={generatePDF} 
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95"
+                disabled={generandoPDF}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-50"
               >
-                <Download size={14} /> Exportar Auditoría de Clientes ({fechaInicio} a {fechaFin})
+                <Download size={14} /> {generandoPDF ? "Generando PDF de Clientes..." : `Exportar Auditoría de Clientes (${fechaInicio} a ${fechaFin})`}
               </button>
             </div>
 

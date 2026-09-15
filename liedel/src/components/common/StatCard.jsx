@@ -1,27 +1,28 @@
 import { motion } from "framer-motion";
 
-const StatCard = ({name, icon:Icon, value, color, onClick }) => {
+const StatCard = ({ name, icon: Icon, value, color, onClick }) => {
   return (
-    
     <motion.div
-        onClick={onClick}
-        className="overflow-hidden rounded-xl border border-gray-200" style={{ backgroundColor: 'rgb(240, 243, 249)' }}
-        whileHover={{ y: -5, boxShadow: "0px 25px 50px -12px rgba(172, 168, 168, 0.5)" }}
+      onClick={onClick}
+      className={`p-5 rounded-xl border border-gray-200 shadow-sm bg-white flex items-center gap-4 ${
+        onClick ? "cursor-pointer transition-transform hover:scale-[1.02]" : ""
+      }`}
+      whileHover={onClick ? { y: -2 } : {}}
     >
-        <div className="px-4 py-5 sm:p-6">
-            <span className="flex items-center text-base font-medium text-black-100">
-                <Icon 
-                    size={20}   
-                    className="mr-2"
-                    style={{color}}
-                />
-                {name}
-            </span>
-            <p className="mt-1 text-3xl font-semibold text-black-100">{value}</p>
-        </div>
-        
+      <div
+        className="p-3 rounded-lg flex items-center justify-center shrink-0"
+        style={{ backgroundColor: `${color}1A`, color: color }}
+      >
+        <Icon size={22} />
+      </div>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">{name}</p>
+        <p className="text-xl font-black font-mono mt-0.5" style={{ color: color }}>
+          {value}
+        </p>
+      </div>
     </motion.div>
-  )
-}
+  );
+};
 
 export default StatCard;

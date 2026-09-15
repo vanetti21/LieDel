@@ -264,497 +264,501 @@ const ProductPage = () => {
                     />
                 </motion.div>
 
-                {/* ================= CONTROLLER DE FECHAS ================= */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl bg-white shadow-sm">
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-800">Filtro Analítico de Productos</h2>
-                        <p className="text-xs text-gray-500">Seleccione un rango para filtrar los gráficos y reportes detallados inferiores.</p>
-                    </div>
-                    <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-300">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Desde</span>
-                            <input 
-                                type="date" 
-                                value={startDate} 
-                                onChange={(e) => setStartDate(e.target.value)} 
-                                className="bg-transparent text-gray-800 text-sm p-1 outline-none cursor-pointer" 
-                            />
+                {/* ================= TARJETA BLANCA EXTERIOR (envuelve filtro + reporte) ================= */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-gray-800 font-sans mb-8">
+
+                    {/* ================= CONTROLLER DE FECHAS ================= */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-800">Filtro Analítico de Productos</h2>
+                            <p className="text-xs text-gray-500">Seleccione un rango para filtrar los gráficos y reportes detallados inferiores.</p>
                         </div>
-                        <div className="w-[1px] h-8 bg-gray-300" />
-                        <div className="flex flex-col">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 px-1">Hasta</span>
-                            <input 
-                                type="date" 
-                                value={endDate} 
-                                onChange={(e) => setEndDate(e.target.value)} 
-                                className="bg-transparent text-gray-800 text-sm p-1 outline-none cursor-pointer" 
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* ================= ESTADOS DE CARGA / INICIAL ================= */}
-                {!reportData && !loading && (
-                    <div className="text-center py-16 rounded-xl border border-dashed border-gray-300 bg-gray-50">
-                        <Calendar className="mx-auto text-gray-400 mb-3" size={40} />
-                        <p className="text-gray-600 font-medium">Establezca un rango de fechas en el panel superior para cargar los datos del reporte.</p>
-                    </div>
-                )}
-
-                {loading && (
-                    <div className="text-center py-16 rounded-xl border border-gray-200 bg-gray-50">
-                        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                        <p className="text-indigo-600 font-medium animate-pulse">Procesando registros de inventario y ventas...</p>
-                    </div>
-                )}
-
-                {/* ================= CUERPO DEL REPORTE BASADO EN FECHAS ================= */}
-                {reportData && (
-                    <div className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm text-gray-800">
-                        
-                        {/* RESUMEN DE METADATOS */}
-                        <div 
-                            className="p-3 rounded-xl border border-gray-200 text-xs text-gray-600 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 bg-gray-50 text-center"
-                            style={{ lineHeight: "1.2", verticalAlign: "middle" }}
-                        >
-                            <div className="px-2 py-1 flex items-center justify-center gap-1">
-                                <span className="uppercase text-[11px]">PRODUCTO LÍDER:</span>
-                                <strong className="text-gray-900 font-bold">{reportData.producto_top}</strong>
+                        <div className="flex flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2 border-r border-gray-200">
+                                <Calendar size={14} className="text-indigo-600" /> Desde:
+                                <input 
+                                    type="date" 
+                                    value={startDate} 
+                                    onChange={(e) => setStartDate(e.target.value)} 
+                                    className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none" 
+                                />
                             </div>
-                            <div className="px-2 py-1 border-t sm:border-t-0 sm:border-l border-gray-200 flex items-center justify-center gap-1">
-                                <span className="uppercase text-[11px]">CATEGORÍA LÍDER:</span>
-                                <strong className="text-gray-900 font-bold">{reportData.categoria_top}</strong>
-                            </div>
-                            <div className="px-2 py-1 border-t lg:border-t-0 lg:border-l border-gray-200 flex items-center justify-center gap-1">
-                                <span className="uppercase text-[11px]">CAPITAL EN INVENTARIO:</span>
-                                <strong className="text-green-600 font-bold">${reportData.capital_inmovilizado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
-                            </div>
-                            <div className="px-2 py-1 border-t lg:border-t-0 lg:border-l border-gray-200 flex items-center justify-center gap-1">
-                                <span className="uppercase text-[11px]">INGRESOS TOTALES:</span>
-                                <strong className="text-indigo-600 font-bold">${reportData.ingresos?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                            <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
+                                Hasta:
+                                <input 
+                                    type="date" 
+                                    value={endDate} 
+                                    onChange={(e) => setEndDate(e.target.value)} 
+                                    className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none" 
+                                />
                             </div>
                         </div>
+                    </div>
 
-                        {/* LineChart Ventas */}
-                        <div id="chart-ventas" className="p-5 rounded-xl border border-gray-200 bg-gray-50">
-                            <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
-                                📊 Evolución Temporal de Unidades Vendidas
-                            </h3>
-                            <ResponsiveContainer width="100%" height={320}>
-                                <LineChart 
-                                    data={reportData.tendencia_ventas || []}
-                                    margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                    <XAxis dataKey="fecha" stroke="#718096" tick={{ fontSize: 11 }}
-                                    minTickGap={20}
-                                    tickFormatter={(value) => {
-                                        const d = new Date(value);
-                                        return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
-                                    }}
-                                    padding={{ left: 20, right: 20 }}
-                                    />
-                                    <YAxis 
-                                        stroke="#718096" 
-                                        allowDecimals={false} 
-                                        domain={[0, 22]} 
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: "#fff", borderColor: "#cbd5e1", color: "#000" }}
-                                        labelFormatter={(value) => {
-                                        const d = new Date(value);
-                                        return d.toLocaleDateString("es-ES", { 
-                                            weekday: "short", 
-                                            day: "2-digit", 
-                                            month: "short", 
-                                            year: "numeric" 
-                                        });
-                                    }}
-                                    formatter={(value) => [`${value} unidades`, "Vendidas"]}
-                                    />
-                                    <Line 
-                                        type="monotone" 
-                                        dataKey="unidades_vendidas" 
-                                        stroke="#4f46e5" 
-                                        strokeWidth={3} 
-                                        dot={{ r: 4 }} 
-                                    />
-                                </LineChart>
-                            </ResponsiveContainer>
+                    {/* ================= ESTADOS DE CARGA / INICIAL ================= */}
+                    {!reportData && !loading && (
+                        <div className="text-center py-16 rounded-xl border border-dashed border-gray-300 bg-gray-50">
+                            <Calendar className="mx-auto text-gray-400 mb-3" size={40} />
+                            <p className="text-gray-600 font-medium">Establezca un rango de fechas en el panel superior para cargar los datos del reporte.</p>
                         </div>
+                    )}
 
-                        {/* BarChart Top 10 */}
-                        <div id="chart-top-ingresos" className="p-5 rounded-xl border border-gray-200 bg-gray-50">
-                            <h3 className="text-base font-bold mb-4 text-gray-900">
-                                🏆 Top 10 Productos con Mayor Aporte de Ingresos
-                            </h3>
-                            <ResponsiveContainer width="100%" height={360}>
-                                <BarChart 
-                                    data={reportData.top_ingresos}
-                                    margin={{ top: 20, right: 30, left: 15, bottom: 55 }}
-                                >
-                                    <XAxis 
-                                        dataKey="Nombre" 
-                                        stroke="#718096" 
-                                        tick={{ fontSize: 10, fill: "#4a5568" }} 
-                                        angle={-45} 
-                                        textAnchor="end" 
-                                        interval={0}
-                                        tickFormatter={(value) => 
-                                            value.length > 12 ? `${value.slice(0, 14)}…` : value
-                                        }
-                                    />
-                                    <YAxis 
-                                        stroke="#718096" 
-                                        tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
-                                        domain={[0, yDomainMaxIngresos]}
-                                    />
-                                    <Tooltip 
-                                        contentStyle={{ backgroundColor: '#fff', borderColor: '#cbd5e1' }} 
-                                        formatter={(value) => [`$${value.toLocaleString()}`, 'Ingresos']} 
-                                    />
-                                    <Bar dataKey="ingresos" name="Ingresos Generados ($)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    {loading && (
+                        <div className="text-center py-16 rounded-xl border border-gray-200 bg-gray-50">
+                            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-indigo-600 font-medium animate-pulse">Procesando registros de inventario y ventas...</p>
                         </div>
+                    )}
 
-                        {/* SECCIÓN UNIFICADA POR CATEGORÍAS */}
-                        <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
-                            <h3 className="text-base font-bold mb-4 text-gray-900">
-                                📈 Rendimiento y Participación Financiera por Categorías
-                            </h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                                
-                                {/* Gráfico de Pastel */}
-                               <div id="chart-categorias" className="w-full h-[320px] pb-2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                    <Pie
-                                        data={reportData?.categorias || []}
-                                        dataKey="total"
-                                        nameKey="nombre"
-                                        cx="50%"
-                                        cy="40%"
-                                        outerRadius={85}
-                                        labelLine={({ percent, points }) => {
-                                        if (percent < 0.02 || !points) return null;
-                                        return (
-                                            <path
-                                            d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`}
-                                            stroke="#9ca3af"
-                                            strokeWidth={1}
-                                            fill="none"
-                                            />
-                                        );
-                                        }}
-                                        label={({ x, y, textAnchor, nombre, percent }) => {
-                                        if (percent < 0.02) return null;
-                                        return (
-                                            <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={10}>
-                                            {`${nombre} (${(percent * 100).toFixed(1)}%)`}
-                                            </text>
-                                        );
-                                        }}
-                                    >
-                                        {(reportData?.categorias || []).map((_, i) => (
-                                        <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-
-                                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Ingresos"]} />
-
-                                    <Legend
-                                        verticalAlign="bottom"
-                                        align="center"
-                                        content={({ payload }) => (
-                                        <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-2 mt-0 pt-2 pb-2 px-2">
-                                            {payload?.map((entry, index) => (
-                                            <span
-                                                key={`legend-item-${index}`}
-                                                className="whitespace-nowrap text-[11px] font-medium text-gray-700"
-                                            >
-                                                <span style={{ color: entry.color, fontSize: 20 }}>●</span> {entry.value}
-                                            </span>
-                                            ))}
-                                        </div>
-                                        )}
-                                    />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                    {/* ================= CUERPO DEL REPORTE BASADO EN FECHAS ================= */}
+                    {reportData && (
+                        <div className="space-y-8">
+                            
+                            {/* RESUMEN DE METADATOS */}
+                            <div 
+                                className="p-3 rounded-xl border border-gray-200 text-xs text-gray-600 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 bg-gray-50 text-center"
+                                style={{ lineHeight: "1.2", verticalAlign: "middle" }}
+                            >
+                                <div className="px-2 py-1 flex items-center justify-center gap-1">
+                                    <span className="uppercase text-[11px]">PRODUCTO LÍDER:</span>
+                                    <strong className="text-gray-900 font-bold">{reportData.producto_top}</strong>
                                 </div>
+                                <div className="px-2 py-1 border-t sm:border-t-0 sm:border-l border-gray-200 flex items-center justify-center gap-1">
+                                    <span className="uppercase text-[11px]">CATEGORÍA LÍDER:</span>
+                                    <strong className="text-gray-900 font-bold">{reportData.categoria_top}</strong>
+                                </div>
+                                <div className="px-2 py-1 border-t lg:border-t-0 lg:border-l border-gray-200 flex items-center justify-center gap-1">
+                                    <span className="uppercase text-[11px]">CAPITAL EN INVENTARIO:</span>
+                                    <strong className="text-green-600 font-bold">${reportData.capital_inmovilizado?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                                </div>
+                                <div className="px-2 py-1 border-t lg:border-t-0 lg:border-l border-gray-200 flex items-center justify-center gap-1">
+                                    <span className="uppercase text-[11px]">INGRESOS TOTALES:</span>
+                                    <strong className="text-indigo-600 font-bold">${reportData.ingresos?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                                </div>
+                            </div>
 
-                                {/* Tabla Detallada por Categorías */}
-                                <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
+                            {/* LineChart Ventas */}
+                            <div id="chart-ventas" className="p-5 rounded-xl border border-gray-200 bg-gray-50">
+                                <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
+                                    📊 Evolución Temporal de Unidades Vendidas
+                                </h3>
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <LineChart 
+                                        data={reportData.tendencia_ventas || []}
+                                        margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="fecha" stroke="#718096" tick={{ fontSize: 11 }}
+                                        minTickGap={20}
+                                        tickFormatter={(value) => {
+                                            const d = new Date(value);
+                                            return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+                                        }}
+                                        padding={{ left: 20, right: 20 }}
+                                        />
+                                        <YAxis 
+                                            stroke="#718096" 
+                                            allowDecimals={false} 
+                                            domain={[0, 22]} 
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: "#fff", borderColor: "#cbd5e1", color: "#000" }}
+                                            labelFormatter={(value) => {
+                                            const d = new Date(value);
+                                            return d.toLocaleDateString("es-ES", { 
+                                                weekday: "short", 
+                                                day: "2-digit", 
+                                                month: "short", 
+                                                year: "numeric" 
+                                            });
+                                        }}
+                                        formatter={(value) => [`${value} unidades`, "Vendidas"]}
+                                        />
+                                        <Line 
+                                            type="monotone" 
+                                            dataKey="unidades_vendidas" 
+                                            stroke="#4f46e5" 
+                                            strokeWidth={3} 
+                                            dot={{ r: 4 }} 
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* BarChart Top 10 */}
+                            <div id="chart-top-ingresos" className="p-5 rounded-xl border border-gray-200 bg-gray-50">
+                                <h3 className="text-base font-bold mb-4 text-gray-900">
+                                    🏆 Top 10 Productos con Mayor Aporte de Ingresos
+                                </h3>
+                                <ResponsiveContainer width="100%" height={360}>
+                                    <BarChart 
+                                        data={reportData.top_ingresos}
+                                        margin={{ top: 20, right: 30, left: 15, bottom: 55 }}
+                                    >
+                                        <XAxis 
+                                            dataKey="Nombre" 
+                                            stroke="#718096" 
+                                            tick={{ fontSize: 10, fill: "#4a5568" }} 
+                                            angle={-45} 
+                                            textAnchor="end" 
+                                            interval={0}
+                                            tickFormatter={(value) => 
+                                                value.length > 12 ? `${value.slice(0, 14)}…` : value
+                                            }
+                                        />
+                                        <YAxis 
+                                            stroke="#718096" 
+                                            tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
+                                            domain={[0, yDomainMaxIngresos]}
+                                        />
+                                        <Tooltip 
+                                            contentStyle={{ backgroundColor: '#fff', borderColor: '#cbd5e1' }} 
+                                            formatter={(value) => [`$${value.toLocaleString()}`, 'Ingresos']} 
+                                        />
+                                        <Bar dataKey="ingresos" name="Ingresos Generados ($)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* SECCIÓN UNIFICADA POR CATEGORÍAS */}
+                            <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
+                                <h3 className="text-base font-bold mb-4 text-gray-900">
+                                    📈 Rendimiento y Participación Financiera por Categorías
+                                </h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                                    
+                                    {/* Gráfico de Pastel */}
+                                   <div id="chart-categorias" className="w-full h-[320px] pb-2">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                        <Pie
+                                            data={reportData?.categorias || []}
+                                            dataKey="total"
+                                            nameKey="nombre"
+                                            cx="50%"
+                                            cy="40%"
+                                            outerRadius={85}
+                                            labelLine={({ percent, points }) => {
+                                            if (percent < 0.02 || !points) return null;
+                                            return (
+                                                <path
+                                                d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`}
+                                                stroke="#9ca3af"
+                                                strokeWidth={1}
+                                                fill="none"
+                                                />
+                                            );
+                                            }}
+                                            label={({ x, y, textAnchor, nombre, percent }) => {
+                                            if (percent < 0.02) return null;
+                                            return (
+                                                <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={10}>
+                                                {`${nombre} (${(percent * 100).toFixed(1)}%)`}
+                                                </text>
+                                            );
+                                            }}
+                                        >
+                                            {(reportData?.categorias || []).map((_, i) => (
+                                            <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+
+                                        <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Ingresos"]} />
+
+                                        <Legend
+                                            verticalAlign="bottom"
+                                            align="center"
+                                            content={({ payload }) => (
+                                            <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-2 mt-0 pt-2 pb-2 px-2">
+                                                {payload?.map((entry, index) => (
+                                                <span
+                                                    key={`legend-item-${index}`}
+                                                    className="whitespace-nowrap text-[11px] font-medium text-gray-700"
+                                                >
+                                                    <span style={{ color: entry.color, fontSize: 20 }}>●</span> {entry.value}
+                                                </span>
+                                                ))}
+                                            </div>
+                                            )}
+                                        />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Tabla Detallada por Categorías */}
+                                    <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
+                                        <table className="w-full text-left text-xs text-gray-700">
+                                            <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="p-3">Categoría</th>
+                                                    <th className="p-3 text-center">U. Vendidas</th>
+                                                    <th className="p-3 text-right">Volumen Total ($)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200 text-gray-600">
+                                                {reportData.categorias?.map((cat, index) => {
+                                                    const unidadCat = reportData.categorias_unidades?.find(u => u.categoria === cat.nombre);
+                                                    return (
+                                                        <tr key={index} className="hover:bg-gray-50 font-mono">
+                                                            <td className="p-3 font-sans text-gray-900 font-semibold">{cat.nombre}</td>
+                                                            <td className="p-3 text-center text-amber-600 font-bold">{unidadCat ? unidadCat.total : 0} u.</td>
+                                                            <td className="p-3 text-right text-indigo-600 font-bold">${Number(cat.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* SECCIÓN CAPITAL INMOVILIZADO */}
+                            <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
+                                <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-gray-900">
+                                        🔒 Capital Inmovilizado Activo (Top 15)</h3>
+                                </div>
+                                <div className="overflow-x-auto bg-white">
                                     <table className="w-full text-left text-xs text-gray-700">
                                         <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
                                             <tr>
-                                                <th className="p-3">Categoría</th>
-                                                <th className="p-3 text-center">U. Vendidas</th>
-                                                <th className="p-3 text-right">Volumen Total ($)</th>
+                                                <th className="p-3">Producto</th>
+                                                <th className="p-3 text-center">Stock</th>
+                                                <th className="p-3 text-right">Precio Venta</th>
+                                                <th className="p-3 text-right">Valor Total</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-200 text-gray-600">
-                                            {reportData.categorias?.map((cat, index) => {
-                                                const unidadCat = reportData.categorias_unidades?.find(u => u.categoria === cat.nombre);
-                                                return (
-                                                    <tr key={index} className="hover:bg-gray-50 font-mono">
-                                                        <td className="p-3 font-sans text-gray-900 font-semibold">{cat.nombre}</td>
-                                                        <td className="p-3 text-center text-amber-600 font-bold">{unidadCat ? unidadCat.total : 0} u.</td>
-                                                        <td className="p-3 text-right text-indigo-600 font-bold">${Number(cat.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                                                    </tr>
-                                                );
-                                            })}
+                                        <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
+                                            {reportData.capital_por_producto?.map((item, index) => (
+                                                <tr key={index} className="hover:bg-gray-50">
+                                                    <td className="p-3 font-sans text-gray-900 font-semibold">{item.Nombre}</td>
+                                                    <td className="p-3 text-center text-gray-900 font-semibold">{item.stock}</td>
+                                                    <td className="p-3 text-right">${Number(item.Precio_venta).toFixed(2)}</td>
+                                                    <td className="p-3 text-right text-green-600 font-bold">${Number(item.valor).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* SECCIÓN CAPITAL INMOVILIZADO */}
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
-                            <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
-                                <h3 className="text-sm font-bold text-gray-900">
-                                    🔒 Capital Inmovilizado Activo (Top 15)</h3>
-                            </div>
-                            <div className="overflow-x-auto bg-white">
-                                <table className="w-full text-left text-xs text-gray-700">
-                                    <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
-                                        <tr>
-                                            <th className="p-3">Producto</th>
-                                            <th className="p-3 text-center">Stock</th>
-                                            <th className="p-3 text-right">Precio Venta</th>
-                                            <th className="p-3 text-right">Valor Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
-                                        {reportData.capital_por_producto?.map((item, index) => (
-                                            <tr key={index} className="hover:bg-gray-50">
-                                                <td className="p-3 font-sans text-gray-900 font-semibold">{item.Nombre}</td>
-                                                <td className="p-3 text-center text-gray-900 font-semibold">{item.stock}</td>
-                                                <td className="p-3 text-right">${Number(item.Precio_venta).toFixed(2)}</td>
-                                                <td className="p-3 text-right text-green-600 font-bold">${Number(item.valor).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* ================= SECCIÓN PRODUCTOS Y GRÁFICOS POR ALMACÉN (SUCURSAL) ================= */}
-                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 p-5 space-y-6">
-                            
-                            {/* ENCABEZADO Y FILTROS */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                                    🗂️ Análisis e Inventario por Almacén / Sucursal
-                                </h3>
+                            {/* ================= SECCIÓN PRODUCTOS Y GRÁFICOS POR ALMACÉN (SUCURSAL) ================= */}
+                            <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 p-5 space-y-6">
                                 
-                                {/* Buscador y Selector de Almacén */}
-                                <div className="flex flex-wrap items-center gap-3 text-xs">
-                                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-300">
-                                        <Search size={14} className="text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Buscar producto..."
-                                            value={searchProducto}
-                                            onChange={(e) => setSearchProducto(e.target.value)}
-                                            className="outline-none bg-transparent text-gray-800 w-32 sm:w-40"
-                                        />
-                                    </div>
-
-                                    <select
-                                        value={selectedAlmacen}
-                                        onChange={(e) => setSelectedAlmacen(e.target.value)}
-                                        className="bg-white px-3 py-1.5 rounded-lg border border-gray-300 text-gray-800 font-semibold outline-none cursor-pointer"
-                                    >
-                                        {listaAlmacenes.map((almacen, idx) => (
-                                            <option key={idx} value={almacen}>
-                                                {almacen === "Todos" ? "Todos los Almacenes" : almacen}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* GRÁFICOS DINÁMICOS DE ALMACÉN MEJORADOS */}
-                            {almacenesData.length > 0 && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* ENCABEZADO Y FILTROS */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                                        🗂️ Análisis e Inventario por Almacén / Sucursal
+                                    </h3>
                                     
-                                    {/* Helper inline para formatear nombres y agrupar */}
-                                    {(() => {
-                                        const formatNombre = (nombre) => 
-                                            nombre ? nombre.replace(/almacén|almacen/gi, "").trim() : "";
+                                    {/* Buscador y Selector de Almacén */}
+                                    <div className="flex flex-wrap items-center gap-3 text-xs">
+                                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-300">
+                                            <Search size={14} className="text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar producto..."
+                                                value={searchProducto}
+                                                onChange={(e) => setSearchProducto(e.target.value)}
+                                                className="outline-none bg-transparent text-gray-800 w-32 sm:w-40"
+                                            />
+                                        </div>
 
-                                        const datosAgrupados = Object.values(
-                                            almacenesData.reduce((acc, item) => {
-                                                const nombreLimpio = formatNombre(item.almacen);
-                                                if (!acc[nombreLimpio]) {
-                                                    acc[nombreLimpio] = { 
-                                                        almacen: nombreLimpio, 
-                                                        productos: 0, 
-                                                        valor: 0 
-                                                    };
-                                                }
-                                                acc[nombreLimpio].productos += 1;
-                                                acc[nombreLimpio].valor += Number(item.stock || 0) * Number(item.Precio_venta || 0);
-                                                return acc;
-                                            }, {})
-                                        );
-
-                                        return (
-                                            <>
-                                                {/* Gráfico 1: Unidades/Productos por Almacén */}
-                                                <div id="chart-variedad-almacen" className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
-                                                        📦 Variedad de Productos por Sucursal
-                                                    </h4>
-                                                    <ResponsiveContainer width="100%" height={300}>
-                                                        <BarChart 
-                                                            data={datosAgrupados} 
-                                                            margin={{ top: 20, right: 10, left: -20, bottom: 55 }}
-                                                        >
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                                            <XAxis 
-                                                                dataKey="almacen" 
-                                                                stroke="#64748b" 
-                                                                tick={{ fontSize: 10, fill: "#475569" }}
-                                                                angle={-35} 
-                                                                textAnchor="end" 
-                                                                interval={0}
-                                                                tickFormatter={(value) => 
-                                                                    value.length > 12 ? `${value.slice(0, 12)}…` : value
-                                                                }
-                                                            />
-                                                            <YAxis stroke="#64748b" allowDecimals={false} tick={{ fontSize: 11 }} />
-                                                            <Tooltip 
-                                                                contentStyle={{ backgroundColor: "#fff", borderRadius: "8px", borderColor: "#cbd5e1" }}
-                                                                formatter={(value) => [`${value} productos`, "Variedad"]}
-                                                            />
-                                                            <Bar dataKey="productos" name="Productos" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                                                        </BarChart>
-                                                    </ResponsiveContainer>
-                                                </div>
-
-                                                {/* Gráfico 2: Valor Monetario por Almacén */}
-                                                <div id="chart-distribucion-almacen" className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
-                                                        💰 Distribución de Valor Monetario ($)
-                                                    </h4>
-                                                    <ResponsiveContainer width="100%" height={300}>
-                                                        <PieChart>
-                                                            <Pie
-                                                                data={datosAgrupados}
-                                                                dataKey="valor"
-                                                                nameKey="almacen"
-                                                                cx="50%"
-                                                                cy="50%"
-                                                                outerRadius={75}
-                                                                labelLine={({ percent, points }) => {
-                                                                    if (percent < 0.03 || !points) return null;
-                                                                    return (
-                                                                        <path 
-                                                                            d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`} 
-                                                                            stroke="#9ca3af" 
-                                                                            strokeWidth={1} 
-                                                                            fill="none" 
-                                                                        />
-                                                                    );
-                                                                }}
-                                                                label={({ x, y, textAnchor, percent }) => {
-                                                                    if (percent < 0.03) return null;
-                                                                    return (
-                                                                        <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={11}>
-                                                                            {`${(percent * 100).toFixed(1)}%`}
-                                                                        </text>
-                                                                    );
-                                                                }}
-                                                            >
-                                                                {datosAgrupados.map((_, i) => (
-                                                                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                                                ))}
-                                                            </Pie>
-                                                            <Tooltip 
-                                                                formatter={(val) => [
-                                                                    `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
-                                                                    'Valor Estimado'
-                                                                ]} 
-                                                            />
-                                                            <Legend 
-                                                                verticalAlign="bottom" 
-                                                                align="center"
-                                                                content={({ payload }) => (
-                                                                    <div className="w-full flex flex-wrap justify-center gap-x-3 gap-y-1 pt-3 px-2">
-                                                                        {payload?.map((entry, index) => (
-                                                                            <span
-                                                                                key={`legend-item-${index}`}
-                                                                                className="whitespace-nowrap"
-                                                                                style={{ color: "#374151", fontSize: 11 }}
-                                                                            >
-                                                                                <span style={{ color: entry.color, fontSize: 18 }}>●</span> {entry.value}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            />
-                                                        </PieChart>
-                                                    </ResponsiveContainer>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
-
+                                        <select
+                                            value={selectedAlmacen}
+                                            onChange={(e) => setSelectedAlmacen(e.target.value)}
+                                            className="bg-white px-3 py-1.5 rounded-lg border border-gray-300 text-gray-800 font-semibold outline-none cursor-pointer"
+                                        >
+                                            {listaAlmacenes.map((almacen, idx) => (
+                                                <option key={idx} value={almacen}>
+                                                    {almacen === "Todos" ? "Todos los Almacenes" : almacen}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                            )}
 
-                            {/* TABLA DE PRODUCTOS FILTRADOS */}
-                            <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
-                                <table className="w-full text-left text-xs text-gray-700">
-                                    <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
-                                        <tr>
-                                            <th className="p-3">Almacén</th>
-                                            <th className="p-3">Producto</th>
-                                            <th className="p-3 text-center">Stock Disponible</th>
-                                            <th className="p-3 text-right">Precio Venta</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200 text-gray-600">
-                                        {productosFiltradosAlmacen.length > 0 ? (
-                                            productosFiltradosAlmacen.map((item, index) => (
-                                                <tr key={index} className="hover:bg-gray-50 font-mono">
-                                                    <td className="p-3 font-sans text-indigo-600 font-bold">{item.almacen}</td>
-                                                    <td className="p-3 font-sans text-gray-900 font-semibold">{item.Nombre}</td>
-                                                    <td className="p-3 text-center text-gray-900 font-semibold">{item.stock} u.</td>
-                                                    <td className="p-3 text-right font-bold text-gray-900">
-                                                        ${Number(item.Precio_venta || 0).toFixed(2)}
+                                {/* GRÁFICOS DINÁMICOS DE ALMACÉN MEJORADOS */}
+                                {almacenesData.length > 0 && (
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        
+                                        {/* Helper inline para formatear nombres y agrupar */}
+                                        {(() => {
+                                            const formatNombre = (nombre) => 
+                                                nombre ? nombre.replace(/almacén|almacen/gi, "").trim() : "";
+
+                                            const datosAgrupados = Object.values(
+                                                almacenesData.reduce((acc, item) => {
+                                                    const nombreLimpio = formatNombre(item.almacen);
+                                                    if (!acc[nombreLimpio]) {
+                                                        acc[nombreLimpio] = { 
+                                                            almacen: nombreLimpio, 
+                                                            productos: 0, 
+                                                            valor: 0 
+                                                        };
+                                                    }
+                                                    acc[nombreLimpio].productos += 1;
+                                                    acc[nombreLimpio].valor += Number(item.stock || 0) * Number(item.Precio_venta || 0);
+                                                    return acc;
+                                                }, {})
+                                            );
+
+                                            return (
+                                                <>
+                                                    {/* Gráfico 1: Unidades/Productos por Almacén */}
+                                                    <div id="chart-variedad-almacen" className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                                        <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
+                                                            📦 Variedad de Productos por Sucursal
+                                                        </h4>
+                                                        <ResponsiveContainer width="100%" height={300}>
+                                                            <BarChart 
+                                                                data={datosAgrupados} 
+                                                                margin={{ top: 20, right: 10, left: -20, bottom: 55 }}
+                                                            >
+                                                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                                                <XAxis 
+                                                                    dataKey="almacen" 
+                                                                    stroke="#64748b" 
+                                                                    tick={{ fontSize: 10, fill: "#475569" }}
+                                                                    angle={-35} 
+                                                                    textAnchor="end" 
+                                                                    interval={0}
+                                                                    tickFormatter={(value) => 
+                                                                        value.length > 12 ? `${value.slice(0, 12)}…` : value
+                                                                    }
+                                                                />
+                                                                <YAxis stroke="#64748b" allowDecimals={false} tick={{ fontSize: 11 }} />
+                                                                <Tooltip 
+                                                                    contentStyle={{ backgroundColor: "#fff", borderRadius: "8px", borderColor: "#cbd5e1" }}
+                                                                    formatter={(value) => [`${value} productos`, "Variedad"]}
+                                                                />
+                                                                <Bar dataKey="productos" name="Productos" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                                            </BarChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+
+                                                    {/* Gráfico 2: Valor Monetario por Almacén */}
+                                                    <div id="chart-distribucion-almacen" className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                                        <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">
+                                                            💰 Distribución de Valor Monetario ($)
+                                                        </h4>
+                                                        <ResponsiveContainer width="100%" height={300}>
+                                                            <PieChart>
+                                                                <Pie
+                                                                    data={datosAgrupados}
+                                                                    dataKey="valor"
+                                                                    nameKey="almacen"
+                                                                    cx="50%"
+                                                                    cy="50%"
+                                                                    outerRadius={75}
+                                                                    labelLine={({ percent, points }) => {
+                                                                        if (percent < 0.03 || !points) return null;
+                                                                        return (
+                                                                            <path 
+                                                                                d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`} 
+                                                                                stroke="#9ca3af" 
+                                                                                strokeWidth={1} 
+                                                                                fill="none" 
+                                                                            />
+                                                                        );
+                                                                    }}
+                                                                    label={({ x, y, textAnchor, percent }) => {
+                                                                        if (percent < 0.03) return null;
+                                                                        return (
+                                                                            <text x={x} y={y} textAnchor={textAnchor} fill="#4b5563" fontSize={11}>
+                                                                                {`${(percent * 100).toFixed(1)}%`}
+                                                                            </text>
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {datosAgrupados.map((_, i) => (
+                                                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                                                    ))}
+                                                                </Pie>
+                                                                <Tooltip 
+                                                                    formatter={(val) => [
+                                                                        `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
+                                                                        'Valor Estimado'
+                                                                    ]} 
+                                                                />
+                                                                <Legend 
+                                                                    verticalAlign="bottom" 
+                                                                    align="center"
+                                                                    content={({ payload }) => (
+                                                                        <div className="w-full flex flex-wrap justify-center gap-x-3 gap-y-1 pt-3 px-2">
+                                                                            {payload?.map((entry, index) => (
+                                                                                <span
+                                                                                    key={`legend-item-${index}`}
+                                                                                    className="whitespace-nowrap"
+                                                                                    style={{ color: "#374151", fontSize: 11 }}
+                                                                                >
+                                                                                    <span style={{ color: entry.color, fontSize: 18 }}>●</span> {entry.value}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                />
+                                                            </PieChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+
+                                    </div>
+                                )}
+
+                                {/* TABLA DE PRODUCTOS FILTRADOS */}
+                                <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
+                                    <table className="w-full text-left text-xs text-gray-700">
+                                        <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
+                                            <tr>
+                                                <th className="p-3">Almacén</th>
+                                                <th className="p-3">Producto</th>
+                                                <th className="p-3 text-center">Stock Disponible</th>
+                                                <th className="p-3 text-right">Precio Venta</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 text-gray-600">
+                                            {productosFiltradosAlmacen.length > 0 ? (
+                                                productosFiltradosAlmacen.map((item, index) => (
+                                                    <tr key={index} className="hover:bg-gray-50 font-mono">
+                                                        <td className="p-3 font-sans text-indigo-600 font-bold">{item.almacen}</td>
+                                                        <td className="p-3 font-sans text-gray-900 font-semibold">{item.Nombre}</td>
+                                                        <td className="p-3 text-center text-gray-900 font-semibold">{item.stock} u.</td>
+                                                        <td className="p-3 text-right font-bold text-gray-900">
+                                                            ${Number(item.Precio_venta || 0).toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={4} className="p-6 text-center text-gray-400 font-sans">
+                                                        No se encontraron productos para los filtros seleccionados.
                                                     </td>
                                                 </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={4} className="p-6 text-center text-gray-400 font-sans">
-                                                    No se encontraron productos para los filtros seleccionados.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* BOTÓN EXPORTAR */}
-                        <div className="pt-4 flex justify-end border-t border-gray-200">
-                            <button 
-                                onClick={generatePDF} 
-                                disabled={generandoPDF}
-                                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95"
-                            >
-                                <Download size={14} /> 
-                                {generandoPDF ? "Procesando páginas y gráficos..." : "Exportar Reporte Analítico a PDF"}
-                            </button>
-                        </div>
+                            {/* BOTÓN EXPORTAR */}
+                            <div className="pt-4 flex justify-end border-t border-gray-200">
+                                <button 
+                                    onClick={generatePDF} 
+                                    disabled={generandoPDF}
+                                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-sm transition-all active:scale-95"
+                                >
+                                    <Download size={14} /> 
+                                    {generandoPDF ? "Procesando páginas y gráficos..." : "Exportar Reporte Analítico a PDF"}
+                                </button>
+                            </div>
 
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
+
             </main>
         </div>
     );
