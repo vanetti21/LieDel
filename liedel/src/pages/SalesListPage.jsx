@@ -23,31 +23,33 @@ const SalesListPage = () => {
   }, []);
 
   // Buscador por Cliente o Empleado
-  const ventasFiltradas = ventas.filter((v) =>
-    (v.cliente && v.cliente.toLowerCase().includes(busqueda.toLowerCase())) ||
-    (v.empleado && v.empleado.toLowerCase().includes(busqueda.toLowerCase()))
+  const ventasFiltradas = ventas.filter(
+    (v) =>
+      (v.cliente && v.cliente.toLowerCase().includes(busqueda.toLowerCase())) ||
+      (v.empleado && v.empleado.toLowerCase().includes(busqueda.toLowerCase())),
   );
 
   return (
     <div className="flex-1 overflow-auto relative z-10 py-8 px-4 lg:px-8 max-w-7xl mx-auto">
-      
-      
-
       <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 p-6">
-        
         {/* Encabezado y Buscador */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <ShoppingBag className="text-indigo-600" /> Registro General de Ventas Realizadas
+              <ShoppingBag className="text-indigo-600" /> Registro General de
+              Ventas Realizadas
             </h2>
             <p className="text-xs text-gray-500 font-medium mt-0.5">
-              Haz doble clic en cualquier fila para ver el detalle completo de la venta
+              Haz doble clic en cualquier fila para ver el detalle completo de
+              la venta
             </p>
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            <Search
+              className="absolute left-3 top-2.5 text-gray-400"
+              size={18}
+            />
             <input
               type="text"
               placeholder="Buscar por Cliente o Empleado..."
@@ -87,19 +89,24 @@ const SalesListPage = () => {
                         {v.Fecha_venta}
                       </td>
                       <td className="py-3 px-4 font-semibold text-gray-900 flex items-center gap-2">
-                        <User size={14} className="text-indigo-500" /> {v.cliente}
+                        <User size={14} className="text-indigo-500" />{" "}
+                        {v.cliente}
                       </td>
-                      <td className="py-3 px-4 text-gray-700">
-                        {v.empleado}
-                      </td>
+                      <td className="py-3 px-4 text-gray-700">{v.empleado}</td>
                       <td className="py-3 px-4 text-right font-bold text-emerald-600">
-                        ${v.Total.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+                        $
+                        {v.Total.toLocaleString("es-DO", {
+                          minimumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center py-6 text-gray-500 font-medium">
+                    <td
+                      colSpan="4"
+                      className="text-center py-6 text-gray-500 font-medium"
+                    >
                       No se encontraron resultados para la búsqueda.
                     </td>
                   </tr>
@@ -108,7 +115,6 @@ const SalesListPage = () => {
             </table>
           </div>
         )}
-
       </div>
     </div>
   );

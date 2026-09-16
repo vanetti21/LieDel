@@ -35,7 +35,7 @@ const EmployeesTable = () => {
     const filtered = employees.filter(
       (employee) =>
         employee.name.toLowerCase().includes(term) ||
-        employee.email.toLowerCase().includes(term)
+        employee.email.toLowerCase().includes(term),
     );
     setFilteredEmployees(filtered);
   };
@@ -49,7 +49,6 @@ const EmployeesTable = () => {
       transition={{ delay: 0.2 }}
     >
       <div className="flex justify-between items-center mb-5">
-        
         {/* Título dentro de un formulario */}
         <motion.h2
           className="text-xl p-1 font-semibold text-black-100"
@@ -61,7 +60,6 @@ const EmployeesTable = () => {
         </motion.h2>
 
         <div className="relative">
-
           <input
             type="text"
             placeholder="Search employees..."
@@ -75,7 +73,7 @@ const EmployeesTable = () => {
 
       <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-700">
-          <thead className='sticky top-0 bg-gray-100 z-10'>
+          <thead className="sticky top-0 bg-gray-100 z-10">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-black-500 uppercase tracking-wider">
                 Name
@@ -130,7 +128,8 @@ const EmployeesTable = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(employee.hireDate)} {/* Formatear la fecha aquí */}
+                  {formatDate(employee.hireDate)}{" "}
+                  {/* Formatear la fecha aquí */}
                 </td>
               </motion.tr>
             ))}

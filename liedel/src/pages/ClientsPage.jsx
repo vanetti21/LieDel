@@ -362,7 +362,10 @@ const ClientsPage = () => {
                   Comportamiento financiero temporal según el ciclo de ventas.
                 </p>
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={data.evolucion_clientes} margin={{ top: 5, right: 19, left: -1, bottom: 0 }}>
+                  <LineChart
+                    data={data.evolucion_clientes}
+                    margin={{ top: 5, right: 19, left: -1, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis dataKey="periodo" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} />

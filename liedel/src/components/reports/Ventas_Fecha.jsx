@@ -2,10 +2,24 @@ import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { motion, AnimatePresence } from "framer-motion";
-import { DollarSign, Download, CheckCircle, Sheet, FileText } from "lucide-react";
 import {
-  BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  DollarSign,
+  Download,
+  CheckCircle,
+  Sheet,
+  FileText,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { hasPermission } from "../../components/common/hasPermission"; // Importamos tu validador
 
@@ -31,7 +45,7 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
       setSuccess(false);
       try {
         const response = await fetch(
-          `http://localhost:5000/api/reporte-fechas?inicio=${startDate}&fin=${endDate}`
+          `http://localhost:5000/api/reporte-fechas?inicio=${startDate}&fin=${endDate}`,
         );
         const result = await response.json();
         setData(result);
@@ -58,10 +72,10 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
   const handleExcelDate = (field, value) => {
     const newStart = field === "start" ? value : startDate;
     const newEnd = field === "end" ? value : endDate;
-    
+
     if (field === "start") setStartDate(value);
     if (field === "end") setEndDate(value);
-    
+
     if (onExcelDates) onExcelDates(newStart, newEnd);
   };
 
@@ -72,7 +86,7 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
     try {
       let url = "http://localhost:5000/api/exportar-excel";
       if (startDate && endDate) url += `?inicio=${startDate}&fin=${endDate}`;
-      
+
       const res = await fetch(url);
       const blob = await res.blob();
       const link = document.createElement("a");
@@ -80,7 +94,7 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
       link.download = "ventas.xlsx";
       link.click();
       URL.revokeObjectURL(link.href);
-      
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -105,17 +119,17 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 0;
-      
+
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
-      
+
       while (heightLeft > 0) {
         position -= pdfHeight;
         pdf.addPage();
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
-      
+
       pdf.save("reporte_ventas.pdf");
       setLoadingPDF(false);
       setSuccess(true);
@@ -125,10 +139,8 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
 
   return (
     <div className="p-5 text-white">
-      
       {/* ── Botones Excel / PDF ── */}
       <div className="flex gap-4 mb-6">
-        
         {/* Renderizado condicional del botón de Excel */}
         {puedeVerExcel && (
           <motion.button
@@ -265,7 +277,9 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
                 </div>
 
                 <div>
-                  <h3 className="py-3 text-xl font-semibold mb-2 text-black">Categorías más vendidas</h3>
+                  <h3 className="py-3 text-xl font-semibold mb-2 text-black">
+                    Categorías más vendidas
+                  </h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={data.categorias}>
                       <XAxis dataKey="nombre" />
@@ -278,20 +292,30 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-2 text-black">Productos más vendidos</h3>
+                  <h3 className="text-xl font-semibold mb-2 text-black">
+                    Productos más vendidos
+                  </h3>
                   <div className="overflow-x-auto border-gray-200 rounded-xl p-4">
                     <table className="min-w-full">
                       <thead>
                         <tr>
-                          <th className="px-4 py-2 text-left text-black">Producto</th>
-                          <th className="px-4 py-2 text-left text-black">Cantidad</th>
+                          <th className="px-4 py-2 text-left text-black">
+                            Producto
+                          </th>
+                          <th className="px-4 py-2 text-left text-black">
+                            Cantidad
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.productos.map((producto, index) => (
                           <tr key={index} className="border-t border-gray-600">
-                            <td className="px-4 py-2 text-black">{producto.nombre}</td>
-                            <td className="px-4 py-2 text-black">{producto.cant}</td>
+                            <td className="px-4 py-2 text-black">
+                              {producto.nombre}
+                            </td>
+                            <td className="px-4 py-2 text-black">
+                              {producto.cant}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -300,7 +324,9 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
                 </div>
 
                 <div>
-                  <h3 className="py-2 text-xl font-semibold mb-2 text-black">Empleados con más ventas</h3>
+                  <h3 className="py-2 text-xl font-semibold mb-2 text-black">
+                    Empleados con más ventas
+                  </h3>
                   {data.empleados && data.empleados.length > 0 ? (
                     <ResponsiveContainer width="100%" height={550}>
                       <PieChart>
@@ -314,17 +340,24 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
                           cx="50%"
                           cy="45%"
                           outerRadius={180}
-                          label={({ name, total }) => `${name} - $${total.toFixed(2)}`}
+                          label={({ name, total }) =>
+                            `${name} - $${total.toFixed(2)}`
+                          }
                         >
                           {data.empleados.map((_, index) => (
-                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                            <Cell
+                              key={index}
+                              fill={COLORS[index % COLORS.length]}
+                            />
                           ))}
                         </Pie>
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-black">No hay ventas de empleados en este rango.</p>
+                    <p className="text-black">
+                      No hay ventas de empleados en este rango.
+                    </p>
                   )}
                 </div>
 
@@ -334,16 +367,27 @@ const Ventas_Fecha = ({ formato, setFormato, onExcelDates }) => {
                   className="mt-4 bg-green-700 hover:bg-green-600 disabled:bg-gray-500 text-white py-2 px-6 rounded-lg flex items-center gap-2 transition-colors"
                 >
                   {loadingPDF ? (
-                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Exportando...</>
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Exportando...
+                    </>
                   ) : success ? (
-                    <><CheckCircle className="w-4 h-4" />¡Descargado!</>
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      ¡Descargado!
+                    </>
                   ) : (
-                    <><Download className="w-4 h-4" />Descargar PDF</>
+                    <>
+                      <Download className="w-4 h-4" />
+                      Descargar PDF
+                    </>
                   )}
                 </button>
               </div>
             ) : (
-              <p className="text-gray-900">Selecciona un rango de fechas para ver el reporte.</p>
+              <p className="text-gray-900">
+                Selecciona un rango de fechas para ver el reporte.
+              </p>
             )}
           </motion.div>
         )}

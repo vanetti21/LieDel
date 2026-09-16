@@ -2,9 +2,17 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Header from "../components/common/Header";
-import { 
-  Crown, ArrowLeft, Phone, Mail, ShoppingBag, 
-  DollarSign, TrendingUp, Calendar, Star, RefreshCw 
+import {
+  Crown,
+  ArrowLeft,
+  Phone,
+  Mail,
+  ShoppingBag,
+  DollarSign,
+  TrendingUp,
+  Calendar,
+  Star,
+  RefreshCw,
 } from "lucide-react";
 
 const VipClientsPage = () => {
@@ -13,7 +21,7 @@ const VipClientsPage = () => {
   const [data, setData] = useState({
     ticket_promedio_general: 0,
     total_vip: 0,
-    clientes: []
+    clientes: [],
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,83 +45,87 @@ const VipClientsPage = () => {
   }, []);
 
   // Filtro de búsqueda por nombre, email o teléfono
-  const filteredClients = data.clientes.filter((c) =>
-    c.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.Contacto_email && c.Contacto_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (c.Contacto_telefono && c.Contacto_telefono.includes(searchTerm))
+  const filteredClients = data.clientes.filter(
+    (c) =>
+      c.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.Contacto_email &&
+        c.Contacto_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (c.Contacto_telefono && c.Contacto_telefono.includes(searchTerm)),
   );
 
   return (
-    
     <div className="flex-1 overflow-auto relative z-10 font-sans">
       <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8 space-y-6">
+        {/* 2. TARJETAS INFORMATIVAS (DISEÑO LIMPIO Y UNIFORME) */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-5"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {/* TOTAL CLIENTES VIP */}
+          <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+            <div className="p-3.5 bg-amber-500/10 text-amber-500 rounded-2xl flex-shrink-0">
+              <Crown size={26} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold block">
+                Total Clientes VIP
+              </span>
+              <span className="text-2xl font-black text-gray-900 font-mono tracking-tight">
+                {data.total_vip}{" "}
+                <span className="text-sm font-sans font-bold text-gray-500">
+                  Compradores
+                </span>
+              </span>
+              <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
+                Cartera de alto valor comercial
+              </p>
+            </div>
+          </div>
 
-        
+          {/* TICKET PROMEDIO GENERAL */}
+          <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+            <div className="p-3.5 bg-indigo-500/10 text-indigo-600 rounded-2xl flex-shrink-0">
+              <TrendingUp size={26} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold block">
+                Ticket Promedio General
+              </span>
+              <span className="text-2xl font-black text-indigo-600 font-mono tracking-tight">
+                $
+                {data.ticket_promedio_general.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
+                Umbral mínimo para calificar VIP
+              </p>
+            </div>
+          </div>
 
-            {/* 2. TARJETAS INFORMATIVAS (DISEÑO LIMPIO Y UNIFORME) */}
-    <motion.div 
-    className="grid grid-cols-1 md:grid-cols-3 gap-5"
-    initial={{ opacity: 0, y: 15 }}
-    animate={{ opacity: 1, y: 0 }}
-    >
-    {/* TOTAL CLIENTES VIP */}
-    <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-        <div className="p-3.5 bg-amber-500/10 text-amber-500 rounded-2xl flex-shrink-0">
-        <Crown size={26} />
-        </div>
-        <div className="min-w-0">
-        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold block">
-            Total Clientes VIP
-        </span>
-        <span className="text-2xl font-black text-gray-900 font-mono tracking-tight">
-            {data.total_vip} <span className="text-sm font-sans font-bold text-gray-500">Compradores</span>
-        </span>
-        <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
-            Cartera de alto valor comercial
-        </p>
-        </div>
-    </div>
-
-    {/* TICKET PROMEDIO GENERAL */}
-    <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-        <div className="p-3.5 bg-indigo-500/10 text-indigo-600 rounded-2xl flex-shrink-0">
-        <TrendingUp size={26} />
-        </div>
-        <div className="min-w-0">
-        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold block">
-            Ticket Promedio General
-        </span>
-        <span className="text-2xl font-black text-indigo-600 font-mono tracking-tight">
-            ${data.ticket_promedio_general.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-        <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
-            Umbral mínimo para calificar VIP
-        </p>
-        </div>
-    </div>
-
-    {/* CRITERIO DINÁMICO */}
-    <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-        <div className="p-3.5 bg-slate-100 text-slate-700 rounded-2xl flex-shrink-0">
-        <Star size={26} />
-        </div>
-        <div className="min-w-0">
-        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold block">
-            Criterio Dinámico
-        </span>
-        <span className="text-sm font-bold text-gray-800 block leading-snug mt-0.5">
-            Calculado en tiempo real
-        </span>
-        <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
-            Basado en transacciones efectivas
-        </p>
-        </div>
-    </div>
-    </motion.div>
+          {/* CRITERIO DINÁMICO */}
+          <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+            <div className="p-3.5 bg-slate-100 text-slate-700 rounded-2xl flex-shrink-0">
+              <Star size={26} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold block">
+                Criterio Dinámico
+              </span>
+              <span className="text-sm font-bold text-gray-800 block leading-snug mt-0.5">
+                Calculado en tiempo real
+              </span>
+              <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">
+                Basado en transacciones efectivas
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         {/* 3. BUSCADOR Y TABLA VIP */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-          
           {/* BARRA DE BÚSQUEDA */}
           <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
             <input
@@ -132,7 +144,9 @@ const VipClientsPage = () => {
           {loading ? (
             <div className="text-center py-20">
               <div className="w-9 h-9 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs font-semibold text-gray-500">Evaluando historial de compras...</p>
+              <p className="text-xs font-semibold text-gray-500">
+                Evaluando historial de compras...
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -150,26 +164,42 @@ const VipClientsPage = () => {
                 <tbody className="divide-y divide-gray-100 font-mono">
                   {filteredClients.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="p-10 text-center text-gray-400 font-sans">
-                        👑 No se encontraron clientes VIP que coincidan con la búsqueda.
+                      <td
+                        colSpan="6"
+                        className="p-10 text-center text-gray-400 font-sans"
+                      >
+                        👑 No se encontraron clientes VIP que coincidan con la
+                        búsqueda.
                       </td>
                     </tr>
                   ) : (
                     filteredClients.map((cl) => (
-                      <tr 
-                        key={cl.Id_cliente} 
-                        onClick={() => navigate(`/clients/detail/${cl.Id_cliente}`)}
+                      <tr
+                        key={cl.Id_cliente}
+                        onClick={() =>
+                          navigate(`/clients/detail/${cl.Id_cliente}`)
+                        }
                         className="hover:bg-amber-50/40 transition-colors cursor-pointer group"
                       >
                         {/* DATOS CLIENTE */}
                         <td className="p-3.5 pl-6 font-sans">
                           <div className="font-bold text-gray-900 group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
                             {cl.cliente}
-                            <Crown size={12} className="text-amber-500 inline-block" />
+                            <Crown
+                              size={12}
+                              className="text-amber-500 inline-block"
+                            />
                           </div>
                           <div className="text-[10px] text-gray-400 font-mono flex items-center gap-3 mt-0.5">
-                            <span className="flex items-center gap-1"><Phone size={10} /> {cl.Contacto_telefono || "S/N"}</span>
-                            {cl.Contacto_email && <span className="flex items-center gap-1"><Mail size={10} /> {cl.Contacto_email}</span>}
+                            <span className="flex items-center gap-1">
+                              <Phone size={10} />{" "}
+                              {cl.Contacto_telefono || "S/N"}
+                            </span>
+                            {cl.Contacto_email && (
+                              <span className="flex items-center gap-1">
+                                <Mail size={10} /> {cl.Contacto_email}
+                              </span>
+                            )}
                           </div>
                         </td>
 
@@ -182,12 +212,18 @@ const VipClientsPage = () => {
 
                         {/* TICKET PROMEDIO INDIVIDUAL */}
                         <td className="p-3.5 text-right font-bold text-indigo-600">
-                          ${cl.ticket_promedio_cliente.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          $
+                          {cl.ticket_promedio_cliente.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                          })}
                         </td>
 
                         {/* TOTAL GASTADO */}
                         <td className="p-3.5 text-right font-black text-emerald-600">
-                          ${cl.total_gastado.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          $
+                          {cl.total_gastado.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                          })}
                         </td>
 
                         {/* PRODUCTO FAVORITO */}
@@ -209,7 +245,6 @@ const VipClientsPage = () => {
             </div>
           )}
         </div>
-
       </main>
     </div>
   );

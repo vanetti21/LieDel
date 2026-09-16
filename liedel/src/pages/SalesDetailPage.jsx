@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShoppingBag, User, Calendar, Store, DollarSign, Package } from "lucide-react";
+import {
+  ArrowLeft,
+  ShoppingBag,
+  User,
+  Calendar,
+  Store,
+  DollarSign,
+  Package,
+} from "lucide-react";
 
 const SalesDetailPage = () => {
   const { id } = useParams();
@@ -25,13 +33,19 @@ const SalesDetailPage = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="text-center py-20 font-bold text-gray-700">Cargando detalles de la venta...</div>;
+    return (
+      <div className="text-center py-20 font-bold text-gray-700">
+        Cargando detalles de la venta...
+      </div>
+    );
   }
 
   if (!detalle) {
     return (
       <div className="text-center py-20">
-        <p className="text-red-500 font-bold mb-4">No se encontró la venta solicitada.</p>
+        <p className="text-red-500 font-bold mb-4">
+          No se encontró la venta solicitada.
+        </p>
         <button
           onClick={() => navigate("/sales/list")}
           className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold"
@@ -46,9 +60,7 @@ const SalesDetailPage = () => {
 
   return (
     <div className="flex-1 overflow-auto relative z-10 py-8 px-4 lg:px-8 max-w-7xl mx-auto">
-      
       {/* Botón para regresar */}
-      
 
       {/* Encabezado Principal */}
       <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
@@ -62,13 +74,13 @@ const SalesDetailPage = () => {
             </p>
           </div>
           <div className="bg-emerald-100 text-emerald-800 px-4 py-2 rounded-xl font-extrabold text-lg">
-            Total: ${venta.Total.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+            Total: $
+            {venta.Total.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
           </div>
         </div>
 
         {/* Tarjetas de Información General */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          
           <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-100">
             <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs mb-1">
               <User size={16} /> Cliente
@@ -89,7 +101,9 @@ const SalesDetailPage = () => {
             <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs mb-1">
               <Calendar size={16} /> Fecha & Hora
             </div>
-            <p className="text-sm font-bold text-gray-800">{venta.Fecha_venta}</p>
+            <p className="text-sm font-bold text-gray-800">
+              {venta.Fecha_venta}
+            </p>
           </div>
 
           <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-100">
@@ -98,14 +112,14 @@ const SalesDetailPage = () => {
             </div>
             <p className="text-sm font-bold text-gray-800">{venta.sucursal}</p>
           </div>
-
         </div>
       </div>
 
       {/* Tabla de Artículos Comprados */}
       <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200 p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Package className="text-indigo-600" /> Artículos Facturados ({items.length})
+          <Package className="text-indigo-600" /> Artículos Facturados (
+          {items.length})
         </h2>
 
         <div className="overflow-x-auto">
@@ -121,15 +135,30 @@ const SalesDetailPage = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item, idx) => (
-                <tr key={idx} className="hover:bg-indigo-50/30 transition-colors">
-                  <td className="py-3 px-4 font-bold text-gray-800">{item.producto}</td>
-                  <td className="py-3 px-4 text-xs font-semibold text-gray-500">{item.categoria || 'N/A'}</td>
-                  <td className="py-3 px-4 text-center font-extrabold text-indigo-600">{item.Cantidad}</td>
+                <tr
+                  key={idx}
+                  className="hover:bg-indigo-50/30 transition-colors"
+                >
+                  <td className="py-3 px-4 font-bold text-gray-800">
+                    {item.producto}
+                  </td>
+                  <td className="py-3 px-4 text-xs font-semibold text-gray-500">
+                    {item.categoria || "N/A"}
+                  </td>
+                  <td className="py-3 px-4 text-center font-extrabold text-indigo-600">
+                    {item.Cantidad}
+                  </td>
                   <td className="py-3 px-4 text-right font-medium">
-                    ${item.Precio_unitario.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+                    $
+                    {item.Precio_unitario.toLocaleString("es-DO", {
+                      minimumFractionDigits: 2,
+                    })}
                   </td>
                   <td className="py-3 px-4 text-right font-bold text-emerald-600">
-                    ${item.subtotal.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+                    $
+                    {item.subtotal.toLocaleString("es-DO", {
+                      minimumFractionDigits: 2,
+                    })}
                   </td>
                 </tr>
               ))}
@@ -137,7 +166,6 @@ const SalesDetailPage = () => {
           </table>
         </div>
       </div>
-
     </div>
   );
 };

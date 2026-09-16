@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Search } from "lucide-react";
 
 export default function EmployeesListPage() {
   const [empleados, setEmpleados] = useState([]);
   const [filteredEmpleados, setFilteredEmpleados] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [cargando, setCargando] = useState(true);
 
   // Formatear la fecha
   const formatDate = (dateString) => {
-    if (!dateString) return '—';
+    if (!dateString) return "—";
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? dateString : date.toLocaleDateString();
   };
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/empleados/lista')
+    fetch("http://127.0.0.1:5000/api/empleados/lista")
       .then((res) => res.json())
       .then((data) => {
         setEmpleados(data);
@@ -24,7 +24,7 @@ export default function EmployeesListPage() {
         setCargando(false);
       })
       .catch((err) => {
-        console.error('Error al cargar la lista de empleados:', err);
+        console.error("Error al cargar la lista de empleados:", err);
         setCargando(false);
       });
   }, []);
@@ -36,7 +36,7 @@ export default function EmployeesListPage() {
       (emp) =>
         emp.Nombre?.toLowerCase().includes(term) ||
         emp.Cargo?.toLowerCase().includes(term) ||
-        emp.Contacto_email?.toLowerCase().includes(term)
+        emp.Contacto_email?.toLowerCase().includes(term),
     );
     setFilteredEmpleados(filtered);
   };
@@ -67,7 +67,10 @@ export default function EmployeesListPage() {
               value={searchTerm}
               onChange={handleSearch}
             />
-            <Search className="absolute left-3.5 top-2.5 text-gray-500" size={16} />
+            <Search
+              className="absolute left-3.5 top-2.5 text-gray-500"
+              size={16}
+            />
           </div>
         </div>
 
@@ -104,20 +107,20 @@ export default function EmployeesListPage() {
                         {emp.Nombre}
                       </td>
                       <td className="py-4 px-4 text-gray-700">
-                        {emp.Cargo || 'Sin cargo'}
+                        {emp.Cargo || "Sin cargo"}
                       </td>
                       <td className="py-4 px-4 text-gray-700">
-                        {emp.Contacto_email || '—'}
+                        {emp.Contacto_email || "—"}
                       </td>
                       <td className="py-4 px-4 text-gray-700">
-                        {emp.Contacto_telefono || '—'}
+                        {emp.Contacto_telefono || "—"}
                       </td>
                       <td className="py-4 px-4 font-bold">
                         <span
                           className={
-                            emp.Estado?.toLowerCase() === 'activo'
-                              ? 'text-emerald-600'
-                              : 'text-red-500'
+                            emp.Estado?.toLowerCase() === "activo"
+                              ? "text-emerald-600"
+                              : "text-red-500"
                           }
                         >
                           {emp.Estado}

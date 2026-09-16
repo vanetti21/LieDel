@@ -192,7 +192,9 @@ const ReporteClientesPDF = ({ data, fechaInicio, fechaFin, chartImages }) => {
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
           {/* CARTERA POR SEGMENTO */}
           <View style={{ width: "35%" }}>
-            <Text style={[styles.sectionTitle, { textAlign: 'center' }]}>Cartera por Segmento</Text>
+            <Text style={[styles.sectionTitle, { textAlign: "center" }]}>
+              Cartera por Segmento
+            </Text>
             {chartImages?.segmentacion && (
               <View
                 style={{

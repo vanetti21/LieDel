@@ -482,7 +482,7 @@ def productos_reporte():
         conn = conectar_bd()
         cursor = conn.cursor(dictionary=True)
         query = """
-               SELECT 
+               SELECT
                     p.Id_producto,
                     p.Nombre AS product,
                     c.Nombre AS category,

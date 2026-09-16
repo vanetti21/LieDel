@@ -11,7 +11,7 @@ const CreateUserPage = () => {
     id_empleado: "",
     usuario: "",
     password: "",
-    role: "cajero" // Rol por defecto
+    role: "cajero", // Rol por defecto
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,7 +42,7 @@ const CreateUserPage = () => {
       const response = await fetch("http://localhost:5000/api/users/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -60,12 +60,10 @@ const CreateUserPage = () => {
 
   return (
     <div className="flex-1 overflow-auto relative z-10">
-      
-      
       <main className="max-w-xl mx-auto py-10 px-4">
         {/* Botón Volver */}
-        <button 
-          onClick={() => navigate("/users-management")} 
+        <button
+          onClick={() => navigate("/users-management")}
           className="flex items-center gap-2 text-gray-600 hover:text-black mb-6 text-sm font-semibold transition"
         >
           <ArrowLeft size={16} /> Back to Users
@@ -79,16 +77,28 @@ const CreateUserPage = () => {
         >
           <div className="flex items-center gap-3 mb-6">
             <UserPlus className="text-blue-600" size={24} />
-            <h2 className="text-xl font-bold text-gray-800">User Credentials</h2>
+            <h2 className="text-xl font-bold text-gray-800">
+              User Credentials
+            </h2>
           </div>
 
-          {error && <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm mb-4 font-semibold">{error}</div>}
-          {success && <div className="bg-green-100 text-green-700 p-3 rounded-lg text-sm mb-4 font-semibold">{success}</div>}
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm mb-4 font-semibold">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-100 text-green-700 p-3 rounded-lg text-sm mb-4 font-semibold">
+              {success}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* SELECT DE EMPLEADOS */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Select Employee</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Select Employee
+              </label>
               <select
                 name="id_empleado"
                 value={formData.id_empleado}
@@ -98,7 +108,7 @@ const CreateUserPage = () => {
                 <option value="">-- Choose an Employee --</option>
                 {empleados.map((emp) => (
                   <option key={emp.id_empleado} value={emp.id_empleado}>
-                    {emp.nombre} 
+                    {emp.nombre}
                   </option>
                 ))}
               </select>
@@ -106,7 +116,9 @@ const CreateUserPage = () => {
 
             {/* USERNAME */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Username
+              </label>
               <input
                 type="text"
                 name="usuario"
@@ -119,7 +131,9 @@ const CreateUserPage = () => {
 
             {/* PASSWORD */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
               <input
                 type="password"
                 name="password"
@@ -129,8 +143,6 @@ const CreateUserPage = () => {
                 className="w-full bg-white text-black rounded-lg p-2.5 border border-gray-300 outline-none text-sm"
               />
             </div>
-
-            
 
             <button
               type="submit"

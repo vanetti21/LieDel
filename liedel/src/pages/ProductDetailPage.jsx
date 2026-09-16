@@ -38,7 +38,7 @@ const ProductDetailPage = () => {
 
   const hoy = new Date().toISOString().split("T")[0];
   const haceUnAno = new Date(
-    new Date().setFullYear(new Date().getFullYear() - 1)
+    new Date().setFullYear(new Date().getFullYear() - 1),
   )
     .toISOString()
     .split("T")[0];
@@ -109,7 +109,8 @@ const ProductDetailPage = () => {
             Trazabilidad y Auditoría de Producto Único
           </h2>
           <p className="text-xs text-gray-500">
-            Ficha global estática e historial dinámico indexado por rango de fecha.
+            Ficha global estática e historial dinámico indexado por rango de
+            fecha.
           </p>
         </div>
 
@@ -166,12 +167,11 @@ const ProductDetailPage = () => {
           className="space-y-8 bg-white p-6 rounded-2xl border border-gray-200"
         >
           {/* ENCABEZADO DEL PRODUCTO */}
-          <div 
+          <div
             className="border border-gray-200 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
             style={{ backgroundColor: MORADO_FONDO }}
           >
-            <div 
-			style={{ backgroundColor: MORADO_FONDO }}>
+            <div style={{ backgroundColor: MORADO_FONDO }}>
               <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-white border border-indigo-200 px-2 py-0.5 rounded-md">
                 {data.categoria}
               </span>
@@ -193,7 +193,7 @@ const ProductDetailPage = () => {
           </div>
 
           {/* 📌 SECCIÓN 1: STATS GLOBALES DEL PRODUCTO (NO CAMBIAN CON LA FECHA) */}
-          <div 
+          <div
             className="p-5 rounded-xl border border-gray-200"
             style={{ backgroundColor: MORADO_FONDO }}
           >
@@ -210,9 +210,12 @@ const ProductDetailPage = () => {
                   Precio de Venta
                 </span>
                 <span className="text-sm font-black text-gray-800 font-mono">
-                  ${Number(data.Precio_venta || data.stats_globales?.precio_venta || 0).toLocaleString(undefined, {
+                  $
+                  {Number(
+                    data.Precio_venta || data.stats_globales?.precio_venta || 0,
+                  ).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                    maximumFractionDigits: 2,
                   })}
                 </span>
               </div>
@@ -223,7 +226,11 @@ const ProductDetailPage = () => {
                   Costo Unitario
                 </span>
                 <span className="text-sm font-black text-gray-800 font-mono">
-                  ${(data.stats_globales?.costo_unitario || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  $
+                  {(data.stats_globales?.costo_unitario || 0).toLocaleString(
+                    undefined,
+                    { minimumFractionDigits: 2 },
+                  )}
                 </span>
               </div>
 
@@ -233,7 +240,11 @@ const ProductDetailPage = () => {
                   Valor Inmovilizado
                 </span>
                 <span className="text-sm font-black text-indigo-600 font-mono">
-                  ${((data.stock_actual || 0) * (data.stats_globales?.costo_unitario || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  $
+                  {(
+                    (data.stock_actual || 0) *
+                    (data.stats_globales?.costo_unitario || 0)
+                  ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
@@ -243,7 +254,11 @@ const ProductDetailPage = () => {
                   Minimo de Stock
                 </span>
                 <span className="text-sm font-black text-amber-600 font-mono">
-                  {data.stock_minimo ?? data.punto_reorden ?? data.stats_globales?.stock_minimo ?? 0} u.
+                  {data.stock_minimo ??
+                    data.punto_reorden ??
+                    data.stats_globales?.stock_minimo ??
+                    0}{" "}
+                  u.
                 </span>
               </div>
 
@@ -282,14 +297,18 @@ const ProductDetailPage = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-3 bg-white border border-gray-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                <AlertCircle
+                  className="text-amber-500 shrink-0 mt-0.5"
+                  size={18}
+                />
                 <div>
                   <h4 className="text-xs font-bold text-gray-800">
                     Nivel de Inventario
                   </h4>
                   <p className="text-[11px] text-gray-600 mt-0.5">
                     {data.insights?.estado_stock ||
-                      (data.stock_actual <= (data.stats_globales?.punto_reorden || 10)
+                      (data.stock_actual <=
+                      (data.stats_globales?.punto_reorden || 10)
                         ? "⚠️ Stock cerca del mínimo recomendado. Se sugiere generar una orden de compra."
                         : "✅ El nivel de inventario se mantiene dentro de parámetros óptimos.")}
                   </p>
@@ -297,7 +316,10 @@ const ProductDetailPage = () => {
               </div>
 
               <div className="p-3 bg-white border border-gray-200 rounded-lg flex items-start gap-3">
-                <TrendingUp className="text-green-500 shrink-0 mt-0.5" size={18} />
+                <TrendingUp
+                  className="text-green-500 shrink-0 mt-0.5"
+                  size={18}
+                />
                 <div>
                   <h4 className="text-xs font-bold text-gray-800">
                     Rentabilidad & Márgenes
@@ -410,10 +432,7 @@ const ProductDetailPage = () => {
                 <XAxis dataKey="periodo" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip
-                  formatter={(value) => [
-                    `${value} unidades`,
-                    "Rotación Real",
-                  ]}
+                  formatter={(value) => [`${value} unidades`, "Rotación Real"]}
                 />
                 <Line
                   type="monotone"
@@ -471,7 +490,9 @@ const ProductDetailPage = () => {
                           ${prov.costo_pactado?.toFixed(2) || "0.00"}
                         </td>
                         <td className="p-2.5 text-center font-mono">
-                          {prov.lead_time_dias ? `${prov.lead_time_dias} días` : "3-5 días"}
+                          {prov.lead_time_dias
+                            ? `${prov.lead_time_dias} días`
+                            : "3-5 días"}
                         </td>
                         <td className="p-2.5 text-center pr-4 font-sans">
                           <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-green-50 text-green-600 border border-green-200">
@@ -703,13 +724,9 @@ const ProductDetailPage = () => {
                       </tr>
                     ) : (
                       data.historial_precios.map((hp) => {
-                        const diferencia =
-                          hp.precio_nuevo - hp.precio_anterior;
+                        const diferencia = hp.precio_nuevo - hp.precio_anterior;
                         return (
-                          <tr
-                            key={hp.Id_precio}
-                            className="hover:bg-gray-50"
-                          >
+                          <tr key={hp.Id_precio} className="hover:bg-gray-50">
                             <td className="p-2 pl-4 text-gray-400 font-sans">
                               {formatDate(hp.fecha)}
                             </td>
@@ -724,15 +741,15 @@ const ProductDetailPage = () => {
                                 diferencia > 0
                                   ? "text-green-600"
                                   : diferencia < 0
-                                  ? "text-red-600"
-                                  : "text-gray-400"
+                                    ? "text-red-600"
+                                    : "text-gray-400"
                               }`}
                             >
                               {diferencia > 0
                                 ? `+$${diferencia.toFixed(2)}`
                                 : diferencia < 0
-                                ? `-$${Math.abs(diferencia).toFixed(2)}`
-                                : "Sin cambio"}
+                                  ? `-$${Math.abs(diferencia).toFixed(2)}`
+                                  : "Sin cambio"}
                             </td>
                             <td
                               className="p-2 pl-4 pr-4 font-sans text-gray-500 text-left truncate max-w-xs"
