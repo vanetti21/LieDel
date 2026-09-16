@@ -111,11 +111,11 @@ const SuppliersPage = () => {
 
   return (
     <div className='flex-1 overflow-auto relative z-10 font-sans'>
-      <main className='max-w-7xl mx-auto py-8 px-4 lg:px-8 space-y-8'>
+      <main className='max-w-7xl mx-auto py-8 px-4 lg:px-8'>
 
         {/* --- 1. TARJETAS DE ESTADÍSTICAS GENERALES --- */}
         <motion.div
-          className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'
+          className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8'
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
@@ -141,111 +141,117 @@ const SuppliersPage = () => {
           />
         </motion.div>
 
-        {/* --- 2. SECCIÓN REPORTE DE PROVEEDORES (DEBAJO DE LAS STAT CARDS) --- */}
-        <motion.div 
-          className="p-6 rounded-2xl space-y-6"
-          id="seccionReporteProveedores" 
-          style={{ backgroundColor: "rgb(247, 249, 253)" }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          
+        {/* ================= TARJETA BLANCA EXTERIOR (envuelve filtro + reporte) ================= */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-gray-800 font-sans mb-8">
+
           {/* ENCABEZADO Y FILTROS DE FECHA */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-5 gap-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
             <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Truck className="text-indigo-600" size={22} /> Dashboard de Analítica de Proveedores
-              </h1>
-              <p className="text-xs text-gray-500 mt-1">Evaluación de tiempos de entrega, confiabilidad y volúmenes de inversión.</p>
+              </h2>
+              <p className="text-xs text-gray-500">Evaluación de tiempos de entrega, confiabilidad y volúmenes de inversión.</p>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200 shadow-sm text-xs">
-              <Calendar size={14} className="text-gray-400 ml-1" />
-              <input 
-                type="date" 
-                value={fechaInicio} 
-                onChange={(e) => setFechaInicio(e.target.value)}
-                className="border-none bg-transparent font-mono focus:ring-0 p-1 text-gray-700"
-              />
-              <span className="text-gray-300 font-bold">al</span>
-              <input 
-                type="date" 
-                value={fechaFin} 
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="border-none bg-transparent font-mono focus:ring-0 p-1 text-gray-700"
-              />
+            <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
+                <Calendar size={14} /> Desde:
+                <input 
+                  type="date" 
+                  value={fechaInicio} 
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                  className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 px-2">
+                Hasta:
+                <input 
+                  type="date" 
+                  value={fechaFin} 
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  className="bg-gray-100 p-1.5 rounded-md text-gray-800 font-mono border border-gray-200 outline-none"
+                />
+              </div>
             </div>
           </div>
 
           {reportLoading && !reportData ? (
-            <div className="flex items-center justify-center py-12 text-xs font-mono text-gray-500">
-              ⌛ Cargando métricas analíticas...
+            <div className="text-center py-20 rounded-xl border border-gray-200" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-indigo-600 font-medium text-sm">Cargando métricas analíticas...</p>
             </div>
           ) : reportData && (
-            <>
+            <div className="space-y-8">
+
               {/* METRICAS DEL PERIODO */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm">
-                  <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600"><Truck size={20} /></div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                  <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg shrink-0"><Truck size={22} /></div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Proveedores Activos</p>
-                    <h3 className="text-lg font-black text-gray-900">{reportData.total_proveedores}</h3>
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Proveedores Activos</span>
+                    <span className="text-xl font-black text-indigo-600 font-mono">{reportData.total_proveedores}</span>
+                    <p className="text-[9px] text-gray-500 mt-0.5">Proveedores con órdenes en el periodo.</p>
                   </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm">
-                  <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600"><Calendar size={20} /></div>
+
+                <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                  <div className="p-3 bg-emerald-100 text-emerald-600 rounded-lg shrink-0"><Calendar size={22} /></div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Órdenes Emitidas</p>
-                    <h3 className="text-lg font-black text-gray-900">{reportData.total_ordenes}</h3>
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Órdenes Emitidas</span>
+                    <span className="text-xl font-black text-emerald-600 font-mono">{reportData.total_ordenes}</span>
+                    <p className="text-[9px] text-gray-500 mt-0.5">Órdenes de compra registradas.</p>
                   </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm">
-                  <div className="p-3 rounded-lg bg-amber-50 text-amber-600"><DollarSign size={20} /></div>
+
+                <div className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                  <div className="p-3 bg-amber-100 text-amber-600 rounded-lg shrink-0"><DollarSign size={22} /></div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Inversión en Abastecimiento</p>
-                    <h3 className="text-lg font-black text-gray-900">${(reportData.inversion_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</h3>
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block">Inversión en Abastecimiento</span>
+                    <span className="text-xl font-black text-amber-600 font-mono">
+                      ${(reportData.inversion_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                    <p className="text-[9px] text-gray-500 mt-0.5">Capital total invertido en compras.</p>
                   </div>
                 </div>
               </div>
 
               {/* TABLA DE PROVEEDORES */}
               <div className="rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
-                <div className="p-3.5 bg-white/50 border-b border-gray-200 flex items-center gap-2">
+                <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
                   <Award size={16} className="text-indigo-600" />
-                  <h3 className="text-xs font-bold text-gray-900">Análisis Comparativo y Desempeño de Proveedores</h3>
+                  <h3 className="text-sm font-bold text-gray-900">Análisis Comparativo y Desempeño de Proveedores</h3>
                 </div>
                 <div className="overflow-x-auto bg-white flex-grow">
                   <table className="w-full text-left text-xs text-gray-700">
-                    <thead className="bg-gray-50 uppercase text-gray-400 border-b border-gray-200 text-[10px]">
+                    <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
                       <tr>
-                        <th className="p-2 pl-4">Proveedor</th>
-                        <th className="p-2 text-center">Órdenes</th>
-                        <th className="p-2 text-right">Total Invertido</th>
-                        <th className="p-2 text-center">Demora Promedio</th>
-                        <th className="p-2 text-center">Confiabilidad</th>
-                        <th className="p-2 pr-4">Contacto</th>
+                        <th className="p-3 pl-4">Proveedor</th>
+                        <th className="p-3 text-center">Órdenes</th>
+                        <th className="p-3 text-right">Total Invertido</th>
+                        <th className="p-3 text-center">Demora Promedio</th>
+                        <th className="p-3 text-center">Confiabilidad</th>
+                        <th className="p-3 pr-4">Contacto</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 font-sans text-gray-600 text-[11px]">
+                    <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
                       {reportData.lista_proveedores.length === 0 ? (
                         <tr>
-                          <td colSpan="6" className="p-4 text-center text-gray-400">No se encontraron datos en este rango.</td>
+                          <td colSpan="6" className="p-6 text-center text-gray-400 font-sans">No se encontraron datos en este rango.</td>
                         </tr>
                       ) : (
                         reportData.lista_proveedores.map((prov) => (
                           <tr key={prov.Id_proveedor} className="hover:bg-gray-50">
-                            <td className="p-2 pl-4 font-bold text-gray-900">{prov.proveedor}</td>
-                            <td className="p-2 text-center font-mono">{prov.total_compras}</td>
-                            <td className="p-2 text-right font-mono font-medium text-gray-900">${prov.total_invertido.toFixed(2)}</td>
-                            <td className="p-2 text-center font-mono text-gray-500">{prov.tiempo_entrega_promedio} días</td>
-                            <td className="p-2 text-center font-mono">
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${prov.confiabilidad >= 85 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                            <td className="p-3 pl-4 font-sans text-gray-900 font-semibold">{prov.proveedor}</td>
+                            <td className="p-3 text-center">{prov.total_compras}</td>
+                            <td className="p-3 text-right font-bold text-gray-900">${prov.total_invertido.toFixed(2)}</td>
+                            <td className="p-3 text-center text-gray-500">{prov.tiempo_entrega_promedio} días</td>
+                            <td className="p-3 text-center font-sans">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${prov.confiabilidad >= 85 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                                 {prov.confiabilidad}%
                               </span>
                             </td>
-                            <td className="p-2 pr-4 text-gray-400 font-mono">
-                              <div className="flex items-center gap-1"><Phone size={10}/> {prov.Contacto_telefono || "S/N"}</div>
+                            <td className="p-3 pr-4 text-gray-400 font-sans">
+                              <div className="flex items-center gap-1"><Phone size={11}/> {prov.Contacto_telefono || "S/N"}</div>
                             </td>
                           </tr>
                         ))
@@ -259,9 +265,9 @@ const SuppliersPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* GRÁFICO BARRA */}
-                <div id="chart-volumen-compras" className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col shadow-sm">
-                  <h4 className="text-xs font-bold text-gray-900 mb-4 uppercase text-gray-400 tracking-wider">Volumen de Compras por Proveedor ($)</h4>
-                  <div className="h-64">
+                <div id="chart-volumen-compras" className="rounded-xl border border-gray-200 p-5" style={{ backgroundColor: "rgb(240, 243, 249)" }}>
+                  <h3 className="text-sm font-bold mb-4 text-gray-900">Volumen de Compras por Proveedor ($)</h3>
+                  <div className="h-64 bg-white rounded-xl border border-gray-200 p-2">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={reportData.lista_proveedores}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -276,35 +282,35 @@ const SuppliersPage = () => {
 
                 {/* RETRASOS CRÍTICOS */}
                 <div className="rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{ backgroundColor: "rgb(254, 242, 242)" }}>
-                  <div className="p-3.5 bg-red-50/50 border-b border-red-100 flex items-center gap-2">
+                  <div className="p-4 bg-white/50 border-b border-red-100 flex items-center gap-2">
                     <AlertTriangle size={16} className="text-red-600" />
-                    <h3 className="text-xs font-bold text-red-900">Órdenes Críticas Retrasadas en el Periodo</h3>
+                    <h3 className="text-sm font-bold text-red-900">Órdenes Críticas Retrasadas en el Periodo</h3>
                   </div>
                   <div className="overflow-x-auto bg-white flex-grow">
                     <table className="w-full text-left text-xs text-gray-700">
-                      <thead className="bg-gray-50 uppercase text-gray-400 border-b border-gray-200 text-[10px]">
+                      <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
                         <tr>
-                          <th className="p-2 pl-4">ID Orden</th>
-                          <th className="p-2">Proveedor</th>
-                          <th className="p-2 text-center">Retraso</th>
-                          <th className="p-2 pr-4 text-center">Estado</th>
+                          <th className="p-3 pl-4">ID Orden</th>
+                          <th className="p-3">Proveedor</th>
+                          <th className="p-3 text-center">Retraso</th>
+                          <th className="p-3 pr-4 text-center">Estado</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 font-mono text-gray-600 text-[11px]">
+                      <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
                         {reportData.ordenes_retrasadas.length === 0 ? (
                           <tr>
-                            <td colSpan="4" className="p-4 text-center text-gray-400 font-sans">
+                            <td colSpan="4" className="p-6 text-center text-gray-400 font-sans">
                               🎉 No se registran órdenes críticas retrasadas asociadas a este periodo.
                             </td>
                           </tr>
                         ) : (
                           reportData.ordenes_retrasadas.map((oc) => (
                             <tr key={oc.Id_orden_compra} className="hover:bg-red-50/30">
-                              <td className="p-2 pl-4 text-gray-400">#{oc.Id_orden_compra}</td>
-                              <td className="p-2 font-sans font-medium text-gray-900">{oc.proveedor}</td>
-                              <td className="p-2 text-center text-red-600 font-bold">{oc.dias_retraso} días</td>
-                              <td className="p-2 pr-4 text-center">
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200 uppercase">
+                              <td className="p-3 pl-4 text-gray-400">#{oc.Id_orden_compra}</td>
+                              <td className="p-3 font-sans font-semibold text-gray-900">{oc.proveedor}</td>
+                              <td className="p-3 text-center text-red-600 font-bold">{oc.dias_retraso} días</td>
+                              <td className="p-3 pr-4 text-center">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase">
                                   {oc.Estado}
                                 </span>
                               </td>
@@ -316,14 +322,13 @@ const SuppliersPage = () => {
                   </div>
                 </div>
               </div>
-			
-			  <div id="suppliers-world-map">
-			    <SuppliersWorldMap fechaInicio={fechaInicio} fechaFin={fechaFin} />
-			  </div>
-			
-			   
+
+              <div id="suppliers-world-map">
+                <SuppliersWorldMap fechaInicio={fechaInicio} fechaFin={fechaFin} />
+              </div>
+
               {/* BOTÓN EXPORTAR PDF */}
-              <div className="download-btn-container pt-4 flex justify-end">
+              <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
                 <button 
                   onClick={generatePDF} 
                   disabled={generandoPDF}
@@ -332,10 +337,10 @@ const SuppliersPage = () => {
                   <Download size={14} /> {generandoPDF ? "Generando PDF de Proveedores..." : "Exportar Reporte de Proveedores (PDF)"}
                 </button>
               </div>
-            </>
-          )}
 
-        </motion.div>
+            </div>
+          )}
+        </div>
 
       </main>
     </div>
