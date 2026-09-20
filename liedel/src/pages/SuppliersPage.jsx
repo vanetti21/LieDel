@@ -8,8 +8,9 @@ import {
   Phone,
   Award,
   Download,
+  BarChart2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import { pdf } from "@react-pdf/renderer";
@@ -25,24 +26,23 @@ import {
 
 import StatCard from "../components/common/StatCard";
 import SuppliersWorldMap from "../components/suppliers/SuppliersWorldMap";
+import SuppliersWorldMapStatic from "../components/suppliers/SuppliersWorldMapStatic";
 import ReporteProveedoresPDF from "../components/reports/ReporteProveedores";
 
 const SuppliersPage = () => {
   const navigate = useNavigate();
+  const mapRef = useRef(null);
 
-  // 1. Estados para StatCards generales
   const [stats, setStats] = useState({
     totalSuppliers: 0,
     productsSupplied: 0,
     supplierRevenue: 0,
   });
 
-  // 2. Estados para el Reporte de Analítica
   const [reportData, setReportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [generandoPDF, setGenerandoPDF] = useState(false);
 
-  // Inicializar rango de fechas (1 año atrás hasta hoy)
   const [fechaInicio, setFechaInicio] = useState(() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
@@ -52,7 +52,6 @@ const SuppliersPage = () => {
     () => new Date().toISOString().split("T")[0],
   );
 
-  // Cargar estadísticas superiores
   useEffect(() => {
     fetch("http://localhost:5000/suppliers_stats")
       .then((res) => res.json())
@@ -60,7 +59,6 @@ const SuppliersPage = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  // Cargar datos del reporte analítico según el rango de fechas
   const fetchReporte = async () => {
     try {
       setReportLoading(true);
@@ -81,13 +79,13 @@ const SuppliersPage = () => {
     fetchReporte();
   }, [fechaInicio, fechaFin]);
 
-  // GENERACIÓN DE PDF NATIVO CON @REACT-PDF/RENDERER Y CAPTURA DE GRÁFICOS
+  // GENERACIÓN DE PDF
   const generatePDF = async () => {
     try {
       setGenerandoPDF(true);
 
       const chartVolumenEl = document.querySelector("#chart-volumen-compras");
-      const mapaEl = document.querySelector("#suppliers-world-map");
+      const mapaEstaticoEl = document.querySelector("#static-world-map");
 
       let imgVolumen = null;
       let imgMapa = null;
@@ -97,10 +95,18 @@ const SuppliersPage = () => {
         imgVolumen = canvas.toDataURL("image/png");
       }
 
-      if (mapaEl) {
-        const canvas = await html2canvas(mapaEl, { scale: 2, useCORS: true });
+      if (mapaEstaticoEl) {
+        // El mapa estático (react-simple-maps) es SVG puro, se pinta sincrónicamente,
+        // así que una espera corta es suficiente antes de capturarlo.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const canvas = await html2canvas(mapaEstaticoEl, {
+          scale: 2,
+          useCORS: true,
+        });
         imgMapa = canvas.toDataURL("image/png");
       }
+
+      const paisesProveedores = mapRef.current?.getMarkers() || [];
 
       const blob = await pdf(
         <ReporteProveedoresPDF
@@ -130,7 +136,6 @@ const SuppliersPage = () => {
   return (
     <div className="flex-1 overflow-auto relative z-10 font-sans">
       <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8">
-        {/* --- 1. TARJETAS DE ESTADÍSTICAS GENERALES --- */}
         <motion.div
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -158,9 +163,7 @@ const SuppliersPage = () => {
           />
         </motion.div>
 
-        {/* ================= TARJETA BLANCA EXTERIOR (envuelve filtro + reporte) ================= */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-gray-800 font-sans mb-8">
-          {/* ENCABEZADO Y FILTROS DE FECHA */}
           <div
             className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8 border border-gray-200 p-5 rounded-xl"
             style={{ backgroundColor: "rgb(240, 243, 249)" }}
@@ -211,7 +214,6 @@ const SuppliersPage = () => {
           ) : (
             reportData && (
               <div className="space-y-8">
-                {/* METRICAS DEL PERIODO */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div
                     className="p-5 rounded-xl border border-gray-200 flex items-center gap-4 shadow-sm"
@@ -278,7 +280,6 @@ const SuppliersPage = () => {
                   </div>
                 </div>
 
-                {/* TABLA DE PROVEEDORES */}
                 <div
                   className="rounded-xl border border-gray-200 overflow-hidden flex flex-col"
                   style={{ backgroundColor: "rgb(240, 243, 249)" }}
@@ -350,26 +351,45 @@ const SuppliersPage = () => {
                   </div>
                 </div>
 
-                {/* GRÁFICA Y RETRASOS */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* GRÁFICO BARRA */}
-                  <div
-                    id="chart-volumen-compras"
-                    className="rounded-xl border border-gray-200 p-5"
-                    style={{ backgroundColor: "rgb(240, 243, 249)" }}
-                  >
-                    <h3 className="text-sm font-bold mb-4 text-gray-900">
-                      Volumen de Compras por Proveedor ($)
+                <div
+                  id="chart-volumen-compras"
+                  className="rounded-xl border border-gray-200 overflow-hidden flex flex-col"
+                  style={{ backgroundColor: "rgb(240, 243, 249)" }}
+                >
+                  <div className="p-4 bg-white/50 border-b border-gray-200 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-gray-900">
+                      📊 Volumen de Compras por Proveedor ($)
                     </h3>
-                    <div className="h-64 bg-white rounded-xl border border-gray-200 p-2">
+                  </div>
+                  <div className="p-4">
+                    <div className="h-80 bg-white rounded-xl border border-gray-200 p-2">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={reportData.lista_proveedores}>
+                        <BarChart
+                          data={reportData.lista_proveedores}
+                          margin={{
+                            top: 10,
+                            right: 15,
+                            left: 5,
+                            bottom: 70,
+                          }}
+                        >
                           <CartesianGrid
                             strokeDasharray="3 3"
                             vertical={false}
                           />
-                          <XAxis dataKey="proveedor" tick={{ fontSize: 10 }} />
-                          <YAxis tick={{ fontSize: 10 }} />
+                          <XAxis
+                            dataKey="proveedor"
+                            interval={0}
+                            angle={-45}
+                            textAnchor="end"
+                            tickFormatter={(value) =>
+                              value.length > 18
+                                ? `${value.substring(0, 18)}...`
+                                : value
+                            }
+                            tick={{ fontSize: 11 }}
+                          />
+                          <YAxis tick={{ fontSize: 11 }} />
                           <Tooltip
                             formatter={(value) => [`$${value}`, "Inversión"]}
                           />
@@ -382,76 +402,75 @@ const SuppliersPage = () => {
                       </ResponsiveContainer>
                     </div>
                   </div>
+                </div>
 
-                  {/* RETRASOS CRÍTICOS */}
-                  <div
-                    className="rounded-xl border border-gray-200 overflow-hidden flex flex-col"
-                    style={{ backgroundColor: "rgb(254, 242, 242)" }}
-                  >
-                    <div className="p-4 bg-white/50 border-b border-red-100 flex items-center gap-2">
-                      <AlertTriangle size={16} className="text-red-600" />
-                      <h3 className="text-sm font-bold text-red-900">
-                        Órdenes Críticas Retrasadas en el Periodo
-                      </h3>
-                    </div>
-                    <div className="overflow-x-auto bg-white flex-grow">
-                      <table className="w-full text-left text-xs text-gray-700">
-                        <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
+                <div
+                  className="rounded-xl border border-gray-200 overflow-hidden flex flex-col"
+                  style={{ backgroundColor: "rgb(254, 242, 242)" }}
+                >
+                  <div className="p-4 bg-white/50 border-b border-red-100 flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-red-600" />
+                    <h3 className="text-sm font-bold text-red-900">
+                      Órdenes Críticas Retrasadas en el Periodo
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto bg-white flex-grow">
+                    <table className="w-full text-left text-xs text-gray-700">
+                      <thead className="bg-gray-100 uppercase text-gray-500 border-b border-gray-200">
+                        <tr>
+                          <th className="p-3 pl-4">ID Orden</th>
+                          <th className="p-3">Proveedor</th>
+                          <th className="p-3 text-center">Retraso</th>
+                          <th className="p-3 pr-4 text-center">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
+                        {reportData.ordenes_retrasadas.length === 0 ? (
                           <tr>
-                            <th className="p-3 pl-4">ID Orden</th>
-                            <th className="p-3">Proveedor</th>
-                            <th className="p-3 text-center">Retraso</th>
-                            <th className="p-3 pr-4 text-center">Estado</th>
+                            <td
+                              colSpan="4"
+                              className="p-6 text-center text-gray-400 font-sans"
+                            >
+                              🎉 No se registran órdenes críticas retrasadas
+                              asociadas a este periodo.
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 font-mono text-gray-600">
-                          {reportData.ordenes_retrasadas.length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan="4"
-                                className="p-6 text-center text-gray-400 font-sans"
-                              >
-                                🎉 No se registran órdenes críticas retrasadas
-                                asociadas a este periodo.
+                        ) : (
+                          reportData.ordenes_retrasadas.map((oc) => (
+                            <tr
+                              key={oc.Id_orden_compra}
+                              className="hover:bg-red-50/30"
+                            >
+                              <td className="p-3 pl-4 text-gray-400">
+                                #{oc.Id_orden_compra}
+                              </td>
+                              <td className="p-3 font-sans font-semibold text-gray-900">
+                                {oc.proveedor}
+                              </td>
+                              <td className="p-3 text-center text-red-600 font-bold">
+                                {oc.dias_retraso} días
+                              </td>
+                              <td className="p-3 pr-4 text-center">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase">
+                                  {oc.Estado}
+                                </span>
                               </td>
                             </tr>
-                          ) : (
-                            reportData.ordenes_retrasadas.map((oc) => (
-                              <tr
-                                key={oc.Id_orden_compra}
-                                className="hover:bg-red-50/30"
-                              >
-                                <td className="p-3 pl-4 text-gray-400">
-                                  #{oc.Id_orden_compra}
-                                </td>
-                                <td className="p-3 font-sans font-semibold text-gray-900">
-                                  {oc.proveedor}
-                                </td>
-                                <td className="p-3 text-center text-red-600 font-bold">
-                                  {oc.dias_retraso} días
-                                </td>
-                                <td className="p-3 pr-4 text-center">
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase">
-                                    {oc.Estado}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
                 <div id="suppliers-world-map">
                   <SuppliersWorldMap
+                    ref={mapRef}
                     fechaInicio={fechaInicio}
                     fechaFin={fechaFin}
                   />
                 </div>
 
-                {/* BOTÓN EXPORTAR PDF */}
                 <div className="download-btn-container pt-4 flex justify-end border-t border-gray-200">
                   <button
                     onClick={generatePDF}
@@ -468,6 +487,19 @@ const SuppliersPage = () => {
             )
           )}
         </div>
+
+        {/* MAPA ESTÁTICO OCULTO — solo existe para capturarse en el PDF.
+            Se posiciona fuera de pantalla (no se ve, pero sí se renderiza y puede capturarse). */}
+        {reportData && (
+          <div
+            id="static-world-map"
+            style={{ position: "fixed", top: 0, left: "-9999px" }}
+          >
+            <SuppliersWorldMapStatic
+              paises={mapRef.current?.getMarkers() || []}
+            />
+          </div>
+        )}
       </main>
     </div>
   );

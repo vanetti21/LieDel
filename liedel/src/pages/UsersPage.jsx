@@ -443,9 +443,8 @@ const UsersPage = () => {
                   className="p-5 rounded-xl border border-gray-200"
                   style={{ backgroundColor: "rgb(240, 243, 249)" }}
                 >
-                  <h3 className="text-sm font-bold mb-3 text-gray-900 flex items-center gap-2">
-                    <TrendingUp size={16} className="text-indigo-600" />{" "}
-                    Evolución Mensual de Carga Operativa en Ventas
+                  <h3 className="text-sm font-bold mb-3 text-gray-900 flex items-center gap-2">                  
+                    📈 Evolución Mensual de Carga Operativa en Ventas
                   </h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <LineChart data={reporteData.evolucion_laboral}>
@@ -476,8 +475,7 @@ const UsersPage = () => {
                   style={{ backgroundColor: "rgb(240, 243, 249)" }}
                 >
                   <h3 className="text-sm font-bold mb-3 text-gray-900 flex items-center gap-2">
-                    <UserPlus size={16} className="text-indigo-600" /> Evolución
-                    de Nuevas Contrataciones
+                    🆕 Evolución de Nuevas Contrataciones
                   </h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <LineChart

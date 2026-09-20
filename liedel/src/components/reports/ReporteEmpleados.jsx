@@ -196,7 +196,6 @@ const ReporteEmpleadosPDF = ({
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
           {chartImages?.evolucionVentas && (
             <View style={{ width: "50%" }} wrap={false}>
-              <Text style={styles.chartTitle}>Evolución Operativa Ventas</Text>
               <Image
                 style={styles.chartImage}
                 src={chartImages.evolucionVentas}
@@ -205,7 +204,6 @@ const ReporteEmpleadosPDF = ({
           )}
           {chartImages?.contrataciones && (
             <View style={{ width: "50%" }} wrap={false}>
-              <Text style={styles.chartTitle}>Nuevas Contrataciones</Text>
               <Image
                 style={styles.chartImage}
                 src={chartImages.contrataciones}

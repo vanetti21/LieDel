@@ -34,12 +34,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 6,
   },
-  chartTitle: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#374151",
-    marginBottom: 4,
-  },
   kpiContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -60,8 +54,13 @@ const styles = StyleSheet.create({
   kpiValue: { fontSize: 11, fontWeight: "bold", marginTop: 2 },
   fullWidthChartImage: {
     width: "100%",
-    height: 180,
+    height: 200,
     objectFit: "contain",
+  },
+  fullWidthChartContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginVertical: 0,
   },
   table: {
     width: "100%",
@@ -108,12 +107,33 @@ const getConfiabilidadColors = (valor) => {
     : { bg: "#FEE2E2", color: "#991B1B" };
 };
 
+// Convierte lat/lng a posición porcentual dentro de un rectángulo equirectangular
+const projectToPercent = (lat, lng) => ({
+  left: ((lng + 180) / 360) * 100,
+  top: ((90 - lat) / 180) * 100,
+});
+
+// Etiquetas de continentes, como referencia visual (sin imagen de fondo)
+const CONTINENT_LABELS = [
+  { name: "N. AMÉRICA", lat: 48, lng: -100 },
+  { name: "S. AMÉRICA", lat: -18, lng: -58 },
+  { name: "EUROPA", lat: 54, lng: 15 },
+  { name: "ÁFRICA", lat: 5, lng: 20 },
+  { name: "ASIA", lat: 45, lng: 90 },
+  { name: "OCEANÍA", lat: -25, lng: 140 },
+];
+
 const ReporteProveedoresPDF = ({
   data,
   fechaInicio,
   fechaFin,
   chartImages,
+  paisesProveedores = [],
 }) => {
+  const maxTotal = Math.max(...paisesProveedores.map((p) => p.Total ?? 1), 1);
+  const getDotSize = (total) =>
+    Math.max(6, Math.min(18, ((total ?? 1) / maxTotal) * 18));
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -237,12 +257,9 @@ const ReporteProveedoresPDF = ({
           )}
         </View>
 
-        {/* GRÁFICO DE VOLUMEN DE COMPRAS */}
+        {/* GRÁFICO DE VOLUMEN DE COMPRAS (captura de html2canvas, sin cambios) */}
         {chartImages?.volumenCompras && (
-          <View style={{ marginBottom: 10 }} wrap={false}>
-            <Text style={styles.chartTitle}>
-              Volumen de Compras por Proveedor ($)
-            </Text>
+          <View style={styles.fullWidthChartContainer}>
             <Image
               style={styles.fullWidthChartImage}
               src={chartImages.volumenCompras}
@@ -252,7 +269,7 @@ const ReporteProveedoresPDF = ({
 
         {/* ÓRDENES CRÍTICAS RETRASADAS */}
         {data?.ordenes_retrasadas?.length > 0 && (
-          <View>
+          <View break>
             <Text style={[styles.sectionTitle, { color: "#991B1B" }]}>
               Órdenes Críticas Retrasadas en el Periodo
             </Text>
@@ -307,14 +324,14 @@ const ReporteProveedoresPDF = ({
           </View>
         )}
 
-        {/* MAPA MUNDIAL DE PROVEEDORES (opcional, solo si se captura) */}
+        {/* MAPA MUNDIAL DE PROVEEDORES (imagen estática capturada de react-simple-maps) */}
         {chartImages?.mapaProveedores && (
-          <View style={{ marginBottom: 10 }} wrap={false} break>
+          <View style={{ marginTop: 10, marginBottom: 10 }} wrap={false}>
             <Text style={styles.sectionTitle}>
               Distribución Geográfica de Proveedores
             </Text>
             <Image
-              style={{ width: "100%", height: 220, objectFit: "contain" }}
+              style={{ width: "100%", height: 240, objectFit: "contain" }}
               src={chartImages.mapaProveedores}
             />
           </View>

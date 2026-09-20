@@ -823,8 +823,7 @@ const SalesPage = () => {
                   style={{ backgroundColor: "rgb(240, 243, 249)" }}
                 >
                   <h3 className="text-sm font-bold mb-1 text-gray-900 flex items-center gap-2">
-                    <h3 size={18} className="text-indigo-600" />
-                    📊 Rendimiento Diario: Volumen de Ventas vs Dinero Recaudado
+                      📊 Rendimiento Diario: Volumen de Ventas vs Dinero Recaudado
                   </h3>
                   <p className="text-[11px] text-gray-500 mb-4">
                     Comparativa directa entre transacciones cobradas (barras) y

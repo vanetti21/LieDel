@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@react-pdf/renderer": "^4.9.0"
+    "@react-pdf/renderer": "^4.9.0",
+    "react-simple-maps": "^5.0.5"
   }
 }
